@@ -1,0 +1,28 @@
+export = index;
+declare const index: {
+    PixelGif: Function;
+    createBuffer: Function;
+    createImageData: Function;
+    detect: Function;
+    fetchArrayBuffer: Function;
+    fetchBuffer: Function;
+    fetchFile: Function;
+    fetchImageData: Function;
+    fetchImageDataViaBinary: Function;
+    fetchImageDataViaBlob: Function;
+    fetchImageDataViaBuffer: Function;
+    fetchImageDataViaDatauri: Function;
+    fetchImageDataViaUrl: Function;
+    fetchObjectUrl: Function;
+    get: Function;
+    getBuffer: Function;
+    getBufferBinary: Function;
+    getImageData: Function;
+    getImageType: Function;
+    getTypeof: Function;
+    lookupImageType: Function;
+    parse: Function;
+    readAsArrayBuffer: Function;
+    readAsArrayBufferSync: Function;
+    set: Function;
+};
