@@ -1,5 +1,4 @@
 import typescript from "rollup-plugin-typescript";
-import jsx from "rollup-plugin-jsx";
 import replace from 'rollup-plugin-replace';
 import babel from "rollup-plugin-babel";
 
@@ -14,12 +13,6 @@ const config = {
         typescript({
             "target": "es5",
             "sourceMap": false
-        }),
-        jsx({
-            arrayChildren: true,
-            factory: 'React.createElement.bind(this)',
-            spreadFn: 'Object.assign',
-            unknownTagPattern: 'React.createComponent.call(this, {tag})'
         }),
         babel(),
         replace({
