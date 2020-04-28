@@ -23829,6 +23829,8 @@ var Model = /** @class */ (function () {
         // 触发攻击的范围
         this.akX = 10;
         this.akY = 1;
+        // 所处的层级
+        this.index = 1;
         // 帧频
         this.fps = 60;
         this.id = '';
@@ -23850,34 +23852,60 @@ var Model = /** @class */ (function () {
         this.img = void 0;
         this.image = {};
         this.hitArea = [];
+        // scene处于哪些state时, 允许碰撞检测
+        this.hitState = {};
+        // 默认是否要进行碰撞检测
+        this.hitAble = false;
+        this.state = 0;
     }
     Model.prototype.init = function (stateChange) {
         return __awaiter(this, void 0, void 0, function () {
-            var _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
+            var _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
                     case 0:
+                        if (this.state > 0) {
+                            return [2 /*return*/];
+                        }
+                        this.state = 1;
+                        this.initProp();
+                        if (!this.initBefore()) return [3 /*break*/, 5];
                         _a = this;
                         return [4 /*yield*/, this.initGif()];
                     case 1:
-                        _a.gif = _b.sent();
+                        _a.gif = _c.sent();
                         return [4 /*yield*/, this.gif.toBlobUrl()];
                     case 2:
-                        _b.sent();
+                        _c.sent();
+                        _b = this;
                         return [4 /*yield*/, this.gif.loadImage(stateChange)];
                     case 3:
-                        _b.sent();
-                        return [2 /*return*/];
+                        _b.img = (_c.sent())[0];
+                        return [4 /*yield*/, this.setHitArea()];
+                    case 4:
+                        _c.sent();
+                        _c.label = 5;
+                    case 5: return [2 /*return*/];
                 }
             });
         });
     };
+    Model.prototype.initBefore = function () {
+        return true;
+    };
+    Model.prototype.initProp = function () {
+        if (!this.id) {
+            this.time = +new Date;
+            this.id = [this.type, this.name, Math.floor(Math.random() * 1e8).toString(36)].join('/');
+        }
+    };
     Model.prototype.initGif = function (src) {
         return __awaiter(this, void 0, void 0, function () {
-            var image;
+            var image, gif;
             return __generator(this, function (_a) {
                 image = this.image;
-                return [2 /*return*/, this.gif || new GifCanvas(src || path$4.join(image.path, image.name), this)];
+                gif = this.gif || new GifCanvas(src || path$4.join(image.path, image.name), this);
+                return [2 /*return*/, gif];
             });
         });
     };
@@ -23886,6 +23914,16 @@ var Model = /** @class */ (function () {
         for (var _i = 0; _i < arguments.length; _i++) {
             rest[_i] = arguments[_i];
         }
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/];
+            });
+        });
+    };
+    Model.prototype.animate = function () {
+        return __awaiter(this, void 0, void 0, function () { return __generator(this, function (_a) {
+            return [2 /*return*/];
+        }); });
     };
     Model.prototype.attack = function () {
         var rest = [];
@@ -23895,18 +23933,38 @@ var Model = /** @class */ (function () {
     };
     Model.prototype.stop = function () { };
     Model.prototype.destory = function () { };
-    Model.prototype.setHitArea = function (x, y, scale) { };
+    Model.prototype.setHitArea = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var _a, x, y, scale, img;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        if (!(!this.hitArea.length && this.gif)) return [3 /*break*/, 2];
+                        _a = this, x = _a.x, y = _a.y, scale = _a.scale;
+                        return [4 /*yield*/, this.gif.imgElems];
+                    case 1:
+                        img = (_b.sent())[0];
+                        this.hitArea = [x, y, img.width * scale, img.height * scale];
+                        this.width = img.width;
+                        this.height = img.height;
+                        _b.label = 2;
+                    case 2: return [2 /*return*/];
+                }
+            });
+        });
+    };
     Model.prototype.trigger = function (type, event) { };
     return Model;
 }());
 
 var Menu = /** @class */ (function (_super) {
     __extends(Menu, _super);
-    function Menu(type, options) {
+    function Menu(name, options) {
         if (options === void 0) { options = {}; }
         var _this = _super.call(this) || this;
         _this.options = {};
-        _this.type = type;
+        _this.name = name;
+        _this.type = 'menu';
         _this.options = options;
         Object.assign(_this, options);
         return _this;
@@ -23916,13 +23974,16 @@ var Menu = /** @class */ (function (_super) {
 
 var Bullet = /** @class */ (function (_super) {
     __extends(Bullet, _super);
-    function Bullet(type, options) {
+    function Bullet(name, options) {
         if (options === void 0) { options = {}; }
         var _this = _super.call(this) || this;
         _this.options = {};
-        _this.type = type;
+        _this.name = name;
+        _this.type = 'menu';
         _this.options = options;
-        Object.assign(_this, options);
+        Object.assign(_this, {
+            hitAble: true
+        }, options);
         return _this;
     }
     return Bullet;
@@ -23935,8 +23996,11 @@ var Plant = /** @class */ (function (_super) {
         var _this = _super.call(this) || this;
         _this.options = {};
         _this.name = name;
+        _this.type = 'plant';
         _this.options = options;
-        Object.assign(_this, options);
+        Object.assign(_this, {
+            hitAble: true
+        }, options);
         return _this;
     }
     return Plant;
@@ -23944,13 +24008,16 @@ var Plant = /** @class */ (function (_super) {
 
 var Zombie = /** @class */ (function (_super) {
     __extends(Zombie, _super);
-    function Zombie(type, options) {
+    function Zombie(name, options) {
         if (options === void 0) { options = {}; }
         var _this = _super.call(this) || this;
         _this.options = {};
-        _this.type = type;
+        _this.name = name;
+        _this.type = 'zombie';
         _this.options = options;
-        Object.assign(_this, options);
+        Object.assign(_this, {
+            hitAble: true
+        }, options);
         return _this;
     }
     return Zombie;
@@ -24020,17 +24087,96 @@ var execHook = function (source, hook) {
         });
     });
 };
+var hitTest = function () {
+    var rest = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        rest[_i] = arguments[_i];
+    }
+    var x1 = rest[0], y1 = rest[1], x = rest[2], y = rest[3], w = rest[4], h = rest[5];
+    return x1 >= x && x1 <= x + w && y1 >= y && y1 <= y + h;
+};
+var dotV2 = function (v1, v2) {
+    return v1.x * v2.x + v1.y * v2.y;
+};
+var calcProj = function (axis, polyArr) {
+    var v = { "x": polyArr[0], "y": polyArr[1] };
+    var d, min, max;
+    min = max = dotV2(axis, v);
+    for (var i = 2; i < polyArr.length - 1; i += 2) {
+        v.x = polyArr[i];
+        v.y = polyArr[i + 1];
+        d = dotV2(axis, v);
+        min = (d < min) ? d : min;
+        max = (d > max) ? d : max;
+    }
+    return [min, max];
+};
+var segDist = function (min1, max1, min2, max2) {
+    if (min1 < min2) {
+        return min2 - max1;
+    }
+    else {
+        return min1 - max2;
+    }
+};
+var isCollide = function (p1, p2) {
+    var e = { "x": 0, "y": 0 };
+    var p = p1, idx = 0, len1 = p1.length, len2 = p2.length, px, py;
+    for (var i = 0, len = len1 + len2; i < len - 1; i += 2) {
+        idx = i;
+        if (i > len1) {
+            p = p2;
+            idx = (i - len1);
+        }
+        if (i === p.length - 2) {
+            px = p[0] - p[idx];
+            py = p[1] - p[idx + 1];
+        }
+        else {
+            px = p[idx + 2] - p[idx];
+            py = p[idx + 3] - p[idx + 1];
+        }
+        e.x = -py;
+        e.y = px;
+        var pp1 = calcProj(e, p1);
+        var pp2 = calcProj(e, p2);
+        if (segDist(pp1[0], pp1[1], pp2[0], pp2[1]) > 0) {
+            return false;
+        }
+    }
+    return true;
+};
 
+var defaultConfig = {
+    width: 1366,
+    height: 720
+};
 var Scene = /** @class */ (function () {
     function Scene(container, config) {
         if (config === void 0) { config = {}; }
         this.state = '';
         this.task = new Task;
         this.coms = [];
+        this.comMap = {};
         this.loadCount = 0;
+        this.hitCom = [];
         this.container = container;
-        this.config = config;
+        config = this.config = Object.assign({}, defaultConfig, config);
+        if (config.size === 'fullScreen') {
+            config.width = window.screen.width;
+            config.height = window.screen.height;
+        }
+        this.container.width = config.width;
+        this.container.height = config.height;
+        this.context = container.getContext('2d');
     }
+    Scene.prototype.beforeInit = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/];
+            });
+        });
+    };
     Scene.prototype.init = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
@@ -24044,6 +24190,7 @@ var Scene = /** @class */ (function () {
                         return [4 /*yield*/, this.loadMenu()];
                     case 3:
                         _a.sent();
+                        this.setBackground();
                         return [2 /*return*/];
                 }
             });
@@ -24082,9 +24229,20 @@ var Scene = /** @class */ (function () {
                             var Ctor = Ctors[key];
                             list = list.concat(coms[key].list.map(function (item) {
                                 return new Promise(function (resolve) { return __awaiter(_this, void 0, void 0, function () {
+                                    var config, instance;
                                     return __generator(this, function (_a) {
-                                        if (Ctor)
-                                            return [2 /*return*/, resolve(new Ctor(item, coms[key].options[item]))];
+                                        if (Ctor && this.comMap[item]) {
+                                            console.log('Map中 ' + item + ' 属性将被覆盖');
+                                        }
+                                        if (Ctor) {
+                                            config = Object.assign({
+                                                scene: this,
+                                                context: this.context,
+                                                container: this.container,
+                                            }, coms[key].options[item]);
+                                            instance = new Ctor(item, config);
+                                            return [2 /*return*/, resolve(this.comMap[key + '_' + item] = this.comMap[item] = instance)];
+                                        }
                                         resolve();
                                         return [2 /*return*/];
                                     });
@@ -24096,24 +24254,45 @@ var Scene = /** @class */ (function () {
                         }
                         _b.label = 1;
                     case 1:
-                        _b.trys.push([1, 4, , 5]);
+                        _b.trys.push([1, 5, , 6]);
                         _a = this;
                         return [4 /*yield*/, Promise.all(list)];
                     case 2:
                         _a.coms = _b.sent();
+                        return [4 /*yield*/, this.loading()];
+                    case 3:
+                        _b.sent();
                         return [4 /*yield*/, Promise.all(this.coms.map(function (instance) { return __awaiter(_this, void 0, void 0, function () {
                                 return __generator(this, function (_a) {
                                     return [2 /*return*/, instance.init(this.stateChange.bind(this))];
                                 });
                             }); }))];
-                    case 3:
-                        _b.sent();
-                        return [3 /*break*/, 5];
                     case 4:
+                        _b.sent();
+                        return [3 /*break*/, 6];
+                    case 5:
                         err_1 = _b.sent();
                         console.log(err_1);
-                        return [3 /*break*/, 5];
-                    case 5: return [2 /*return*/];
+                        return [3 /*break*/, 6];
+                    case 6: return [2 /*return*/];
+                }
+            });
+        });
+    };
+    Scene.prototype.loading = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var com;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        com = this.getCom('popcap_logo.png');
+                        return [4 /*yield*/, com.init(this.stateChange.bind(this))];
+                    case 1:
+                        _a.sent();
+                        return [4 /*yield*/, com.draw()];
+                    case 2:
+                        _a.sent();
+                        return [2 /*return*/];
                 }
             });
         });
@@ -24122,18 +24301,92 @@ var Scene = /** @class */ (function () {
         var count = this.coms.length;
         if (index === gif.imageUrls.length - 1) {
             this.loadCount++;
+            console.log('已加载:' + (this.loadCount / count * 100).toFixed(2) + '%');
         }
-        console.log('已加载:' + (this.loadCount / count * 100).toFixed(2) + '%');
+    };
+    Scene.prototype.setBackground = function (name) {
+        if (name === void 0) { name = 'Surface.jpg'; }
+        return __awaiter(this, void 0, void 0, function () {
+            var com;
+            return __generator(this, function (_a) {
+                com = this.getCom(name || '');
+                if (com) {
+                    com.draw();
+                }
+                return [2 /*return*/];
+            });
+        });
     };
     Scene.prototype.addEvents = function () {
-        return __awaiter(this, void 0, void 0, function () { return __generator(this, function (_a) {
-            return [2 /*return*/];
-        }); });
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                this.container.addEventListener('mousedown', function (event) {
+                    _this.hitExec(true, _this.hitTest(event), function (com) {
+                        console.log(com);
+                    });
+                });
+                this.container.addEventListener('mouseup', function (event) {
+                });
+                this.container.addEventListener('mousemove', function (event) {
+                });
+                this.container.addEventListener('mouseout', function (event) {
+                });
+                return [2 /*return*/];
+            });
+        });
+    };
+    // 碰撞到组件时执行
+    Scene.prototype.hitExec = function (one, hitCom, func) {
+        if (one === void 0) { one = false; }
+        if (hitCom === void 0) { hitCom = this.hitCom; }
+        var coms = hitCom.slice(0).sort(function (a, b) {
+            return a.index - b.index;
+        });
+        if (one) {
+            coms.length && func(coms[0]);
+        }
+        else {
+            coms.map(function (item) {
+                func(item);
+            });
+        }
+    };
+    Scene.prototype.hitTest = function (event) {
+        var _this = this;
+        // @ts-ignore
+        var x = event.offsetX, y = event.offsetY;
+        var hit = [];
+        this.coms.map(function (com) {
+            // 如果没有指定当前环节要碰撞检测, 且默认不检测, 则跳过
+            if (!com.hitState.hasOwnProperty(_this.state) && !com.hitAble) {
+                return;
+            }
+            if (com.hitArea.length === 4) {
+                if (hitTest.apply(null, [x, y].concat(com.hitArea))) {
+                    hit.push(com);
+                }
+            }
+            else if (com.hitArea.length) {
+                if (isCollide([x, y, x + 1, y, x + 1, y + 1], com.hitArea)) {
+                    hit.push(com);
+                }
+            }
+        });
+        return this.hitCom = hit;
+    };
+    Scene.prototype.getCom = function (name, type) {
+        var key = (type ? type + '_' : '') + name;
+        var com = this.comMap[key];
+        !com && console.log('未能找到 ' + key + ' 组件');
+        return com;
     };
     Scene.prototype.loadMenu = function () {
-        return __awaiter(this, void 0, void 0, function () { return __generator(this, function (_a) {
-            return [2 /*return*/];
-        }); });
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/];
+            });
+        });
     };
     Scene.prototype.showMenu = function () {
         return __awaiter(this, void 0, void 0, function () { return __generator(this, function (_a) {
@@ -24194,7 +24447,45 @@ var mergeOptions = function (options) {
     });
     return options;
 };
-var options = mergeOptions({});
+var options = mergeOptions({
+    'popcap_logo.png': {
+        draw: function () {
+            return __awaiter(this, void 0, void 0, function () {
+                var iw, ih, sw, sh;
+                var _this = this;
+                return __generator(this, function (_a) {
+                    iw = this.img.width;
+                    ih = this.img.height;
+                    sw = this.scene.config.width;
+                    sh = this.scene.config.height;
+                    return [2 /*return*/, new Promise(function (resolve) {
+                            var opacity = 0;
+                            var animate = function () {
+                                _this.context.clearRect(0, 0, sw, sh);
+                                _this.context.globalAlpha = opacity += .01;
+                                _this.context.drawImage(_this.img, (sw - iw) / 2, (sh - ih) / 2, iw, ih);
+                                if (opacity < .95) {
+                                    setTimeout(animate, 50);
+                                }
+                                else {
+                                    _this.context.clearRect(0, 0, sw, sh);
+                                    resolve();
+                                }
+                            };
+                            animate();
+                        })];
+                });
+            });
+        }
+    },
+    'Surface.jpg': {
+        draw: function () {
+            var w = this.scene.config.width;
+            var h = this.scene.config.height;
+            this.context.drawImage(this.img, 0, 0, w, h);
+        }
+    }
+});
 var menu = {
     path: path,
     name: name,
@@ -24336,6 +24627,9 @@ var zombie$1 = {
 };
 
 var config = {
+    // size: 'fullScreen',
+    width: 1400,
+    height: 700,
     coms: {
         Menu: menu,
         Bullet: zombie,
@@ -24352,14 +24646,17 @@ var Core = function (container) { return __awaiter(void 0, void 0, void 0, funct
                 scene = new Scene(container, config);
                 // @ts-ignore
                 window.scene = scene;
-                return [4 /*yield*/, execHook(scene, 'init')];
+                return [4 /*yield*/, execHook(scene, 'beforeInit')];
             case 1:
                 _a.sent();
-                return [4 /*yield*/, execHook(scene, 'mount')];
+                return [4 /*yield*/, execHook(scene, 'init')];
             case 2:
                 _a.sent();
-                return [4 /*yield*/, execHook(scene, 'play')];
+                return [4 /*yield*/, execHook(scene, 'mount')];
             case 3:
+                _a.sent();
+                return [4 /*yield*/, execHook(scene, 'play')];
+            case 4:
                 _a.sent();
                 return [2 /*return*/, scene];
         }
