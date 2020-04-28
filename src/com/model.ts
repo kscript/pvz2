@@ -44,6 +44,9 @@ export default class Model {
   // 触发攻击的范围
   public akX: number = 10
   public akY: number = 1
+
+  // 所处的层级
+  public index: number = 1
   
   // 帧频
   public fps: number = 60
@@ -69,20 +72,51 @@ export default class Model {
   public image: anyObject = {
   }
   public hitArea: number[] = []
+  // scene处于哪些state时, 允许碰撞检测
+  public hitState: anyObject<boolean> = {}
+  // 默认是否要进行碰撞检测
+  public hitAble: boolean = false
+  public state: number = 0
   constructor() {}
   public async init(stateChange?: (type: string, url: string, index: number, gif: GifCanvas) => void) {
-    this.gif = await this.initGif()
-    await this.gif.toBlobUrl()
-    await this.gif.loadImage(stateChange)
+    if (this.state > 0) { return }
+    this.state = 1
+    this.initProp()
+    if (this.initBefore()) {
+      this.gif = await this.initGif()
+      await this.gif.toBlobUrl()
+      this.img = (await this.gif.loadImage(stateChange))[0]
+      await this.setHitArea()
+    }
+  }
+  public initBefore() {
+    return true
+  }
+  public initProp() {
+    if (!this.id) {
+      this.time = +new Date
+      this.id = [this.type, this.name, Math.floor(Math.random() * 1e8).toString(36)].join('/')
+    }
   }
   public async initGif(src?: string) {
     let image = this.image
-    return this.gif || new GifCanvas(src || path.join(image.path, image.name), this)
+    let gif = this.gif || new GifCanvas(src || path.join(image.path, image.name), this)
+    return gif
   }
-  public draw(...rest: any[]) {}
+  public async draw(...rest: any[]) {
+  }
+  public async animate() {}
   public attack(...rest: any[]) {}
   public stop() {}
   public destory() {}
-  public setHitArea(x: number, y: number, scale: number) {}
+  public async setHitArea() {
+    if (!this.hitArea.length && this.gif) {
+      let { x, y, scale } = this
+      let img = (await this.gif.imgElems)[0]
+      this.hitArea = [x, y, img.width * scale, img.height * scale]
+      this.width = img.width
+      this.height = img.height
+    }
+  }
   public trigger(type: string, event?: Event) {}
 }

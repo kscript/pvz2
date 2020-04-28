@@ -4,7 +4,10 @@ export default class Plant extends Model {
   constructor(name: string, options: anyObject = {}) {
     super()
     this.name = name
+    this.type = 'plant'
     this.options = options
-    Object.assign(this, options)
+    Object.assign(this, {
+      hitAble: true
+    }, options)
   }
 }

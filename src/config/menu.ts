@@ -46,7 +46,38 @@ const mergeOptions = (options: anyObject) => {
   })
   return options
 }
-const options: anyObject = mergeOptions({})
+const options: anyObject = mergeOptions({
+  'popcap_logo.png': {
+    async draw() {
+      let iw = this.img.width
+      let ih = this.img.height
+      let sw = this.scene.config.width
+      let sh = this.scene.config.height
+      return new Promise(resolve => {
+        let opacity = 0
+        const animate = () => {
+          this.context.clearRect(0, 0, sw, sh)
+          this.context.globalAlpha = opacity += .01
+          this.context.drawImage(this.img, (sw - iw) / 2, (sh - ih) / 2 , iw, ih)
+          if (opacity < .95) {
+            setTimeout(animate, 50)
+          } else {
+            this.context.clearRect(0, 0, sw, sh)
+            resolve()
+          }
+        }
+        animate()
+      })
+    }
+  },
+  'Surface.jpg': {
+    draw() {
+      let w = this.scene.config.width
+      let h = this.scene.config.height
+      this.context.drawImage(this.img, 0, 0, w, h)
+    }
+  }
+})
 const menu = {
   path,
   name,
