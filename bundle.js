@@ -24161,7 +24161,7 @@ var Scene = /** @class */ (function () {
         this.comsMountedMap = {};
         this.comMap = {};
         this.loadCount = 0;
-        this.hitCom = [];
+        this.hitCom = {};
         this.container = container;
         config = this.config = Object.assign({}, defaultConfig, config);
         if (config.size === 'fullScreen') {
@@ -24186,13 +24186,23 @@ var Scene = /** @class */ (function () {
                     case 0: return [4 /*yield*/, this.loadResource()];
                     case 1:
                         _a.sent();
-                        return [4 /*yield*/, this.addEvents()];
+                        return [4 /*yield*/, this.addEvents()
+                            // 需要等待用户点击开始
+                        ];
                     case 2:
                         _a.sent();
-                        return [4 /*yield*/, this.loadMenu()
-                            // this.setBackground()
-                        ];
+                        // 需要等待用户点击开始
+                        return [4 /*yield*/, this.task.init()];
                     case 3:
+                        // 需要等待用户点击开始
+                        _a.sent();
+                        this.clearCanvas();
+                        this.clearMounted();
+                        return [4 /*yield*/, this.loadMenu()];
+                    case 4:
+                        _a.sent();
+                        return [4 /*yield*/, this.setBackground()];
+                    case 5:
                         _a.sent();
                         return [2 /*return*/];
                 }
@@ -24280,13 +24290,12 @@ var Scene = /** @class */ (function () {
             });
         });
     };
-    Scene.prototype.mountCom = function (coms) {
-        if (coms instanceof Array) {
-            this.comsMounted.push.apply(this.comsMounted, coms);
-        }
-        else {
-            this.comsMounted.push(coms);
-        }
+    Scene.prototype.mountCom = function (com) {
+        var _this = this;
+        (Array.isArray(com) ? com : [com]).map(function (item) {
+            _this.comsMountedMap[item.id] = item;
+            _this.comsMounted.push(item);
+        });
     };
     Scene.prototype.loading = function () {
         return __awaiter(this, void 0, void 0, function () {
@@ -24349,20 +24358,48 @@ var Scene = /** @class */ (function () {
     Scene.prototype.clearCanvas = function () {
         this.context.clearRect(0, 0, this.config.width, this.config.width);
     };
+    Scene.prototype.clearMounted = function () {
+        var _this = this;
+        this.comsMounted.splice(0).forEach(function (item) {
+            item.destory();
+            delete _this.comsMountedMap[item.id];
+        });
+    };
     Scene.prototype.addEvents = function () {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
             return __generator(this, function (_a) {
                 this.container.addEventListener('mousedown', function (event) {
-                    _this.hitExec(true, _this.hitTest(event), function (com) {
-                        console.log(com);
+                    _this.hitExec(true, _this.hitCom['click'] = _this.hitTest(event), function (com) {
+                        com.trigger('click', event);
                     });
                 });
                 this.container.addEventListener('mouseup', function (event) {
                 });
                 this.container.addEventListener('mousemove', function (event) {
+                    var old = _this.hitCom.hover || [];
+                    var hover = _this.hitCom.hover = _this.hitTest(event);
+                    _this.hitExec(true, hover.slice(0), function (com) {
+                        // 如果在旧数组找不到, 则触发hover
+                        if (!old.some(function (item) { return item.id === com.id; })) {
+                            com.trigger('hover', event);
+                        }
+                    });
+                    // 如果在新数组找不到, 则触发leave
+                    old.forEach(function (com) {
+                        if (!hover.some(function (item) { return item.id === com.id; })) {
+                            com.trigger('leave', event);
+                        }
+                    });
                 });
-                this.container.addEventListener('mouseout', function (event) {
+                this.container.addEventListener('mouseleave', function (event) {
+                    var hover = _this.hitCom['hover'];
+                    if (hover && hover.length) {
+                        hover.map(function (com) {
+                            com.trigger('leave', event);
+                        });
+                        hover.splice(0);
+                    }
                 });
                 return [2 /*return*/];
             });
@@ -24371,7 +24408,6 @@ var Scene = /** @class */ (function () {
     // 碰撞到组件时执行
     Scene.prototype.hitExec = function (one, hitCom, func) {
         if (one === void 0) { one = false; }
-        if (hitCom === void 0) { hitCom = this.hitCom; }
         var coms = hitCom.slice(0).sort(function (a, b) {
             return a.index - b.index;
         });
@@ -24410,7 +24446,7 @@ var Scene = /** @class */ (function () {
                 }
             }
         });
-        return this.hitCom = hit;
+        return hit;
     };
     Scene.prototype.getCom = function (name, type) {
         var key = (type ? type + '_' : '') + name;
@@ -24552,6 +24588,14 @@ var options = mergeOptions({
             this.context.globalAlpha = .4;
             this.context.drawImage(this.img, x - this.width / 2, y - this.height / 2);
             this.context.globalAlpha = 1;
+        },
+        trigger: function (type, event) {
+            if (type === 'click') {
+                this.scene.task.resolve();
+            }
+            else {
+                this.scene.container.style.cursor = type === 'leave' ? 'auto' : 'pointer';
+            }
         }
     }
 });
