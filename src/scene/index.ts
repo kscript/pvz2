@@ -78,12 +78,11 @@ export default class Scene {
       console.log(err)
     }
   }
-  mountCom(coms: Model | Model[]) {
-    if (coms instanceof Array) {
-      this.comsMounted.push.apply(this.comsMounted, coms)
-    } else {
-      this.comsMounted.push(coms)
-    }
+  mountCom(com: Model | Model[]) {
+    (Array.isArray(com) ? com : [com]).map(item => {
+      this.comsMountedMap[item.id] = item
+      this.comsMounted.push(item)
+    })
   }
   async loading() {
     const coms: Model[] = ['popcap_logo.png', 'SodRollCap.png', 'LoadBar.png'].map(item => this.getCom(item))
