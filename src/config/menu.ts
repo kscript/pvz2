@@ -108,6 +108,13 @@ const options: anyObject = mergeOptions({
       this.context.globalAlpha = .4
       this.context.drawImage(this.img, x - this.width / 2, y - this.height / 2)
       this.context.globalAlpha = 1
+    },
+    trigger(type: string, event: Event) {
+      if (type === 'click') {
+        this.scene.task.resolve()
+      } else {
+        this.scene.container.style.cursor = type === 'leave' ? 'auto' : 'pointer'
+      }
     }
   }
 })

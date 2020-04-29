@@ -18,7 +18,7 @@ export default class Scene {
   public comsMountedMap: anyObject<Model> = {}
   public comMap: anyObject<Model> = {}
   public loadCount = 0
-  public hitCom: Model[] = []
+  public hitCom: anyObject<Model[]> = {}
   constructor(container: HTMLCanvasElement, config: anyObject = {}) {
     this.container = container
     config = this.config = Object.assign({}, defaultConfig, config)
@@ -36,8 +36,12 @@ export default class Scene {
   async init() {
     await this.loadResource()
     await this.addEvents()
+    // 需要等待用户点击开始
+    await this.task.init()
+    this.clearCanvas()
+    this.clearMounted()
     await this.loadMenu()
-    // this.setBackground()
+    await this.setBackground()
   }
   async mount() {
     await this.showMenu()
@@ -122,25 +126,49 @@ export default class Scene {
   clearCanvas() {
     this.context.clearRect(0, 0, this.config.width, this.config.width)
   }
-
+  clearMounted() {
+    this.comsMounted.splice(0).forEach(item => {
+      item.destory()
+      delete this.comsMountedMap[item.id]
+    })
+  }
   async addEvents() {
     this.container.addEventListener('mousedown', (event: Event) => {
-      this.hitExec(true, this.hitTest(event),(com) => {
-        console.log(com)
+      this.hitExec(true, this.hitCom['click'] = this.hitTest(event), (com) => {
+        com.trigger('click', event)
       })
     })
     this.container.addEventListener('mouseup', (event: Event) => {
-
+      
     })
     this.container.addEventListener('mousemove', (event: Event) => {
-
+      let old = this.hitCom.hover || []
+      let hover = this.hitCom.hover = this.hitTest(event)
+      this.hitExec(true, hover.slice(0), (com) => {
+        // 如果在旧数组找不到, 则触发hover
+        if (!old.some(item => item.id === com.id)) {
+          com.trigger('hover', event)
+        }
+      })
+      // 如果在新数组找不到, 则触发leave
+      old.forEach(com => {
+        if (!hover.some(item => item.id === com.id)) {
+          com.trigger('leave', event)
+        }
+      })
     })
-    this.container.addEventListener('mouseout', (event: Event) => {
-
+    this.container.addEventListener('mouseleave', (event: Event) => {
+      const hover = this.hitCom['hover']
+      if (hover && hover.length) {
+        hover.map(com => {
+          com.trigger('leave', event)        
+        })
+        hover.splice(0)
+      }
     })
   }
   // 碰撞到组件时执行
-  hitExec(one: boolean = false, hitCom: Model[] = this.hitCom, func: (com: Model) => any) {
+  hitExec(one: boolean = false, hitCom: Model[], func: (com: Model) => any) {
     const coms = hitCom.slice(0).sort((a, b) => {
       return a.index - b.index
     })
@@ -176,7 +204,7 @@ export default class Scene {
         }
       }
     })
-    return this.hitCom = hit
+    return hit
   }
   getCom(name?: string, type?: string) {
     const key = (type ? type + '_' : '') + name
