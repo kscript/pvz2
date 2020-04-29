@@ -1,4 +1,5 @@
 import { replaceTpl } from '@/utils'
+import Model from '@/com/model';
 
 const path = './images/interface/'
 const name = '${name}'
@@ -30,7 +31,10 @@ const list: string[] = [
   // 图鉴
   'SelectorScreen_Almanac.png',
   // logo
-  'popcap_logo.png'
+  'popcap_logo.png',
+  // loading
+  'SodRollCap.png',
+  'LoadBar.png'
 ]
 const mergeOptions = (options: anyObject) => {
   list.forEach(item => {
@@ -56,13 +60,13 @@ const options: anyObject = mergeOptions({
       return new Promise(resolve => {
         let opacity = 0
         const animate = () => {
-          this.context.clearRect(0, 0, sw, sh)
+          this.scene.clearCanvas()
           this.context.globalAlpha = opacity += .01
           this.context.drawImage(this.img, (sw - iw) / 2, (sh - ih) / 2 , iw, ih)
           if (opacity < .95) {
             setTimeout(animate, 50)
           } else {
-            this.context.clearRect(0, 0, sw, sh)
+            this.scene.clearCanvas()
             resolve()
           }
         }
@@ -75,6 +79,35 @@ const options: anyObject = mergeOptions({
       let w = this.scene.config.width
       let h = this.scene.config.height
       this.context.drawImage(this.img, 0, 0, w, h)
+    }
+  },
+  'SodRollCap.png': {
+    draw(rate: number, LoadBar: Model) {
+      let offsetY = 200
+      let x = this.scene.config.width / 2
+      let y = this.scene.config.height / 2 + offsetY
+      let lw = ~~(LoadBar.width * rate / 100)
+      this.context.save()
+      this.context.translate(x + lw - LoadBar.width / 2 - 10, y - LoadBar.height / 2 + 10)
+      this.context.rotate(rate * 10.8 * Math.PI / 180)
+      this.context.drawImage(this.img, -this.width / 2, -this.height / 2)
+      this.context.restore()
+    }
+  },
+  'LoadBar.png': {
+    hitAble: true,
+    draw(rate: number) {
+      let offsetY = 200
+      let x = this.scene.config.width / 2
+      let y = this.scene.config.height / 2 + offsetY
+      let lw = ~~(this.width * rate / 100)
+      // 如果需要进行碰撞检测的话, 每次画之前要设置好左上角
+      this.x = x - this.width / 2
+      this.y = y - this.height / 2
+      this.context.drawImage(this.img, 0, 0, lw, this.height, x - this.width / 2, y - this.height / 2, lw, this.height)
+      this.context.globalAlpha = .4
+      this.context.drawImage(this.img, x - this.width / 2, y - this.height / 2)
+      this.context.globalAlpha = 1
     }
   }
 })

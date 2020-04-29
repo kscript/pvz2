@@ -14,6 +14,8 @@ export default class Scene {
   public state = ''
   public task = new Task
   public coms: Model[] = []
+  public comsMounted: Model[] = []
+  public comsMountedMap: anyObject<Model> = {}
   public comMap: anyObject<Model> = {}
   public loadCount = 0
   public hitCom: Model[] = []
@@ -35,7 +37,7 @@ export default class Scene {
     await this.loadResource()
     await this.addEvents()
     await this.loadMenu()
-    this.setBackground()
+    // this.setBackground()
   }
   async mount() {
     await this.showMenu()
@@ -69,23 +71,47 @@ export default class Scene {
     try {
       this.coms = await Promise.all(list)
       await this.loading()
-      await Promise.all(this.coms.map(async instance => {
+      await Promise.all(this.coms.map(instance => {
         return instance.init(this.stateChange.bind(this))
       }))
     } catch (err) {
       console.log(err)
     }
   }
+  mountCom(coms: Model | Model[]) {
+    if (coms instanceof Array) {
+      this.comsMounted.push.apply(this.comsMounted, coms)
+    } else {
+      this.comsMounted.push(coms)
+    }
+  }
   async loading() {
-    const com = this.getCom('popcap_logo.png')
-    await com.init(this.stateChange.bind(this))
-    await com.draw()
+    const coms: Model[] = ['popcap_logo.png', 'SodRollCap.png', 'LoadBar.png'].map(item => this.getCom(item))
+    this.loadCount++
+    this.mountCom(coms)
+    await coms[0].init()
+    await coms[0].draw()
+    await Promise.all(coms.slice(1).map(com => {
+      if(com) {
+        this.loadCount++
+        return com.init()
+      }
+    }))
+  }
+  loadAnimate(rate: number) {
+    this.clearCanvas()
+    const SodRollCap = this.getCom('SodRollCap.png')
+    const LoadBar = this.getCom('LoadBar.png')
+    LoadBar.draw(~~rate)
+    SodRollCap.draw(~~rate, LoadBar)
+    console.log('已加载:' + rate.toFixed(2) + '%')
   }
   stateChange(type: string, url: string, index: number, gif: GifCanvas) {
     const count = this.coms.length
     if (index === gif.imageUrls.length -1) {
       this.loadCount++
-      console.log('已加载:' + (this.loadCount / count * 100).toFixed(2) + '%')
+      const rate = this.loadCount / count * 100
+      this.loadAnimate(rate)
     }
   }
   async setBackground(name: string = 'Surface.jpg') {
@@ -93,6 +119,9 @@ export default class Scene {
     if (com) {
       com.draw()
     }
+  }
+  clearCanvas() {
+    this.context.clearRect(0, 0, this.config.width, this.config.width)
   }
 
   async addEvents() {
@@ -128,18 +157,23 @@ export default class Scene {
     // @ts-ignore
     const { offsetX: x, offsetY: y } = event
     const hit: Model[] = []
-    this.coms.map(com => {
+    this.comsMounted.map(com => {
+      const hitArea = (com.hitArea||[]).slice(0)
       // 如果没有指定当前环节要碰撞检测, 且默认不检测, 则跳过
       if (!com.hitState.hasOwnProperty(this.state) && !com.hitAble) {
         return
       }
-      if (com.hitArea.length === 4) {
-        if (hitTest.apply(null, [x, y].concat(com.hitArea))) {
-          hit.push(com)
-        }
-      } else if(com.hitArea.length){
-        if (isCollide([x, y, x + 1, y, x + 1, y + 1], com.hitArea)) {
-          hit.push(com)
+      if (hitArea.length) {
+        hitArea[0] = com.x
+        hitArea[1] = com.y
+        if (hitArea.length === 4) {
+          if (hitTest.apply(null, [x, y].concat(hitArea))) {
+            hit.push(com)
+          }
+        } else if(hitArea.length){
+          if (isCollide([x, y, x + 1, y, x + 1, y + 1], hitArea)) {
+            hit.push(com)
+          }
         }
       }
     })
