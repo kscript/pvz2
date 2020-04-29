@@ -24157,6 +24157,8 @@ var Scene = /** @class */ (function () {
         this.state = '';
         this.task = new Task;
         this.coms = [];
+        this.comsMounted = [];
+        this.comsMountedMap = {};
         this.comMap = {};
         this.loadCount = 0;
         this.hitCom = [];
@@ -24187,10 +24189,11 @@ var Scene = /** @class */ (function () {
                         return [4 /*yield*/, this.addEvents()];
                     case 2:
                         _a.sent();
-                        return [4 /*yield*/, this.loadMenu()];
+                        return [4 /*yield*/, this.loadMenu()
+                            // this.setBackground()
+                        ];
                     case 3:
                         _a.sent();
-                        this.setBackground();
                         return [2 /*return*/];
                 }
             });
@@ -24262,11 +24265,9 @@ var Scene = /** @class */ (function () {
                         return [4 /*yield*/, this.loading()];
                     case 3:
                         _b.sent();
-                        return [4 /*yield*/, Promise.all(this.coms.map(function (instance) { return __awaiter(_this, void 0, void 0, function () {
-                                return __generator(this, function (_a) {
-                                    return [2 /*return*/, instance.init(this.stateChange.bind(this))];
-                                });
-                            }); }))];
+                        return [4 /*yield*/, Promise.all(this.coms.map(function (instance) {
+                                return instance.init(_this.stateChange.bind(_this));
+                            }))];
                     case 4:
                         _b.sent();
                         return [3 /*break*/, 6];
@@ -24279,29 +24280,57 @@ var Scene = /** @class */ (function () {
             });
         });
     };
+    Scene.prototype.mountCom = function (coms) {
+        if (coms instanceof Array) {
+            this.comsMounted.push.apply(this.comsMounted, coms);
+        }
+        else {
+            this.comsMounted.push(coms);
+        }
+    };
     Scene.prototype.loading = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var com;
+            var coms;
+            var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        com = this.getCom('popcap_logo.png');
-                        return [4 /*yield*/, com.init(this.stateChange.bind(this))];
+                        coms = ['popcap_logo.png', 'SodRollCap.png', 'LoadBar.png'].map(function (item) { return _this.getCom(item); });
+                        this.loadCount++;
+                        this.mountCom(coms);
+                        return [4 /*yield*/, coms[0].init()];
                     case 1:
                         _a.sent();
-                        return [4 /*yield*/, com.draw()];
+                        return [4 /*yield*/, coms[0].draw()];
                     case 2:
+                        _a.sent();
+                        return [4 /*yield*/, Promise.all(coms.slice(1).map(function (com) {
+                                if (com) {
+                                    _this.loadCount++;
+                                    return com.init();
+                                }
+                            }))];
+                    case 3:
                         _a.sent();
                         return [2 /*return*/];
                 }
             });
         });
     };
+    Scene.prototype.loadAnimate = function (rate) {
+        this.clearCanvas();
+        var SodRollCap = this.getCom('SodRollCap.png');
+        var LoadBar = this.getCom('LoadBar.png');
+        LoadBar.draw(~~rate);
+        SodRollCap.draw(~~rate, LoadBar);
+        console.log('已加载:' + rate.toFixed(2) + '%');
+    };
     Scene.prototype.stateChange = function (type, url, index, gif) {
         var count = this.coms.length;
         if (index === gif.imageUrls.length - 1) {
             this.loadCount++;
-            console.log('已加载:' + (this.loadCount / count * 100).toFixed(2) + '%');
+            var rate = this.loadCount / count * 100;
+            this.loadAnimate(rate);
         }
     };
     Scene.prototype.setBackground = function (name) {
@@ -24316,6 +24345,9 @@ var Scene = /** @class */ (function () {
                 return [2 /*return*/];
             });
         });
+    };
+    Scene.prototype.clearCanvas = function () {
+        this.context.clearRect(0, 0, this.config.width, this.config.width);
     };
     Scene.prototype.addEvents = function () {
         return __awaiter(this, void 0, void 0, function () {
@@ -24357,19 +24389,24 @@ var Scene = /** @class */ (function () {
         // @ts-ignore
         var x = event.offsetX, y = event.offsetY;
         var hit = [];
-        this.coms.map(function (com) {
+        this.comsMounted.map(function (com) {
+            var hitArea = (com.hitArea || []).slice(0);
             // 如果没有指定当前环节要碰撞检测, 且默认不检测, 则跳过
             if (!com.hitState.hasOwnProperty(_this.state) && !com.hitAble) {
                 return;
             }
-            if (com.hitArea.length === 4) {
-                if (hitTest.apply(null, [x, y].concat(com.hitArea))) {
-                    hit.push(com);
+            if (hitArea.length) {
+                hitArea[0] = com.x;
+                hitArea[1] = com.y;
+                if (hitArea.length === 4) {
+                    if (hitTest.apply(null, [x, y].concat(hitArea))) {
+                        hit.push(com);
+                    }
                 }
-            }
-            else if (com.hitArea.length) {
-                if (isCollide([x, y, x + 1, y, x + 1, y + 1], com.hitArea)) {
-                    hit.push(com);
+                else if (hitArea.length) {
+                    if (isCollide([x, y, x + 1, y, x + 1, y + 1], hitArea)) {
+                        hit.push(com);
+                    }
                 }
             }
         });
@@ -24431,7 +24468,10 @@ var list = [
     // 图鉴
     'SelectorScreen_Almanac.png',
     // logo
-    'popcap_logo.png'
+    'popcap_logo.png',
+    // loading
+    'SodRollCap.png',
+    'LoadBar.png'
 ];
 var mergeOptions = function (options) {
     list.forEach(function (item) {
@@ -24461,14 +24501,14 @@ var options = mergeOptions({
                     return [2 /*return*/, new Promise(function (resolve) {
                             var opacity = 0;
                             var animate = function () {
-                                _this.context.clearRect(0, 0, sw, sh);
+                                _this.scene.clearCanvas();
                                 _this.context.globalAlpha = opacity += .01;
                                 _this.context.drawImage(_this.img, (sw - iw) / 2, (sh - ih) / 2, iw, ih);
                                 if (opacity < .95) {
                                     setTimeout(animate, 50);
                                 }
                                 else {
-                                    _this.context.clearRect(0, 0, sw, sh);
+                                    _this.scene.clearCanvas();
                                     resolve();
                                 }
                             };
@@ -24483,6 +24523,35 @@ var options = mergeOptions({
             var w = this.scene.config.width;
             var h = this.scene.config.height;
             this.context.drawImage(this.img, 0, 0, w, h);
+        }
+    },
+    'SodRollCap.png': {
+        draw: function (rate, LoadBar) {
+            var offsetY = 200;
+            var x = this.scene.config.width / 2;
+            var y = this.scene.config.height / 2 + offsetY;
+            var lw = ~~(LoadBar.width * rate / 100);
+            this.context.save();
+            this.context.translate(x + lw - LoadBar.width / 2 - 10, y - LoadBar.height / 2 + 10);
+            this.context.rotate(rate * 10.8 * Math.PI / 180);
+            this.context.drawImage(this.img, -this.width / 2, -this.height / 2);
+            this.context.restore();
+        }
+    },
+    'LoadBar.png': {
+        hitAble: true,
+        draw: function (rate) {
+            var offsetY = 200;
+            var x = this.scene.config.width / 2;
+            var y = this.scene.config.height / 2 + offsetY;
+            var lw = ~~(this.width * rate / 100);
+            // 如果需要进行碰撞检测的话, 每次画之前要设置好左上角
+            this.x = x - this.width / 2;
+            this.y = y - this.height / 2;
+            this.context.drawImage(this.img, 0, 0, lw, this.height, x - this.width / 2, y - this.height / 2, lw, this.height);
+            this.context.globalAlpha = .4;
+            this.context.drawImage(this.img, x - this.width / 2, y - this.height / 2);
+            this.context.globalAlpha = 1;
         }
     }
 });
