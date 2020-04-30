@@ -24628,7 +24628,7 @@ var Scene = /** @class */ (function () {
                             }); })];
                     case 1:
                         _a.sent();
-                        this.stopMuisc();
+                        this.toggleMusic('./sound/hugewave');
                         return [2 /*return*/];
                 }
             });
@@ -24664,11 +24664,23 @@ var Scene = /** @class */ (function () {
         }
         catch (e) { }
     };
-    Scene.prototype.toggleMusic = function (src, stop) {
+    Scene.prototype.toggleMusic = function (src, stop, cache) {
         if (src === void 0) { src = './sound/Faster.mp3'; }
         if (stop === void 0) { stop = true; }
+        if (cache === void 0) { cache = false; }
         stop && this.stopMuisc();
-        this.sounds[src] = this.music(src);
+        if (cache) {
+            if (this.sounds[src]) {
+                if (this.sounds[src].pause) {
+                    this.sounds[src].play();
+                }
+                return this.sounds[src];
+            }
+            else {
+                return this.sounds[src] = this.music(src);
+            }
+        }
+        return this.sounds[src] = this.music(src);
     };
     Scene.prototype.music = function (src) {
         if (src === void 0) { src = './sound/Faster.mp3'; }
@@ -24810,10 +24822,14 @@ var menuTrigger = function (com, type, event) {
     if (type === 'hover') {
         com.scene.container.style.cursor = 'pointer';
         com.startY = .5;
+        com.scene.stopMuisc('./sound/mouseclick.wav');
+        var sound = com.scene.toggleMusic('./sound/mouseclick.wav', false, true);
+        sound.loop = false;
     }
     else if (type === 'leave') {
         com.scene.container.style.cursor = 'auto';
         com.startY = 0;
+        com.scene.stopMuisc('./sound/mouseclick.wav');
     }
     com.draw();
 };
