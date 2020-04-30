@@ -24012,6 +24012,7 @@ var Model = /** @class */ (function () {
         // 剪切图像
         this.startX = 0;
         this.startY = 0;
+        this.personal = {};
     }
     Model.prototype.init = function (stateChange) {
         return __awaiter(this, void 0, void 0, function () {
@@ -24076,6 +24077,10 @@ var Model = /** @class */ (function () {
         });
     };
     Model.prototype.animate = function () {
+        var rest = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            rest[_i] = arguments[_i];
+        }
         return __awaiter(this, void 0, void 0, function () { return __generator(this, function (_a) {
             return [2 /*return*/];
         }); });
@@ -24589,16 +24594,47 @@ var Scene = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         this.mod = index;
+                        return [4 /*yield*/, this.selectAfter()];
+                    case 1:
+                        _a.sent();
                         this.clearCanvas();
                         this.clearMounted();
                         return [4 /*yield*/, this.task.resolve()];
-                    case 1:
+                    case 2:
                         _a.sent();
                         return [2 /*return*/];
                 }
             });
         });
     };
+    Scene.prototype.selectAfter = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var com, imgData;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        this.toggleMusic('./sound/evillaugh.mp3');
+                        com = this.getCom('ZombieHand.png');
+                        this.mountCom(com);
+                        imgData = this.context.getImageData(0, 0, this.config.width, this.config.height);
+                        return [4 /*yield*/, com.animate(function () { return __awaiter(_this, void 0, void 0, function () {
+                                return __generator(this, function (_a) {
+                                    this.clearCanvas();
+                                    this.context.putImageData(imgData, 0, 0);
+                                    com.draw();
+                                    return [2 /*return*/];
+                                });
+                            }); })];
+                    case 1:
+                        _a.sent();
+                        this.stopMuisc();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    // 工具方法
     Scene.prototype.recordPath = function () {
         var pointers = [];
         console.log(pointers);
@@ -24615,12 +24651,27 @@ var Scene = /** @class */ (function () {
         // @ts-ignore
         drawHitArea(color, cxt, area);
     };
-    Scene.prototype.toggleMusic = function (src) {
-        if (src === void 0) { src = '/sound/Faster.mp3'; }
+    Scene.prototype.stopMuisc = function (src) {
+        try {
+            if (src) {
+                this.sounds[src].pause();
+            }
+            else {
+                for (var key in this.sounds) {
+                    this.sounds[key].pause();
+                }
+            }
+        }
+        catch (e) { }
+    };
+    Scene.prototype.toggleMusic = function (src, stop) {
+        if (src === void 0) { src = './sound/Faster.mp3'; }
+        if (stop === void 0) { stop = true; }
+        stop && this.stopMuisc();
         this.sounds[src] = this.music(src);
     };
     Scene.prototype.music = function (src) {
-        if (src === void 0) { src = '/sound/Faster.mp3'; }
+        if (src === void 0) { src = './sound/Faster.mp3'; }
         var sound = new Audio;
         sound.src = src;
         sound.muted = true;
@@ -24678,7 +24729,9 @@ var list = [
     'popcap_logo.png',
     // loading
     'SodRollCap.png',
-    'LoadBar.png'
+    'LoadBar.png',
+    'ZombieHand.png',
+    'Tombstone_mounds.png'
 ];
 var mergeOptions = function (options) {
     list.forEach(function (item) {
@@ -25033,6 +25086,50 @@ var options = mergeOptions({
             scene.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2);
         }
     },
+    'ZombieHand.png': {
+        ctype: 'function',
+        personal: {
+            lenX: 7,
+            lenY: 1,
+            currX: 0,
+            currY: 0,
+            animateTime: 300
+        },
+        animate: function (render) {
+            return __awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                return __generator(this, function (_a) {
+                    return [2 /*return*/, new Promise(function (resolve) {
+                            var paly = function () {
+                                if (_this.personal.currX < _this.personal.lenX) {
+                                    render();
+                                    _this.personal.currX++;
+                                    setTimeout(paly, _this.personal.animateTime);
+                                }
+                                else {
+                                    _this.personal.currX = 0;
+                                    setTimeout(function () {
+                                        resolve();
+                                    }, _this.personal.animateTime * 3);
+                                }
+                            };
+                            paly();
+                        })];
+                });
+            });
+        },
+        draw: function () {
+            var _a = getProps(this), x = _a.x, y = _a.y, w = _a.w, h = _a.h, scene = _a.scene;
+            var _b = this, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY, width = _b.width, height = _b.height;
+            this.x = x - w * .2;
+            this.y = y - h * .3;
+            startX = this.personal.currX % this.personal.lenX;
+            startY = this.personal.currY % this.personal.lenY;
+            width = width / this.personal.lenX;
+            height = height / this.personal.lenY;
+            scene.context.drawImage(this.img, startX * width, startY * height, width, height, this.x, this.y, width * scaleX, height * scaleY);
+        }
+    }
 });
 var menu = {
     path: path,
