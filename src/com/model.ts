@@ -1,17 +1,19 @@
 import * as path from 'path'
 import { GifCanvas } from '@/utils/canvas'
+import Scene from '@/scene'
+import { drawHitArea } from '@/utils'
 export default class Model {
   // 坐标
   public x: number = 0
   public y: number = 0
 
   // 剪切图像
-  public sx: number = 0
-  public sy: number = 0
-  public sw: number = 0
-  public sh: number = 0
-  public dw: number = 0
-  public dh: number = 0
+  // public sx: number = 0
+  // public sy: number = 0
+  // public sw: number = 0
+  // public sh: number = 0
+  // public dw: number = 0
+  // public dh: number = 0
 
   // 偏移量
   public ox: number = 0
@@ -21,7 +23,8 @@ export default class Model {
   public width: number = 0
   public height: number = 0
   // 缩放比例
-  public scale: number = 1
+  public scaleX: number = 1
+  public scaleY: number = 1
 
   // 需要阳光值
   public sun: number = 0
@@ -68,7 +71,7 @@ export default class Model {
   // 水生类型
   public aquatic: boolean = false
   public gif: GifCanvas | void = void 0
-  public img: HTMLElement | void = void 0
+  public img: HTMLImageElement | void = void 0
   public image: anyObject = {
   }
   public hitArea: number[] = []
@@ -77,6 +80,26 @@ export default class Model {
   // 默认是否要进行碰撞检测
   public hitAble: boolean = false
   public state: number = 0
+  // @ts-ignore
+  public scene: Scene
+  public col: number = 0
+  public row: number = 0
+  public ctype: string = ''
+  // 矩形左上方顺时针四个顶点
+  // 使用正负值作为方向
+  public tilt1: number = 0
+  public tilt2: number = 0
+  public tilt3: number = 0
+  public tilt4: number = 0
+  // 坐标偏移
+  public tiltX: number = 1
+  public tiltY: number = 1
+  // 大小
+  public tiltW: number = 1
+  public tiltH: number = 1
+  // 剪切图像
+  public startX: number = 0
+  public startY: number = 0
   constructor() {}
   public async init(stateChange?: (type: string, url: string, index: number, gif: GifCanvas) => void) {
     if (this.state > 0) { return }
@@ -109,13 +132,44 @@ export default class Model {
   public attack(...rest: any[]) {}
   public stop() {}
   public destory() {}
-  public async setHitArea() {
-    if (!this.hitArea.length && this.gif) {
-      let { x, y, scale } = this
-      let img = (await this.gif.imgElems)[0]
-      this.hitArea = [x, y, img.width * scale, img.height * scale]
-      this.width = img.width
-      this.height = img.height
+  public async setHitArea(refresh: boolean = false) {
+    if ((!this.hitArea.length || refresh) && this.gif) {
+      let img = this.img || (await this.gif.imgElems)[0]
+      let { x, y, scaleX, scaleY, tilt1, tilt2, tilt3, tilt4, tiltX, tiltY, tiltW, tiltH } = this
+      if (!this.hitArea.length) {
+        this.width = img.width
+        this.height = img.height
+      }
+      if ([tilt1, tilt2, tilt3, tilt4].some(item => item !== 0) || tiltX !== 1 || tiltY !== 1) {
+        const strength = new Array(8)
+        ~[tilt1, tilt2, tilt3, tilt4].forEach((item, index) => {
+          const num = index % 2 + ~~(index / 2)
+          strength[num * 2 + index] = item
+          strength[(num * 2 + index + 2) % 8] = item
+        })
+        const width = this.width * tiltW
+        const height = this.height * tiltH
+        // 计算倾斜时的hitArea
+        this.hitArea = [
+          x, y,
+          x + width * scaleX, y,
+          x + width * scaleX, y + height * scaleY,
+          x, y + height * scaleY
+        ].map((item, index) => {
+          item *= (index % 2 ? tiltY : tiltX)
+          return item * (1 + strength[index])
+        })
+      } else {
+        this.hitArea = [x, y, this.width * scaleX, this.height * scaleY]
+      }
+    }
+  }
+  public drawHitArea(color = 'red', cxt = this.scene.context, area = this.hitArea) {
+    let len = area.length
+    if (len === 4) {
+      drawHitArea(color, cxt, [this.x, this.y, area[2], area[3]])
+    } else if (len && len > 4 && len % 2 === 0){
+      drawHitArea(color, cxt, area)
     }
   }
   public trigger(type: string, event?: Event) {}

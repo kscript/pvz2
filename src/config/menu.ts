@@ -30,6 +30,15 @@ const list: string[] = [
   'SelectorScreen_ZenGarden.png',
   // 图鉴
   'SelectorScreen_Almanac.png',
+  // 冒险
+  'SelectorScreenAdventure.png',
+  // 解密
+  'SelectorScreenChallenges.png',
+  // 小游戏
+  'SelectorScreenSurvival.png',
+  // 开始游戏
+  'SelectorScreenStartAdventur.png',
+
   // logo
   'popcap_logo.png',
   // loading
@@ -49,6 +58,50 @@ const mergeOptions = (options: anyObject) => {
     }, options[item].image instanceof Object ? options[item].image : {})
   })
   return options
+}
+const conf: anyObject = {
+  // 菜单项起始位置坐标与场景中尺寸的比例
+  // 游戏模式选项
+  mod: {
+    sx: .535,
+    sy: .12,
+    // col间距
+    sc: 0,
+    // row间距
+    sr: .13
+  },
+  // 底部功能选项
+  function: {
+    sx: .25,
+    sy: .75,
+    sc: .15,
+    sr: 0
+  }
+}
+const getProps = (com: Model) => {
+  let type = com.ctype
+  let scene = com.scene
+  let w = scene.config.width
+  let h = scene.config.height
+  let info = conf[type] || {}
+  let x = w * info.sx
+  let y = h * info.sy
+  let c = w * info.sc
+  let r = h * info.sr
+  return { scene, w, h, info, x, y, r, c }
+}
+const menuTrigger = (com: Model, type: string, event: Event) => {
+  if (type === 'click'){
+    return
+  }
+  if (type === 'hover') {
+    com.scene.container.style.cursor = 'pointer'
+    com.startY = .5
+  } else if (type === 'leave') {
+    com.scene.container.style.cursor = 'auto'
+    com.startY = 0
+  }
+  com.draw()
 }
 const options: anyObject = mergeOptions({
   'popcap_logo.png': {
@@ -116,7 +169,174 @@ const options: anyObject = mergeOptions({
         this.scene.container.style.cursor = type === 'leave' ? 'auto' : 'pointer'
       }
     }
-  }
+  },
+  // 商店
+  'SelectorScreen_Store.png': {
+    hitAble: true,
+    col: 0,
+    row: 0,
+    ctype: 'function',
+    trigger(type: string, event: Event) {
+      // console.log(type, event, this)
+    },
+    draw() {
+      let { x, y, r, c, scene } = getProps(this)
+      this.x = x  + c * this.col
+      this.y = y + r * this.row
+      scene.context.drawImage(this.img, this.x, this.y, this.img.width * this.scaleX, this.img.height * this.scaleY)
+    }
+  },
+  // 花园
+  'SelectorScreen_ZenGarden.png': {
+    hitAble: true,
+    col: 1,
+    row: 0,
+    ctype: 'function',
+    trigger(type: string, event: Event) {
+      // console.log(type, event, this)
+    },
+    draw() {
+      let { x, y, r, c, scene } = getProps(this)
+      this.x = x  + c * this.col
+      this.y = y + r * this.row
+      scene.context.drawImage(this.img, this.x, this.y, this.img.width, this.img.height)
+    }
+  },
+  // 图鉴
+  'SelectorScreen_Almanac.png': {
+    hitAble: true,
+    col: 2,
+    row: 0,
+    ctype: 'function',
+    trigger(type: string, event: Event) {
+      // console.log(type, event, this)
+    },
+    draw() {
+      let { x, y, r, c, scene } = getProps(this)
+      this.x = x  + c * this.col
+      this.y = y + r * this.row
+      scene.context.drawImage(this.img, this.x, this.y, this.img.width, this.img.height)
+    }
+  },
+  // 冒险
+  'SelectorScreenAdventure.png': {
+    hitAble: true,
+    col: 0,
+    row: 0,
+    scaleX: 1.3,
+    scaleY: .9,
+    ctype: 'mod',
+    startX: 0,
+    startY: 0,
+    tilt1: 0,
+    tilt2: .05,
+    tilt4: -.08,
+    tiltY: 1.1,
+    tiltH: .6,
+    index: 4,
+    trigger(type: string, event: Event) {
+      menuTrigger(this, type, event)
+    },
+    draw() {
+      let { x, y, r, c, scene } = getProps(this)
+      let { scaleX, scaleY, startX, startY } = this
+      let { width, height } = this.img
+      this.x = x  + c * this.col
+      this.y = y + r * this.row
+      this.height = height / 2
+      scene.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2)
+    }
+  },
+  // 解密
+  'SelectorScreenChallenges.png': {
+    hitAble: true,
+    col: 0,
+    row: 1,
+    scaleX: 1.4,
+    scaleY: .96,
+    startX: 0,
+    startY: 0,
+    tilt1: 0,
+    tilt2: .05,
+    tilt4: -.09,
+    tiltY: 1.1,
+    tiltH: .66,
+    ctype: 'mod',
+    index: 3,
+    trigger(type: string, event: Event) {
+      menuTrigger(this, type, event)
+    },
+    draw() {
+      let { x, y, r, c, scene } = getProps(this)
+      let { scaleX, scaleY, startX, startY } = this
+      let { width, height } = this.img
+      this.x = x  + c * this.col
+      this.y = y + r * this.row
+      this.height = height / 2
+      scene.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2)
+    }
+  },
+  // 小游戏
+  'SelectorScreenSurvival.png': {
+    hitAble: true,
+    col: 0,
+    row: 2,
+    scaleX: 1.3,
+    scaleY: .9,
+    startX: 0,
+    startY: 0,
+    tilt1: 0,
+    tilt2: .02,
+    tilt4: -.12,
+    tiltY: 1.12,
+    tiltH: .66,
+    ctype: 'mod',
+    index: 2,
+    trigger(type: string, event: Event) {
+      menuTrigger(this, type, event)
+    },
+    draw() {
+      let { x, y, r, c, scene } = getProps(this)
+      let { scaleX, scaleY, startX, startY } = this
+      let { width, height } = this.img
+      this.x = x  + c * this.col
+      this.y = y + r * this.row
+      this.height = height / 2
+      scene.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2)
+    }
+  },
+  // 开始游戏
+  'SelectorScreenStartAdventur.png': {
+    hitAble: true,
+    col: 0,
+    row: 3,
+    // 缩放
+    scaleX: 1.3,
+    scaleY: .8,
+    // 图像截取时位移
+    startX: 0,
+    startY: 0,
+    // 倾斜度(用于计算hitArea)
+    tilt1: 0,
+    tilt2: 0,
+    tilt4: -.1,
+    tiltY: 1.08,
+    tiltH: .8,
+    ctype: 'mod',
+    index: 1,
+    trigger(type: string, event: Event) {
+      menuTrigger(this, type, event)
+    },
+    draw() {
+      let { x, y, r, c, scene } = getProps(this)
+      let { scaleX, scaleY, startX, startY } = this
+      let { width, height } = this.img
+      this.x = x  + c * this.col
+      this.y = y + r * this.row * 1.05
+      this.height = height / 2
+      scene.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2)
+    }
+  },
 })
 const menu = {
   path,

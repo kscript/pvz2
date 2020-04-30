@@ -1,6 +1,6 @@
 import Com from '@/com'
 import Model from '@/com/model'
-import { Task, hitTest, isCollide } from '@/utils'
+import { Task, hitTest, isCollide, drawHitArea } from '@/utils'
 import { GifCanvas } from '@/utils/canvas'
 const defaultConfig = {
   width: 1366,
@@ -40,8 +40,8 @@ export default class Scene {
     await this.task.init()
     this.clearCanvas()
     this.clearMounted()
-    await this.loadMenu()
     await this.setBackground()
+    await this.loadMenu()
   }
   async mount() {
     await this.showMenu()
@@ -91,13 +91,15 @@ export default class Scene {
   async loading() {
     const coms: Model[] = ['popcap_logo.png', 'SodRollCap.png', 'LoadBar.png'].map(item => this.getCom(item))
     this.loadCount++
-    this.mountCom(coms)
     await coms[0].init()
+    this.mountCom(coms[0])
     await coms[0].draw()
-    await Promise.all(coms.slice(1).map(com => {
+    await Promise.all(coms.slice(1).map(async com => {
       if(com) {
         this.loadCount++
-        return com.init()
+        await com.init()
+        this.mountCom(coms)
+        return com
       }
     }))
   }
@@ -128,8 +130,8 @@ export default class Scene {
   }
   clearMounted() {
     this.comsMounted.splice(0).forEach(item => {
-      item.destory()
       delete this.comsMountedMap[item.id]
+      item.destory()
     })
   }
   async addEvents() {
@@ -173,6 +175,7 @@ export default class Scene {
       return a.index - b.index
     })
     if (one) {
+      coms.splice(1)
       coms.length && func(coms[0])
     } else {
       coms.map(item => {
@@ -213,7 +216,43 @@ export default class Scene {
     return com
   }
   async loadMenu() {
+    const coms: Model[] = [
+      'SelectorScreen_Store.png',
+      // 花园
+      'SelectorScreen_ZenGarden.png',
+      // 图鉴
+      'SelectorScreen_Almanac.png',
+      // 冒险
+      'SelectorScreenAdventure.png',
+      // 解密
+      'SelectorScreenChallenges.png',
+      // 小游戏
+      'SelectorScreenSurvival.png',
+      // 开始游戏
+      'SelectorScreenStartAdventur.png'
+    ].map(item => {
+      const com = this.getCom(item)
+      this.mountCom(com)
+      com.draw()
+      com.setHitArea(true)
+      com.drawHitArea()
+      return com
+    })
   }
   async showMenu() {}
   async selectMenu() {}
+  recordPath() {
+    const pointers: number[] = []
+    console.log(pointers)      
+    this.container.addEventListener('click', (event: Event) => {
+      // @ts-ignore
+      pointers.push(event.offsetX)
+      // @ts-ignore
+      pointers.push(event.offsetY)
+    })
+  }
+  public drawHitArea(color: string, cxt: CanvasContextEx = this.context, area: number[] = []) {
+    // @ts-ignore
+    drawHitArea(color, cxt, area)
+  }
 }

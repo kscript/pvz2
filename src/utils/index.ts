@@ -1,3 +1,4 @@
+import Scene from '@/scene';
 
 export class Task {
   public state: string = 'resolved'
@@ -86,4 +87,20 @@ export const isCollide = (p1: number[], p2: number[]) => {
       }
   }
   return true
+}
+export const drawHitArea = (color = 'red', cxt: CanvasContextEx, area: number[] = []) => {
+  let len = area.length
+  cxt.strokeStyle = color
+  if (len === 4) {
+    // @ts-ignore
+    cxt.strokeRect.apply(cxt, area)
+  } else if (len && len > 4 && len % 2 === 0){
+    cxt.beginPath()
+    cxt.moveTo(area[0], area[1])
+    for(let i = 2; i < len; i += 2) {
+      cxt.lineTo(area[i], area[i+1])
+    }
+    cxt.closePath()
+    cxt.stroke()
+  }
 }
