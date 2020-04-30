@@ -124,9 +124,13 @@ const menuTrigger = (com: Model, type: string, event?: Event) => {
   if (type === 'hover') {
     com.scene.container.style.cursor = 'pointer'
     com.startY = .5
+    com.scene.stopMuisc('./sound/mouseclick.wav')
+    const sound = com.scene.toggleMusic('./sound/mouseclick.wav', false, true)
+    sound.loop = false
   } else if (type === 'leave') {
     com.scene.container.style.cursor = 'auto'
     com.startY = 0
+    com.scene.stopMuisc('./sound/mouseclick.wav')
   }
   com.draw()
 }

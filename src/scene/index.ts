@@ -260,7 +260,7 @@ export default class Scene {
       this.context.putImageData(imgData, 0, 0)
       com.draw()
     })
-    this.stopMuisc()
+    this.toggleMusic('./sound/hugewave')
   }
   // 工具方法
   recordPath() {
@@ -288,9 +288,19 @@ export default class Scene {
       }
     } catch(e) {}
   }
-  public toggleMusic(src: string = './sound/Faster.mp3', stop: boolean = true) {
+  public toggleMusic(src: string = './sound/Faster.mp3', stop: boolean = true, cache: boolean = false) {
     stop && this.stopMuisc()
-    this.sounds[src] = this.music(src)
+    if (cache) {
+      if (this.sounds[src]) {
+        if (this.sounds[src].pause) {
+          this.sounds[src].play()
+        }
+        return this.sounds[src]
+      } else {
+        return this.sounds[src] = this.music(src)
+      }
+    }
+    return this.sounds[src] = this.music(src)
   }
   public music(src: string = './sound/Faster.mp3') {
     const sound = new Audio
