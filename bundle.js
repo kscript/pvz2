@@ -24242,6 +24242,8 @@ var Scene = /** @class */ (function () {
         this.comMap = {};
         this.loadCount = 0;
         this.hitCom = {};
+        this.mod = 0;
+        this.sounds = {};
         this.container = container;
         config = this.config = Object.assign({}, defaultConfig, config);
         if (config.size === 'fullScreen') {
@@ -24276,6 +24278,7 @@ var Scene = /** @class */ (function () {
                     case 3:
                         // 需要等待用户点击开始
                         _a.sent();
+                        this.toggleMusic();
                         this.clearCanvas();
                         this.clearMounted();
                         return [4 /*yield*/, this.setBackground()];
@@ -24296,7 +24299,7 @@ var Scene = /** @class */ (function () {
                     case 0: return [4 /*yield*/, this.showMenu()];
                     case 1:
                         _a.sent();
-                        return [4 /*yield*/, this.selectMenu()];
+                        return [4 /*yield*/, this.task.init()];
                     case 2:
                         _a.sent();
                         return [2 /*return*/];
@@ -24568,7 +24571,7 @@ var Scene = /** @class */ (function () {
                     _this.mountCom(com);
                     com.draw();
                     com.setHitArea(true);
-                    com.drawHitArea();
+                    // com.drawHitArea()
                     return com;
                 });
                 return [2 /*return*/];
@@ -24580,10 +24583,21 @@ var Scene = /** @class */ (function () {
             return [2 /*return*/];
         }); });
     };
-    Scene.prototype.selectMenu = function () {
-        return __awaiter(this, void 0, void 0, function () { return __generator(this, function (_a) {
-            return [2 /*return*/];
-        }); });
+    Scene.prototype.selectMenu = function (index) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        this.mod = index;
+                        this.clearCanvas();
+                        this.clearMounted();
+                        return [4 /*yield*/, this.task.resolve()];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
     };
     Scene.prototype.recordPath = function () {
         var pointers = [];
@@ -24600,6 +24614,25 @@ var Scene = /** @class */ (function () {
         if (area === void 0) { area = []; }
         // @ts-ignore
         drawHitArea(color, cxt, area);
+    };
+    Scene.prototype.toggleMusic = function (src) {
+        if (src === void 0) { src = '/sound/Faster.mp3'; }
+        this.sounds[src] = this.music(src);
+    };
+    Scene.prototype.music = function (src) {
+        if (src === void 0) { src = '/sound/Faster.mp3'; }
+        var sound = new Audio;
+        sound.src = src;
+        sound.muted = true;
+        sound.autoplay = true;
+        sound.loop = true;
+        sound.onload = function () {
+        };
+        sound.oncanplay = function () {
+            sound.muted = false;
+            sound.play();
+        };
+        return sound;
     };
     return Scene;
 }());
@@ -24692,8 +24725,33 @@ var getProps = function (com) {
     var r = h * info.sr;
     return { scene: scene, w: w, h: h, info: info, x: x, y: y, r: r, c: c };
 };
+var menus = {
+    selected: null,
+    index: 0
+};
 var menuTrigger = function (com, type, event) {
+    if (com.scene.state !== 'mount' || menus.index === com.index) {
+        return;
+    }
     if (type === 'click') {
+        com.scene.container.style.cursor = 'pointer';
+        com.startY = .5;
+        com.draw();
+        if (com.name === 'SelectorScreenStartAdventur.png') {
+            var index = menus.index;
+            menus.index = 0;
+            if (menus.selected) {
+                menus.selected.trigger('leave');
+            }
+            com.scene.selectMenu(index);
+        }
+        else {
+            menus.index = com.index;
+            if (menus.selected) {
+                menus.selected.trigger('leave');
+            }
+            menus.selected = com;
+        }
         return;
     }
     if (type === 'hover') {
@@ -24788,7 +24846,16 @@ var options = mergeOptions({
         row: 0,
         ctype: 'function',
         trigger: function (type, event) {
-            // console.log(type, event, this)
+            if (type === 'click') {
+                return;
+            }
+            if (type === 'hover') {
+                this.scene.container.style.cursor = 'pointer';
+            }
+            else if (type === 'leave') {
+                this.scene.container.style.cursor = 'auto';
+            }
+            this.draw();
         },
         draw: function () {
             var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c, scene = _a.scene;
@@ -24804,7 +24871,16 @@ var options = mergeOptions({
         row: 0,
         ctype: 'function',
         trigger: function (type, event) {
-            // console.log(type, event, this)
+            if (type === 'click') {
+                return;
+            }
+            if (type === 'hover') {
+                this.scene.container.style.cursor = 'pointer';
+            }
+            else if (type === 'leave') {
+                this.scene.container.style.cursor = 'auto';
+            }
+            this.draw();
         },
         draw: function () {
             var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c, scene = _a.scene;
@@ -24820,7 +24896,16 @@ var options = mergeOptions({
         row: 0,
         ctype: 'function',
         trigger: function (type, event) {
-            // console.log(type, event, this)
+            if (type === 'click') {
+                return;
+            }
+            if (type === 'hover') {
+                this.scene.container.style.cursor = 'pointer';
+            }
+            else if (type === 'leave') {
+                this.scene.container.style.cursor = 'auto';
+            }
+            this.draw();
         },
         draw: function () {
             var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c, scene = _a.scene;
@@ -24844,7 +24929,7 @@ var options = mergeOptions({
         tilt4: -.08,
         tiltY: 1.1,
         tiltH: .6,
-        index: 4,
+        index: 1,
         trigger: function (type, event) {
             menuTrigger(this, type);
         },
@@ -24873,7 +24958,7 @@ var options = mergeOptions({
         tiltY: 1.1,
         tiltH: .66,
         ctype: 'mod',
-        index: 3,
+        index: 2,
         trigger: function (type, event) {
             menuTrigger(this, type);
         },
@@ -24902,7 +24987,7 @@ var options = mergeOptions({
         tiltY: 1.12,
         tiltH: .66,
         ctype: 'mod',
-        index: 2,
+        index: 3,
         trigger: function (type, event) {
             menuTrigger(this, type);
         },
@@ -24934,7 +25019,7 @@ var options = mergeOptions({
         tiltY: 1.08,
         tiltH: .8,
         ctype: 'mod',
-        index: 1,
+        index: 4,
         trigger: function (type, event) {
             menuTrigger(this, type);
         },
