@@ -292,7 +292,7 @@ export default class Scene {
     stop && this.stopMuisc()
     if (cache) {
       if (this.sounds[src]) {
-        if (this.sounds[src].pause) {
+        if (this.sounds[src].paused) {
           this.sounds[src].play()
         }
         return this.sounds[src]
