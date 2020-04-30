@@ -19,6 +19,8 @@ export default class Scene {
   public comMap: anyObject<Model> = {}
   public loadCount = 0
   public hitCom: anyObject<Model[]> = {}
+  public mod: number = 0
+  public sounds: anyObject = {}
   constructor(container: HTMLCanvasElement, config: anyObject = {}) {
     this.container = container
     config = this.config = Object.assign({}, defaultConfig, config)
@@ -38,6 +40,7 @@ export default class Scene {
     await this.addEvents()
     // 需要等待用户点击开始
     await this.task.init()
+    this.toggleMusic()
     this.clearCanvas()
     this.clearMounted()
     await this.setBackground()
@@ -45,7 +48,7 @@ export default class Scene {
   }
   async mount() {
     await this.showMenu()
-    await this.selectMenu()
+    await this.task.init()
   }
   async play() {}
 
@@ -235,15 +238,20 @@ export default class Scene {
       this.mountCom(com)
       com.draw()
       com.setHitArea(true)
-      com.drawHitArea()
+      // com.drawHitArea()
       return com
     })
   }
   async showMenu() {}
-  async selectMenu() {}
+  async selectMenu(index: number) {
+    this.mod = index
+    this.clearCanvas()
+    this.clearMounted()
+    await this.task.resolve()
+  }
   recordPath() {
     const pointers: number[] = []
-    console.log(pointers)      
+    console.log(pointers)
     this.container.addEventListener('click', (event: Event) => {
       // @ts-ignore
       pointers.push(event.offsetX)
@@ -254,5 +262,23 @@ export default class Scene {
   public drawHitArea(color: string, cxt: CanvasContextEx = this.context, area: number[] = []) {
     // @ts-ignore
     drawHitArea(color, cxt, area)
+  }
+  
+  public toggleMusic(src: string = '/sound/Faster.mp3') {
+    this.sounds[src] = this.music(src)
+  }
+  public music(src: string = '/sound/Faster.mp3') {
+    const sound = new Audio
+    sound.src = src
+    sound.muted = true
+    sound.autoplay = true
+    sound.loop = true
+    sound.onload = () => {
+    }
+    sound.oncanplay = () => {
+        sound.muted = false
+        sound.play()
+    }
+    return sound
   }
 }

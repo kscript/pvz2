@@ -90,10 +90,35 @@ const getProps = (com: Model) => {
   let r = h * info.sr
   return { scene, w, h, info, x, y, r, c }
 }
-const menuTrigger = (com: Model, type: string, event: Event) => {
+const menus: anyObject = {
+  selected: null,
+  index: 0
+}
+const menuTrigger = (com: Model, type: string, event?: Event) => {
+  if (com.scene.state !== 'mount' || menus.index === com.index) {
+    return 
+  }
   if (type === 'click'){
+    com.scene.container.style.cursor = 'pointer'
+    com.startY = .5
+    com.draw()
+    if (com.name === 'SelectorScreenStartAdventur.png') {
+      let index = menus.index
+      menus.index = 0
+      if (menus.selected) {
+        menus.selected.trigger('leave')
+      }
+      com.scene.selectMenu(index)
+    } else {
+      menus.index = com.index
+      if (menus.selected) {
+        menus.selected.trigger('leave')
+      }
+      menus.selected = com
+    }
     return
   }
+  
   if (type === 'hover') {
     com.scene.container.style.cursor = 'pointer'
     com.startY = .5
@@ -177,7 +202,15 @@ const options: anyObject = mergeOptions({
     row: 0,
     ctype: 'function',
     trigger(type: string, event: Event) {
-      // console.log(type, event, this)
+      if (type === 'click') {
+        return 
+      }
+      if (type === 'hover') {
+        this.scene.container.style.cursor = 'pointer'
+      } else if (type === 'leave') {
+        this.scene.container.style.cursor = 'auto'
+      }
+      this.draw()
     },
     draw() {
       let { x, y, r, c, scene } = getProps(this)
@@ -193,7 +226,15 @@ const options: anyObject = mergeOptions({
     row: 0,
     ctype: 'function',
     trigger(type: string, event: Event) {
-      // console.log(type, event, this)
+      if (type === 'click') {
+        return 
+      }
+      if (type === 'hover') {
+        this.scene.container.style.cursor = 'pointer'
+      } else if (type === 'leave') {
+        this.scene.container.style.cursor = 'auto'
+      }
+      this.draw()
     },
     draw() {
       let { x, y, r, c, scene } = getProps(this)
@@ -209,7 +250,15 @@ const options: anyObject = mergeOptions({
     row: 0,
     ctype: 'function',
     trigger(type: string, event: Event) {
-      // console.log(type, event, this)
+      if (type === 'click') {
+        return 
+      }
+      if (type === 'hover') {
+        this.scene.container.style.cursor = 'pointer'
+      } else if (type === 'leave') {
+        this.scene.container.style.cursor = 'auto'
+      }
+      this.draw()
     },
     draw() {
       let { x, y, r, c, scene } = getProps(this)
@@ -233,7 +282,7 @@ const options: anyObject = mergeOptions({
     tilt4: -.08,
     tiltY: 1.1,
     tiltH: .6,
-    index: 4,
+    index: 1,
     trigger(type: string, event: Event) {
       menuTrigger(this, type, event)
     },
@@ -262,7 +311,7 @@ const options: anyObject = mergeOptions({
     tiltY: 1.1,
     tiltH: .66,
     ctype: 'mod',
-    index: 3,
+    index: 2,
     trigger(type: string, event: Event) {
       menuTrigger(this, type, event)
     },
@@ -291,7 +340,7 @@ const options: anyObject = mergeOptions({
     tiltY: 1.12,
     tiltH: .66,
     ctype: 'mod',
-    index: 2,
+    index: 3,
     trigger(type: string, event: Event) {
       menuTrigger(this, type, event)
     },
@@ -323,7 +372,7 @@ const options: anyObject = mergeOptions({
     tiltY: 1.08,
     tiltH: .8,
     ctype: 'mod',
-    index: 1,
+    index: 4,
     trigger(type: string, event: Event) {
       menuTrigger(this, type, event)
     },
