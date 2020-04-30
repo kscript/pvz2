@@ -23790,246 +23790,6 @@ var GifCanvas = /** @class */ (function () {
     return GifCanvas;
 }());
 
-var Model = /** @class */ (function () {
-    function Model() {
-        // 坐标
-        this.x = 0;
-        this.y = 0;
-        // 剪切图像
-        this.sx = 0;
-        this.sy = 0;
-        this.sw = 0;
-        this.sh = 0;
-        this.dw = 0;
-        this.dh = 0;
-        // 偏移量
-        this.ox = 0;
-        this.oy = 0;
-        // 宽高
-        this.width = 0;
-        this.height = 0;
-        // 缩放比例
-        this.scale = 1;
-        // 需要阳光值
-        this.sun = 0;
-        // 产生阳光值
-        this.sun2 = 0;
-        // 等级
-        this.level = 1;
-        // 生命值
-        this.hp = 100;
-        // 攻击力
-        this.ak = 20;
-        // 防御力
-        this.dfe = 0;
-        // 装载速度
-        this.loadSpeed = 1e4;
-        // 攻击速度
-        this.akSpeed = 5e3;
-        // 触发攻击的范围
-        this.akX = 10;
-        this.akY = 1;
-        // 所处的层级
-        this.index = 1;
-        // 帧频
-        this.fps = 60;
-        this.id = '';
-        // 类型
-        this.type = '';
-        // 名称
-        this.name = '';
-        // 创建时间
-        this.time = +new Date;
-        // 方向: 'left,right'
-        this.direction = '';
-        // 死亡
-        this.die = false;
-        // 暂停
-        this.paused = false;
-        // 水生类型
-        this.aquatic = false;
-        this.gif = void 0;
-        this.img = void 0;
-        this.image = {};
-        this.hitArea = [];
-        // scene处于哪些state时, 允许碰撞检测
-        this.hitState = {};
-        // 默认是否要进行碰撞检测
-        this.hitAble = false;
-        this.state = 0;
-    }
-    Model.prototype.init = function (stateChange) {
-        return __awaiter(this, void 0, void 0, function () {
-            var _a, _b;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
-                    case 0:
-                        if (this.state > 0) {
-                            return [2 /*return*/];
-                        }
-                        this.state = 1;
-                        this.initProp();
-                        if (!this.initBefore()) return [3 /*break*/, 5];
-                        _a = this;
-                        return [4 /*yield*/, this.initGif()];
-                    case 1:
-                        _a.gif = _c.sent();
-                        return [4 /*yield*/, this.gif.toBlobUrl()];
-                    case 2:
-                        _c.sent();
-                        _b = this;
-                        return [4 /*yield*/, this.gif.loadImage(stateChange)];
-                    case 3:
-                        _b.img = (_c.sent())[0];
-                        return [4 /*yield*/, this.setHitArea()];
-                    case 4:
-                        _c.sent();
-                        _c.label = 5;
-                    case 5: return [2 /*return*/];
-                }
-            });
-        });
-    };
-    Model.prototype.initBefore = function () {
-        return true;
-    };
-    Model.prototype.initProp = function () {
-        if (!this.id) {
-            this.time = +new Date;
-            this.id = [this.type, this.name, Math.floor(Math.random() * 1e8).toString(36)].join('/');
-        }
-    };
-    Model.prototype.initGif = function (src) {
-        return __awaiter(this, void 0, void 0, function () {
-            var image, gif;
-            return __generator(this, function (_a) {
-                image = this.image;
-                gif = this.gif || new GifCanvas(src || path$4.join(image.path, image.name), this);
-                return [2 /*return*/, gif];
-            });
-        });
-    };
-    Model.prototype.draw = function () {
-        var rest = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            rest[_i] = arguments[_i];
-        }
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                return [2 /*return*/];
-            });
-        });
-    };
-    Model.prototype.animate = function () {
-        return __awaiter(this, void 0, void 0, function () { return __generator(this, function (_a) {
-            return [2 /*return*/];
-        }); });
-    };
-    Model.prototype.attack = function () {
-        var rest = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-            rest[_i] = arguments[_i];
-        }
-    };
-    Model.prototype.stop = function () { };
-    Model.prototype.destory = function () { };
-    Model.prototype.setHitArea = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var _a, x, y, scale, img;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        if (!(!this.hitArea.length && this.gif)) return [3 /*break*/, 2];
-                        _a = this, x = _a.x, y = _a.y, scale = _a.scale;
-                        return [4 /*yield*/, this.gif.imgElems];
-                    case 1:
-                        img = (_b.sent())[0];
-                        this.hitArea = [x, y, img.width * scale, img.height * scale];
-                        this.width = img.width;
-                        this.height = img.height;
-                        _b.label = 2;
-                    case 2: return [2 /*return*/];
-                }
-            });
-        });
-    };
-    Model.prototype.trigger = function (type, event) { };
-    return Model;
-}());
-
-var Menu = /** @class */ (function (_super) {
-    __extends(Menu, _super);
-    function Menu(name, options) {
-        if (options === void 0) { options = {}; }
-        var _this = _super.call(this) || this;
-        _this.options = {};
-        _this.name = name;
-        _this.type = 'menu';
-        _this.options = options;
-        Object.assign(_this, options);
-        return _this;
-    }
-    return Menu;
-}(Model));
-
-var Bullet = /** @class */ (function (_super) {
-    __extends(Bullet, _super);
-    function Bullet(name, options) {
-        if (options === void 0) { options = {}; }
-        var _this = _super.call(this) || this;
-        _this.options = {};
-        _this.name = name;
-        _this.type = 'menu';
-        _this.options = options;
-        Object.assign(_this, {
-            hitAble: true
-        }, options);
-        return _this;
-    }
-    return Bullet;
-}(Model));
-
-var Plant = /** @class */ (function (_super) {
-    __extends(Plant, _super);
-    function Plant(name, options) {
-        if (options === void 0) { options = {}; }
-        var _this = _super.call(this) || this;
-        _this.options = {};
-        _this.name = name;
-        _this.type = 'plant';
-        _this.options = options;
-        Object.assign(_this, {
-            hitAble: true
-        }, options);
-        return _this;
-    }
-    return Plant;
-}(Model));
-
-var Zombie = /** @class */ (function (_super) {
-    __extends(Zombie, _super);
-    function Zombie(name, options) {
-        if (options === void 0) { options = {}; }
-        var _this = _super.call(this) || this;
-        _this.options = {};
-        _this.name = name;
-        _this.type = 'zombie';
-        _this.options = options;
-        Object.assign(_this, {
-            hitAble: true
-        }, options);
-        return _this;
-    }
-    return Zombie;
-}(Model));
-
-var Ctors = {
-    Menu: Menu,
-    Bullet: Bullet,
-    Plant: Plant,
-    Zombie: Zombie
-};
-
 var Task = /** @class */ (function () {
     function Task() {
         this.state = 'resolved';
@@ -24146,6 +23906,326 @@ var isCollide = function (p1, p2) {
     }
     return true;
 };
+var drawHitArea = function (color, cxt, area) {
+    if (color === void 0) { color = 'red'; }
+    if (area === void 0) { area = []; }
+    var len = area.length;
+    cxt.strokeStyle = color;
+    if (len === 4) {
+        // @ts-ignore
+        cxt.strokeRect.apply(cxt, area);
+    }
+    else if (len && len > 4 && len % 2 === 0) {
+        cxt.beginPath();
+        cxt.moveTo(area[0], area[1]);
+        for (var i = 2; i < len; i += 2) {
+            cxt.lineTo(area[i], area[i + 1]);
+        }
+        cxt.closePath();
+        cxt.stroke();
+    }
+};
+
+var Model = /** @class */ (function () {
+    function Model() {
+        // 坐标
+        this.x = 0;
+        this.y = 0;
+        // 剪切图像
+        // public sx: number = 0
+        // public sy: number = 0
+        // public sw: number = 0
+        // public sh: number = 0
+        // public dw: number = 0
+        // public dh: number = 0
+        // 偏移量
+        this.ox = 0;
+        this.oy = 0;
+        // 宽高
+        this.width = 0;
+        this.height = 0;
+        // 缩放比例
+        this.scaleX = 1;
+        this.scaleY = 1;
+        // 需要阳光值
+        this.sun = 0;
+        // 产生阳光值
+        this.sun2 = 0;
+        // 等级
+        this.level = 1;
+        // 生命值
+        this.hp = 100;
+        // 攻击力
+        this.ak = 20;
+        // 防御力
+        this.dfe = 0;
+        // 装载速度
+        this.loadSpeed = 1e4;
+        // 攻击速度
+        this.akSpeed = 5e3;
+        // 触发攻击的范围
+        this.akX = 10;
+        this.akY = 1;
+        // 所处的层级
+        this.index = 1;
+        // 帧频
+        this.fps = 60;
+        this.id = '';
+        // 类型
+        this.type = '';
+        // 名称
+        this.name = '';
+        // 创建时间
+        this.time = +new Date;
+        // 方向: 'left,right'
+        this.direction = '';
+        // 死亡
+        this.die = false;
+        // 暂停
+        this.paused = false;
+        // 水生类型
+        this.aquatic = false;
+        this.gif = void 0;
+        this.img = void 0;
+        this.image = {};
+        this.hitArea = [];
+        // scene处于哪些state时, 允许碰撞检测
+        this.hitState = {};
+        // 默认是否要进行碰撞检测
+        this.hitAble = false;
+        this.state = 0;
+        this.col = 0;
+        this.row = 0;
+        this.ctype = '';
+        // 矩形左上方顺时针四个顶点
+        // 使用正负值作为方向
+        this.tilt1 = 0;
+        this.tilt2 = 0;
+        this.tilt3 = 0;
+        this.tilt4 = 0;
+        // 坐标偏移
+        this.tiltX = 1;
+        this.tiltY = 1;
+        // 大小
+        this.tiltW = 1;
+        this.tiltH = 1;
+        // 剪切图像
+        this.startX = 0;
+        this.startY = 0;
+    }
+    Model.prototype.init = function (stateChange) {
+        return __awaiter(this, void 0, void 0, function () {
+            var _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        if (this.state > 0) {
+                            return [2 /*return*/];
+                        }
+                        this.state = 1;
+                        this.initProp();
+                        if (!this.initBefore()) return [3 /*break*/, 5];
+                        _a = this;
+                        return [4 /*yield*/, this.initGif()];
+                    case 1:
+                        _a.gif = _c.sent();
+                        return [4 /*yield*/, this.gif.toBlobUrl()];
+                    case 2:
+                        _c.sent();
+                        _b = this;
+                        return [4 /*yield*/, this.gif.loadImage(stateChange)];
+                    case 3:
+                        _b.img = (_c.sent())[0];
+                        return [4 /*yield*/, this.setHitArea()];
+                    case 4:
+                        _c.sent();
+                        _c.label = 5;
+                    case 5: return [2 /*return*/];
+                }
+            });
+        });
+    };
+    Model.prototype.initBefore = function () {
+        return true;
+    };
+    Model.prototype.initProp = function () {
+        if (!this.id) {
+            this.time = +new Date;
+            this.id = [this.type, this.name, Math.floor(Math.random() * 1e8).toString(36)].join('/');
+        }
+    };
+    Model.prototype.initGif = function (src) {
+        return __awaiter(this, void 0, void 0, function () {
+            var image, gif;
+            return __generator(this, function (_a) {
+                image = this.image;
+                gif = this.gif || new GifCanvas(src || path$4.join(image.path, image.name), this);
+                return [2 /*return*/, gif];
+            });
+        });
+    };
+    Model.prototype.draw = function () {
+        var rest = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            rest[_i] = arguments[_i];
+        }
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/];
+            });
+        });
+    };
+    Model.prototype.animate = function () {
+        return __awaiter(this, void 0, void 0, function () { return __generator(this, function (_a) {
+            return [2 /*return*/];
+        }); });
+    };
+    Model.prototype.attack = function () {
+        var rest = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            rest[_i] = arguments[_i];
+        }
+    };
+    Model.prototype.stop = function () { };
+    Model.prototype.destory = function () { };
+    Model.prototype.setHitArea = function (refresh) {
+        if (refresh === void 0) { refresh = false; }
+        return __awaiter(this, void 0, void 0, function () {
+            var img, _a, _b, x, y, scaleX, scaleY, tilt1, tilt2, tilt3, tilt4, tiltX_1, tiltY_1, tiltW, tiltH, strength_1, width, height;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        if (!((!this.hitArea.length || refresh) && this.gif)) return [3 /*break*/, 3];
+                        _a = this.img;
+                        if (_a) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.gif.imgElems];
+                    case 1:
+                        _a = (_c.sent())[0];
+                        _c.label = 2;
+                    case 2:
+                        img = _a;
+                        _b = this, x = _b.x, y = _b.y, scaleX = _b.scaleX, scaleY = _b.scaleY, tilt1 = _b.tilt1, tilt2 = _b.tilt2, tilt3 = _b.tilt3, tilt4 = _b.tilt4, tiltX_1 = _b.tiltX, tiltY_1 = _b.tiltY, tiltW = _b.tiltW, tiltH = _b.tiltH;
+                        if (!this.hitArea.length) {
+                            this.width = img.width;
+                            this.height = img.height;
+                        }
+                        if ([tilt1, tilt2, tilt3, tilt4].some(function (item) { return item !== 0; }) || tiltX_1 !== 1 || tiltY_1 !== 1) {
+                            strength_1 = new Array(8);
+                            ~[tilt1, tilt2, tilt3, tilt4].forEach(function (item, index) {
+                                var num = index % 2 + ~~(index / 2);
+                                strength_1[num * 2 + index] = item;
+                                strength_1[(num * 2 + index + 2) % 8] = item;
+                            });
+                            width = this.width * tiltW;
+                            height = this.height * tiltH;
+                            // 计算倾斜时的hitArea
+                            this.hitArea = [
+                                x, y,
+                                x + width * scaleX, y,
+                                x + width * scaleX, y + height * scaleY,
+                                x, y + height * scaleY
+                            ].map(function (item, index) {
+                                item *= (index % 2 ? tiltY_1 : tiltX_1);
+                                return item * (1 + strength_1[index]);
+                            });
+                        }
+                        else {
+                            this.hitArea = [x, y, this.width * scaleX, this.height * scaleY];
+                        }
+                        _c.label = 3;
+                    case 3: return [2 /*return*/];
+                }
+            });
+        });
+    };
+    Model.prototype.drawHitArea = function (color, cxt, area) {
+        if (color === void 0) { color = 'red'; }
+        if (cxt === void 0) { cxt = this.scene.context; }
+        if (area === void 0) { area = this.hitArea; }
+        var len = area.length;
+        if (len === 4) {
+            drawHitArea(color, cxt, [this.x, this.y, area[2], area[3]]);
+        }
+        else if (len && len > 4 && len % 2 === 0) {
+            drawHitArea(color, cxt, area);
+        }
+    };
+    Model.prototype.trigger = function (type, event) { };
+    return Model;
+}());
+
+var Menu = /** @class */ (function (_super) {
+    __extends(Menu, _super);
+    function Menu(name, options) {
+        if (options === void 0) { options = {}; }
+        var _this = _super.call(this) || this;
+        _this.options = {};
+        _this.name = name;
+        _this.type = 'menu';
+        _this.options = options;
+        Object.assign(_this, options);
+        return _this;
+    }
+    return Menu;
+}(Model));
+
+var Bullet = /** @class */ (function (_super) {
+    __extends(Bullet, _super);
+    function Bullet(name, options) {
+        if (options === void 0) { options = {}; }
+        var _this = _super.call(this) || this;
+        _this.options = {};
+        _this.name = name;
+        _this.type = 'menu';
+        _this.options = options;
+        Object.assign(_this, {
+            hitAble: true
+        }, options);
+        return _this;
+    }
+    return Bullet;
+}(Model));
+
+var Plant = /** @class */ (function (_super) {
+    __extends(Plant, _super);
+    function Plant(name, options) {
+        if (options === void 0) { options = {}; }
+        var _this = _super.call(this) || this;
+        _this.options = {};
+        _this.name = name;
+        _this.type = 'plant';
+        _this.options = options;
+        Object.assign(_this, {
+            hitAble: true
+        }, options);
+        return _this;
+    }
+    return Plant;
+}(Model));
+
+var Zombie = /** @class */ (function (_super) {
+    __extends(Zombie, _super);
+    function Zombie(name, options) {
+        if (options === void 0) { options = {}; }
+        var _this = _super.call(this) || this;
+        _this.options = {};
+        _this.name = name;
+        _this.type = 'zombie';
+        _this.options = options;
+        Object.assign(_this, {
+            hitAble: true
+        }, options);
+        return _this;
+    }
+    return Zombie;
+}(Model));
+
+var Ctors = {
+    Menu: Menu,
+    Bullet: Bullet,
+    Plant: Plant,
+    Zombie: Zombie
+};
 
 var defaultConfig = {
     width: 1366,
@@ -24198,10 +24278,10 @@ var Scene = /** @class */ (function () {
                         _a.sent();
                         this.clearCanvas();
                         this.clearMounted();
-                        return [4 /*yield*/, this.loadMenu()];
+                        return [4 /*yield*/, this.setBackground()];
                     case 4:
                         _a.sent();
-                        return [4 /*yield*/, this.setBackground()];
+                        return [4 /*yield*/, this.loadMenu()];
                     case 5:
                         _a.sent();
                         return [2 /*return*/];
@@ -24306,19 +24386,28 @@ var Scene = /** @class */ (function () {
                     case 0:
                         coms = ['popcap_logo.png', 'SodRollCap.png', 'LoadBar.png'].map(function (item) { return _this.getCom(item); });
                         this.loadCount++;
-                        this.mountCom(coms);
                         return [4 /*yield*/, coms[0].init()];
                     case 1:
                         _a.sent();
+                        this.mountCom(coms[0]);
                         return [4 /*yield*/, coms[0].draw()];
                     case 2:
                         _a.sent();
-                        return [4 /*yield*/, Promise.all(coms.slice(1).map(function (com) {
-                                if (com) {
-                                    _this.loadCount++;
-                                    return com.init();
-                                }
-                            }))];
+                        return [4 /*yield*/, Promise.all(coms.slice(1).map(function (com) { return __awaiter(_this, void 0, void 0, function () {
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            if (!com) return [3 /*break*/, 2];
+                                            this.loadCount++;
+                                            return [4 /*yield*/, com.init()];
+                                        case 1:
+                                            _a.sent();
+                                            this.mountCom(coms);
+                                            return [2 /*return*/, com];
+                                        case 2: return [2 /*return*/];
+                                    }
+                                });
+                            }); }))];
                     case 3:
                         _a.sent();
                         return [2 /*return*/];
@@ -24361,8 +24450,8 @@ var Scene = /** @class */ (function () {
     Scene.prototype.clearMounted = function () {
         var _this = this;
         this.comsMounted.splice(0).forEach(function (item) {
-            item.destory();
             delete _this.comsMountedMap[item.id];
+            item.destory();
         });
     };
     Scene.prototype.addEvents = function () {
@@ -24412,6 +24501,7 @@ var Scene = /** @class */ (function () {
             return a.index - b.index;
         });
         if (one) {
+            coms.splice(1);
             coms.length && func(coms[0]);
         }
         else {
@@ -24456,7 +24546,31 @@ var Scene = /** @class */ (function () {
     };
     Scene.prototype.loadMenu = function () {
         return __awaiter(this, void 0, void 0, function () {
+            var coms;
+            var _this = this;
             return __generator(this, function (_a) {
+                coms = [
+                    'SelectorScreen_Store.png',
+                    // 花园
+                    'SelectorScreen_ZenGarden.png',
+                    // 图鉴
+                    'SelectorScreen_Almanac.png',
+                    // 冒险
+                    'SelectorScreenAdventure.png',
+                    // 解密
+                    'SelectorScreenChallenges.png',
+                    // 小游戏
+                    'SelectorScreenSurvival.png',
+                    // 开始游戏
+                    'SelectorScreenStartAdventur.png'
+                ].map(function (item) {
+                    var com = _this.getCom(item);
+                    _this.mountCom(com);
+                    com.draw();
+                    com.setHitArea(true);
+                    com.drawHitArea();
+                    return com;
+                });
                 return [2 /*return*/];
             });
         });
@@ -24470,6 +24584,22 @@ var Scene = /** @class */ (function () {
         return __awaiter(this, void 0, void 0, function () { return __generator(this, function (_a) {
             return [2 /*return*/];
         }); });
+    };
+    Scene.prototype.recordPath = function () {
+        var pointers = [];
+        console.log(pointers);
+        this.container.addEventListener('click', function (event) {
+            // @ts-ignore
+            pointers.push(event.offsetX);
+            // @ts-ignore
+            pointers.push(event.offsetY);
+        });
+    };
+    Scene.prototype.drawHitArea = function (color, cxt, area) {
+        if (cxt === void 0) { cxt = this.context; }
+        if (area === void 0) { area = []; }
+        // @ts-ignore
+        drawHitArea(color, cxt, area);
     };
     return Scene;
 }());
@@ -24503,6 +24633,14 @@ var list = [
     'SelectorScreen_ZenGarden.png',
     // 图鉴
     'SelectorScreen_Almanac.png',
+    // 冒险
+    'SelectorScreenAdventure.png',
+    // 解密
+    'SelectorScreenChallenges.png',
+    // 小游戏
+    'SelectorScreenSurvival.png',
+    // 开始游戏
+    'SelectorScreenStartAdventur.png',
     // logo
     'popcap_logo.png',
     // loading
@@ -24522,6 +24660,51 @@ var mergeOptions = function (options) {
         }, options[item].image instanceof Object ? options[item].image : {});
     });
     return options;
+};
+var conf = {
+    // 菜单项起始位置坐标与场景中尺寸的比例
+    // 游戏模式选项
+    mod: {
+        sx: .535,
+        sy: .12,
+        // col间距
+        sc: 0,
+        // row间距
+        sr: .13
+    },
+    // 底部功能选项
+    function: {
+        sx: .25,
+        sy: .75,
+        sc: .15,
+        sr: 0
+    }
+};
+var getProps = function (com) {
+    var type = com.ctype;
+    var scene = com.scene;
+    var w = scene.config.width;
+    var h = scene.config.height;
+    var info = conf[type] || {};
+    var x = w * info.sx;
+    var y = h * info.sy;
+    var c = w * info.sc;
+    var r = h * info.sr;
+    return { scene: scene, w: w, h: h, info: info, x: x, y: y, r: r, c: c };
+};
+var menuTrigger = function (com, type, event) {
+    if (type === 'click') {
+        return;
+    }
+    if (type === 'hover') {
+        com.scene.container.style.cursor = 'pointer';
+        com.startY = .5;
+    }
+    else if (type === 'leave') {
+        com.scene.container.style.cursor = 'auto';
+        com.startY = 0;
+    }
+    com.draw();
 };
 var options = mergeOptions({
     'popcap_logo.png': {
@@ -24597,7 +24780,174 @@ var options = mergeOptions({
                 this.scene.container.style.cursor = type === 'leave' ? 'auto' : 'pointer';
             }
         }
-    }
+    },
+    // 商店
+    'SelectorScreen_Store.png': {
+        hitAble: true,
+        col: 0,
+        row: 0,
+        ctype: 'function',
+        trigger: function (type, event) {
+            // console.log(type, event, this)
+        },
+        draw: function () {
+            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c, scene = _a.scene;
+            this.x = x + c * this.col;
+            this.y = y + r * this.row;
+            scene.context.drawImage(this.img, this.x, this.y, this.img.width * this.scaleX, this.img.height * this.scaleY);
+        }
+    },
+    // 花园
+    'SelectorScreen_ZenGarden.png': {
+        hitAble: true,
+        col: 1,
+        row: 0,
+        ctype: 'function',
+        trigger: function (type, event) {
+            // console.log(type, event, this)
+        },
+        draw: function () {
+            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c, scene = _a.scene;
+            this.x = x + c * this.col;
+            this.y = y + r * this.row;
+            scene.context.drawImage(this.img, this.x, this.y, this.img.width, this.img.height);
+        }
+    },
+    // 图鉴
+    'SelectorScreen_Almanac.png': {
+        hitAble: true,
+        col: 2,
+        row: 0,
+        ctype: 'function',
+        trigger: function (type, event) {
+            // console.log(type, event, this)
+        },
+        draw: function () {
+            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c, scene = _a.scene;
+            this.x = x + c * this.col;
+            this.y = y + r * this.row;
+            scene.context.drawImage(this.img, this.x, this.y, this.img.width, this.img.height);
+        }
+    },
+    // 冒险
+    'SelectorScreenAdventure.png': {
+        hitAble: true,
+        col: 0,
+        row: 0,
+        scaleX: 1.3,
+        scaleY: .9,
+        ctype: 'mod',
+        startX: 0,
+        startY: 0,
+        tilt1: 0,
+        tilt2: .05,
+        tilt4: -.08,
+        tiltY: 1.1,
+        tiltH: .6,
+        index: 4,
+        trigger: function (type, event) {
+            menuTrigger(this, type);
+        },
+        draw: function () {
+            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c, scene = _a.scene;
+            var _b = this, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY;
+            var _c = this.img, width = _c.width, height = _c.height;
+            this.x = x + c * this.col;
+            this.y = y + r * this.row;
+            this.height = height / 2;
+            scene.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2);
+        }
+    },
+    // 解密
+    'SelectorScreenChallenges.png': {
+        hitAble: true,
+        col: 0,
+        row: 1,
+        scaleX: 1.4,
+        scaleY: .96,
+        startX: 0,
+        startY: 0,
+        tilt1: 0,
+        tilt2: .05,
+        tilt4: -.09,
+        tiltY: 1.1,
+        tiltH: .66,
+        ctype: 'mod',
+        index: 3,
+        trigger: function (type, event) {
+            menuTrigger(this, type);
+        },
+        draw: function () {
+            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c, scene = _a.scene;
+            var _b = this, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY;
+            var _c = this.img, width = _c.width, height = _c.height;
+            this.x = x + c * this.col;
+            this.y = y + r * this.row;
+            this.height = height / 2;
+            scene.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2);
+        }
+    },
+    // 小游戏
+    'SelectorScreenSurvival.png': {
+        hitAble: true,
+        col: 0,
+        row: 2,
+        scaleX: 1.3,
+        scaleY: .9,
+        startX: 0,
+        startY: 0,
+        tilt1: 0,
+        tilt2: .02,
+        tilt4: -.12,
+        tiltY: 1.12,
+        tiltH: .66,
+        ctype: 'mod',
+        index: 2,
+        trigger: function (type, event) {
+            menuTrigger(this, type);
+        },
+        draw: function () {
+            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c, scene = _a.scene;
+            var _b = this, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY;
+            var _c = this.img, width = _c.width, height = _c.height;
+            this.x = x + c * this.col;
+            this.y = y + r * this.row;
+            this.height = height / 2;
+            scene.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2);
+        }
+    },
+    // 开始游戏
+    'SelectorScreenStartAdventur.png': {
+        hitAble: true,
+        col: 0,
+        row: 3,
+        // 缩放
+        scaleX: 1.3,
+        scaleY: .8,
+        // 图像截取时位移
+        startX: 0,
+        startY: 0,
+        // 倾斜度(用于计算hitArea)
+        tilt1: 0,
+        tilt2: 0,
+        tilt4: -.1,
+        tiltY: 1.08,
+        tiltH: .8,
+        ctype: 'mod',
+        index: 1,
+        trigger: function (type, event) {
+            menuTrigger(this, type);
+        },
+        draw: function () {
+            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c, scene = _a.scene;
+            var _b = this, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY;
+            var _c = this.img, width = _c.width, height = _c.height;
+            this.x = x + c * this.col;
+            this.y = y + r * this.row * 1.05;
+            this.height = height / 2;
+            scene.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2);
+        }
+    },
 });
 var menu = {
     path: path,
