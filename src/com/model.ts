@@ -100,6 +100,7 @@ export default class Model {
   // 剪切图像
   public startX: number = 0
   public startY: number = 0
+  public personal: anyObject = {}
   constructor() {}
   public async init(stateChange?: (type: string, url: string, index: number, gif: GifCanvas) => void) {
     if (this.state > 0) { return }
@@ -128,7 +129,7 @@ export default class Model {
   }
   public async draw(...rest: any[]) {
   }
-  public async animate() {}
+  public async animate(...rest: any[]) {}
   public attack(...rest: any[]) {}
   public stop() {}
   public destory() {}

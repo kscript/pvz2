@@ -245,10 +245,24 @@ export default class Scene {
   async showMenu() {}
   async selectMenu(index: number) {
     this.mod = index
+    await this.selectAfter()
     this.clearCanvas()
     this.clearMounted()
     await this.task.resolve()
   }
+  async selectAfter() {
+    this.toggleMusic('./sound/evillaugh.mp3')
+    const com = this.getCom('ZombieHand.png')
+    this.mountCom(com)
+    const imgData = this.context.getImageData(0, 0, this.config.width, this.config.height)
+    await com.animate(async () => {
+      this.clearCanvas()
+      this.context.putImageData(imgData, 0, 0)
+      com.draw()
+    })
+    this.stopMuisc()
+  }
+  // 工具方法
   recordPath() {
     const pointers: number[] = []
     console.log(pointers)
@@ -263,11 +277,22 @@ export default class Scene {
     // @ts-ignore
     drawHitArea(color, cxt, area)
   }
-  
-  public toggleMusic(src: string = '/sound/Faster.mp3') {
+  public stopMuisc(src?: string) {
+    try{
+      if (src) {
+        this.sounds[src].pause()
+      } else {
+        for (let key in this.sounds) {
+          this.sounds[key].pause()
+        }
+      }
+    } catch(e) {}
+  }
+  public toggleMusic(src: string = './sound/Faster.mp3', stop: boolean = true) {
+    stop && this.stopMuisc()
     this.sounds[src] = this.music(src)
   }
-  public music(src: string = '/sound/Faster.mp3') {
+  public music(src: string = './sound/Faster.mp3') {
     const sound = new Audio
     sound.src = src
     sound.muted = true

@@ -43,7 +43,9 @@ const list: string[] = [
   'popcap_logo.png',
   // loading
   'SodRollCap.png',
-  'LoadBar.png'
+  'LoadBar.png',
+  'ZombieHand.png',
+  'Tombstone_mounds.png'
 ]
 const mergeOptions = (options: anyObject) => {
   list.forEach(item => {
@@ -386,6 +388,44 @@ const options: anyObject = mergeOptions({
       scene.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2)
     }
   },
+  'ZombieHand.png': {
+    ctype: 'function',
+    personal: {
+      lenX: 7,
+      lenY: 1,
+      currX: 0,
+      currY: 0,
+      animateTime: 300
+    },
+    async animate(render: Function) {
+      return new Promise(resolve => {
+        const paly = () => {
+          if (this.personal.currX < this.personal.lenX) {
+            render()
+            this.personal.currX++
+            setTimeout(paly, this.personal.animateTime)
+          } else {
+            this.personal.currX = 0
+            setTimeout(() => {
+              resolve()
+            }, this.personal.animateTime * 3)
+          }
+        }
+        paly()
+      })
+    },
+    draw() {
+      let { x, y, w, h, scene } = getProps(this)
+      let { scaleX, scaleY, startX, startY, width, height } = this    
+      this.x = x - w * .2
+      this.y = y - h * .3
+      startX = this.personal.currX % this.personal.lenX
+      startY = this.personal.currY % this.personal.lenY
+      width = width / this.personal.lenX
+      height = height / this.personal.lenY
+      scene.context.drawImage(this.img, startX * width, startY * height, width, height, this.x, this.y, width * scaleX, height * scaleY)
+    }
+  }
 })
 const menu = {
   path,
