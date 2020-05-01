@@ -24251,6 +24251,7 @@ var Scene = /** @class */ (function () {
         this.hitCom = {};
         this.mod = 0;
         this.sounds = {};
+        this.imgDatas = {};
         this.container = container;
         config = this.config = Object.assign({}, defaultConfig, config);
         if (config.size === 'fullScreen') {
@@ -24288,26 +24289,24 @@ var Scene = /** @class */ (function () {
                         this.toggleMusic();
                         this.clearCanvas();
                         this.clearMounted();
-                        return [4 /*yield*/, this.setBackground()];
-                    case 4:
-                        _a.sent();
+                        this.setBackground();
                         return [4 /*yield*/, this.loadMenu()];
-                    case 5:
+                    case 4:
                         _a.sent();
                         return [2 /*return*/];
                 }
             });
         });
     };
+    Scene.prototype.startGame = function () {
+        this.task.resolve('init');
+    };
     Scene.prototype.mount = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.showMenu()];
+                    case 0: return [4 /*yield*/, this.task.init('mount')];
                     case 1:
-                        _a.sent();
-                        return [4 /*yield*/, this.task.init('mount')];
-                    case 2:
                         _a.sent();
                         return [2 /*return*/];
                 }
@@ -24316,9 +24315,18 @@ var Scene = /** @class */ (function () {
     };
     Scene.prototype.play = function () {
         return __awaiter(this, void 0, void 0, function () {
+            var com;
+            var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.setBackground('background1.jpg')];
+                    case 0:
+                        com = this.getCom('background1.jpg');
+                        this.save();
+                        return [4 /*yield*/, com.animate(function () {
+                                _this.clearCanvas();
+                                _this.restore();
+                                com.draw();
+                            })];
                     case 1:
                         _a.sent();
                         return [2 /*return*/];
@@ -24387,16 +24395,6 @@ var Scene = /** @class */ (function () {
             });
         });
     };
-    Scene.prototype.startGame = function () {
-        this.task.resolve('init');
-    };
-    Scene.prototype.mountCom = function (com) {
-        var _this = this;
-        (Array.isArray(com) ? com : [com]).map(function (item) {
-            _this.comsMountedMap[item.id] = item;
-            _this.comsMounted.push(item);
-        });
-    };
     Scene.prototype.loading = function () {
         return __awaiter(this, void 0, void 0, function () {
             var coms;
@@ -24451,29 +24449,6 @@ var Scene = /** @class */ (function () {
             this.loadAnimate(rate);
         }
     };
-    Scene.prototype.setBackground = function (name) {
-        if (name === void 0) { name = 'Surface.jpg'; }
-        return __awaiter(this, void 0, void 0, function () {
-            var com;
-            return __generator(this, function (_a) {
-                com = this.getCom(name || '');
-                if (com) {
-                    com.draw();
-                }
-                return [2 /*return*/];
-            });
-        });
-    };
-    Scene.prototype.clearCanvas = function () {
-        this.context.clearRect(0, 0, this.config.width, this.config.width);
-    };
-    Scene.prototype.clearMounted = function () {
-        var _this = this;
-        this.comsMounted.splice(0).forEach(function (item) {
-            delete _this.comsMountedMap[item.id];
-            item.destory();
-        });
-    };
     Scene.prototype.addEvents = function () {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
@@ -24512,6 +24487,116 @@ var Scene = /** @class */ (function () {
                 });
                 return [2 /*return*/];
             });
+        });
+    };
+    Scene.prototype.loadMenu = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var coms;
+            var _this = this;
+            return __generator(this, function (_a) {
+                coms = [
+                    'SelectorScreen_Store.png',
+                    // 花园
+                    'SelectorScreen_ZenGarden.png',
+                    // 图鉴
+                    'SelectorScreen_Almanac.png',
+                    // 冒险
+                    'SelectorScreenAdventure.png',
+                    // 解密
+                    'SelectorScreenChallenges.png',
+                    // 小游戏
+                    'SelectorScreenSurvival.png',
+                    // 开始游戏
+                    'SelectorScreenStartAdventur.png'
+                ].map(function (item) {
+                    var com = _this.getCom(item);
+                    _this.mountCom(com);
+                    com.draw();
+                    com.setHitArea(true);
+                    // com.drawHitArea()
+                    return com;
+                });
+                return [2 /*return*/];
+            });
+        });
+    };
+    Scene.prototype.selectMenu = function (index) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        this.mod = index;
+                        return [4 /*yield*/, this.selectAfter()];
+                    case 1:
+                        _a.sent();
+                        this.clearCanvas();
+                        this.clearMounted();
+                        return [4 /*yield*/, this.task.resolve('mount')];
+                    case 2:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    Scene.prototype.selectAfter = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var sound, com;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        sound = this.toggleMusic('./sound/evillaugh.mp3');
+                        com = this.getCom('ZombieHand.png');
+                        this.mountCom(com);
+                        this.save();
+                        sound.loop = false;
+                        return [4 /*yield*/, new Promise(function (resolve) { return __awaiter(_this, void 0, void 0, function () {
+                                var _this = this;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            sound.onended = function () {
+                                                resolve();
+                                            };
+                                            return [4 /*yield*/, com.animate(function () { return __awaiter(_this, void 0, void 0, function () {
+                                                    return __generator(this, function (_a) {
+                                                        this.clearCanvas();
+                                                        this.restore();
+                                                        com.draw();
+                                                        return [2 /*return*/];
+                                                    });
+                                                }); })];
+                                        case 1:
+                                            _a.sent();
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); })];
+                    case 1:
+                        _a.sent();
+                        this.toggleMusic('./sound/hugewave.mp3').loop = false;
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    // 工具方法
+    Scene.prototype.mountCom = function (com) {
+        var _this = this;
+        (Array.isArray(com) ? com : [com]).map(function (item) {
+            _this.comsMountedMap[item.id] = item;
+            _this.comsMounted.push(item);
+        });
+    };
+    Scene.prototype.clearCanvas = function () {
+        this.context.clearRect(0, 0, this.config.width, this.config.width);
+    };
+    Scene.prototype.clearMounted = function () {
+        var _this = this;
+        this.comsMounted.splice(0).forEach(function (item) {
+            delete _this.comsMountedMap[item.id];
+            item.destory();
         });
     };
     // 碰撞到组件时执行
@@ -24564,89 +24649,48 @@ var Scene = /** @class */ (function () {
         !com && console.log('未能找到 ' + key + ' 组件');
         return com;
     };
-    Scene.prototype.loadMenu = function () {
+    Scene.prototype.setBackground = function (name) {
+        if (name === void 0) { name = 'Surface.jpg'; }
         return __awaiter(this, void 0, void 0, function () {
-            var coms;
-            var _this = this;
+            var com;
             return __generator(this, function (_a) {
-                coms = [
-                    'SelectorScreen_Store.png',
-                    // 花园
-                    'SelectorScreen_ZenGarden.png',
-                    // 图鉴
-                    'SelectorScreen_Almanac.png',
-                    // 冒险
-                    'SelectorScreenAdventure.png',
-                    // 解密
-                    'SelectorScreenChallenges.png',
-                    // 小游戏
-                    'SelectorScreenSurvival.png',
-                    // 开始游戏
-                    'SelectorScreenStartAdventur.png'
-                ].map(function (item) {
-                    var com = _this.getCom(item);
-                    _this.mountCom(com);
+                com = this.getCom(name || '');
+                if (com) {
                     com.draw();
-                    com.setHitArea(true);
-                    // com.drawHitArea()
-                    return com;
-                });
-                return [2 /*return*/];
-            });
-        });
-    };
-    Scene.prototype.showMenu = function () {
-        return __awaiter(this, void 0, void 0, function () { return __generator(this, function (_a) {
-            return [2 /*return*/];
-        }); });
-    };
-    Scene.prototype.selectMenu = function (index) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        this.mod = index;
-                        return [4 /*yield*/, this.selectAfter()];
-                    case 1:
-                        _a.sent();
-                        this.clearCanvas();
-                        this.clearMounted();
-                        return [4 /*yield*/, this.task.resolve('mount')];
-                    case 2:
-                        _a.sent();
-                        return [2 /*return*/];
                 }
+                return [2 /*return*/, com];
             });
         });
     };
-    Scene.prototype.selectAfter = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var com, imgData;
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        this.toggleMusic('./sound/evillaugh.mp3');
-                        com = this.getCom('ZombieHand.png');
-                        this.mountCom(com);
-                        imgData = this.context.getImageData(0, 0, this.config.width, this.config.height);
-                        return [4 /*yield*/, com.animate(function () { return __awaiter(_this, void 0, void 0, function () {
-                                return __generator(this, function (_a) {
-                                    this.clearCanvas();
-                                    this.context.putImageData(imgData, 0, 0);
-                                    com.draw();
-                                    return [2 /*return*/];
-                                });
-                            }); })];
-                    case 1:
-                        _a.sent();
-                        this.toggleMusic('./sound/hugewave.mp3').loop = false;
-                        return [2 /*return*/];
-                }
-            });
-        });
+    Scene.prototype.save = function (name) {
+        var rest = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            rest[_i - 1] = arguments[_i];
+        }
+        var args = rest.concat(0, 0, this.config.width, this.config.height).filter(function (item) { return typeof item === 'number'; }).slice(0, 4);
+        var imgData = this.context.getImageData.apply(this.context, args);
+        if (name) {
+            this.imgDatas['_' + name] = imgData;
+        }
+        else {
+            this.imgDatas.active = imgData;
+        }
+        return imgData;
     };
-    // 工具方法
+    Scene.prototype.restore = function (name, x, y) {
+        if (x === void 0) { x = 0; }
+        if (y === void 0) { y = 0; }
+        var imgData;
+        if (name && this.imgDatas[name]) {
+            imgData = this.imgDatas[name];
+            delete this.imgDatas[name];
+        }
+        else {
+            imgData = this.imgDatas.active;
+        }
+        imgData && this.context.putImageData(imgData, x, y);
+        return imgData;
+    };
     Scene.prototype.recordPath = function () {
         var pointers = [];
         console.log(pointers);
@@ -24878,15 +24922,48 @@ var options = mergeOptions({
     },
     'background1.jpg': {
         personal: {
-            startX: .1
+            startX: .05,
+            startY: 0,
+            endX: 0.14,
+            changeX: .008,
+            animateTime: 80
         },
         animate: function (render) {
+            var _this = this;
+            var startX = this.personal.startX;
+            var restore = false;
+            return new Promise(function (resolve) {
+                var paly = function () {
+                    _this.personal.startX += _this.personal.changeX;
+                    // 正向运动
+                    if (_this.personal.changeX > 0) {
+                        if (_this.personal.startX > _this.personal.endX) {
+                            _this.personal.changeX *= -1;
+                        }
+                        else if (restore && _this.personal.startX > startX) {
+                            _this.personal.startX = 0;
+                            return resolve();
+                        }
+                    }
+                    else {
+                        if (_this.personal.startX < 0) {
+                            _this.personal.startX = 0;
+                            _this.personal.changeX *= -1;
+                            restore = true;
+                        }
+                    }
+                    render();
+                    setTimeout(paly, _this.personal.animateTime);
+                };
+                paly();
+            });
         },
         draw: function () {
             var w = this.scene.config.width;
             var h = this.scene.config.height;
             var startX = this.personal.startX * this.img.width;
-            this.context.drawImage(this.img, startX, 0, this.img.width - startX * 2, this.img.height, 0, 0, w, h);
+            var startY = this.personal.startY * this.img.height;
+            this.context.drawImage(this.img, startX, startY, w, this.img.height, 0, 0, w, h);
         }
     },
     'Surface.jpg': {
@@ -24909,6 +24986,7 @@ var options = mergeOptions({
             this.context.restore();
         }
     },
+    // 加载进度条
     'LoadBar.png': {
         hitAble: true,
         draw: function (rate) {
@@ -25134,7 +25212,7 @@ var options = mergeOptions({
             lenY: 1,
             currX: 0,
             currY: 0,
-            animateTime: 300
+            animateTime: 150
         },
         animate: function (render) {
             return __awaiter(this, void 0, void 0, function () {
@@ -25149,9 +25227,7 @@ var options = mergeOptions({
                                 }
                                 else {
                                     _this.personal.currX = 0;
-                                    setTimeout(function () {
-                                        resolve();
-                                    }, _this.personal.animateTime * 3);
+                                    resolve();
                                 }
                             };
                             paly();
