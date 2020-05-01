@@ -23612,6 +23612,29 @@ function __extends(d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 }
 
+var __assign = function() {
+    __assign = Object.assign || function __assign(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
+
+function __rest(s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+}
+
 function __awaiter(thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -23649,22 +23672,64 @@ function __generator(thisArg, body) {
     }
 }
 
+function __spreadArrays() {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+}
+
 var OfflineCanvas = /** @class */ (function () {
     function OfflineCanvas(width, height) {
         if (width === void 0) { width = 100; }
         if (height === void 0) { height = 100; }
+        this.imageData = null;
         this.width = width;
         this.height = height;
         this.canvas = document.createElement('canvas');
         this.context = this.canvas.getContext('2d');
         return this;
     }
+    OfflineCanvas.prototype.drawImage = function (img) {
+        this.context.drawImage(img, 0, 0, this.width, this.height);
+        return this;
+    };
+    OfflineCanvas.prototype.putImageData = function () {
+        var rest = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            rest[_i] = arguments[_i];
+        }
+        if (!rest.length)
+            return this;
+        var imageData = rest[0], width = rest[1], height = rest[2];
+        if (rest.length === 3) {
+            this.clear().resize(width, height);
+        }
+        this.imageData = imageData;
+        return this;
+    };
+    OfflineCanvas.prototype.getImageData = function () {
+        var rest = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            rest[_i] = arguments[_i];
+        }
+        var img = rest[0], width = rest[1], height = rest[2];
+        if (rest.length === 1) {
+            return this.clear().drawImage(img).getImageData();
+        }
+        else if (rest.length === 3) {
+            return this.clear().resize(width, height).drawImage(img).getImageData();
+        }
+        return this.imageData = this.context.getImageData(0, 0, this.width, this.height);
+    };
     OfflineCanvas.prototype.resize = function (width, height) {
         this.canvas.width = this.width = width;
         this.canvas.height = this.height = height;
         return this;
     };
     OfflineCanvas.prototype.clear = function () {
+        this.imageData = null;
         this.context.clearRect(0, 0, this.width, this.height);
         return this;
     };
@@ -24074,6 +24139,7 @@ var Model = /** @class */ (function () {
         }
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
+                this.img && this.scene.context.drawImage(this.img, this.x, this.y, this.width, this.height);
                 return [2 /*return*/];
             });
         });
@@ -24252,6 +24318,7 @@ var Scene = /** @class */ (function () {
         this.mod = 0;
         this.sounds = {};
         this.imgDatas = {};
+        this.offlineCanvas = offlineCanvas;
         this.container = container;
         config = this.config = Object.assign({}, defaultConfig, config);
         if (config.size === 'fullScreen') {
@@ -24289,9 +24356,11 @@ var Scene = /** @class */ (function () {
                         this.toggleMusic();
                         this.clearCanvas();
                         this.clearMounted();
-                        this.setBackground();
-                        return [4 /*yield*/, this.loadMenu()];
+                        return [4 /*yield*/, this.setBackground()];
                     case 4:
+                        _a.sent();
+                        return [4 /*yield*/, this.loadMenu()];
+                    case 5:
                         _a.sent();
                         return [2 /*return*/];
                 }
@@ -24315,19 +24384,27 @@ var Scene = /** @class */ (function () {
     };
     Scene.prototype.play = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var com;
+            var com, imageData;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0:
-                        com = this.getCom('background1.jpg');
-                        this.save();
-                        return [4 /*yield*/, com.animate(function () {
-                                _this.clearCanvas();
-                                _this.restore();
-                                com.draw();
-                            })];
+                    case 0: return [4 /*yield*/, this.getCom('background1.jpg')];
                     case 1:
+                        com = _a.sent();
+                        com.init();
+                        imageData = offlineCanvas.getImageData(com.img, com.img.width, this.config.height);
+                        return [4 /*yield*/, this.wobble({
+                                start: .05,
+                                left: 0,
+                                right: .14,
+                                change: .005,
+                                time: 50
+                            }, function (_a) {
+                                var start = _a.start;
+                                _this.clearCanvas();
+                                _this.context.putImageData(imageData, 0 - start * _this.config.width, 0);
+                            })];
+                    case 2:
                         _a.sent();
                         return [2 /*return*/];
                 }
@@ -24582,6 +24659,39 @@ var Scene = /** @class */ (function () {
         });
     };
     // 工具方法
+    // 晃动镜头
+    Scene.prototype.wobble = function (option, render) {
+        if (option === void 0) { option = {}; }
+        var start = option.start, change = option.change, left = option.left, right = option.right, time = option.time, rest = __rest(option, ["start", "change", "left", "right", "time"]);
+        var oldStart = start;
+        var restore = false;
+        return new Promise(function (resolve) {
+            var paly = function () {
+                start += change;
+                if (change > 0) {
+                    // 正向运动完毕
+                    if (start > right) {
+                        change *= -1;
+                        // 复位完毕
+                    }
+                    else if (restore && start > oldStart) {
+                        start = oldStart;
+                        return resolve();
+                    }
+                }
+                else {
+                    // 反向运动完毕
+                    if (start < left) {
+                        change *= -1;
+                        restore = true;
+                    }
+                }
+                render(__assign({ start: start, change: change, left: left, right: right, time: time }, rest));
+                setTimeout(paly, time);
+            };
+            paly();
+        });
+    };
     Scene.prototype.mountCom = function (com) {
         var _this = this;
         (Array.isArray(com) ? com : [com]).map(function (item) {
@@ -24654,21 +24764,27 @@ var Scene = /** @class */ (function () {
         return __awaiter(this, void 0, void 0, function () {
             var com;
             return __generator(this, function (_a) {
-                com = this.getCom(name || '');
-                if (com) {
-                    com.draw();
+                switch (_a.label) {
+                    case 0:
+                        com = this.getCom(name || '');
+                        if (!com) return [3 /*break*/, 2];
+                        return [4 /*yield*/, com.draw()];
+                    case 1:
+                        _a.sent();
+                        _a.label = 2;
+                    case 2: return [2 /*return*/, com];
                 }
-                return [2 /*return*/, com];
             });
         });
     };
     Scene.prototype.save = function (name) {
+        var _a;
         var rest = [];
         for (var _i = 1; _i < arguments.length; _i++) {
             rest[_i - 1] = arguments[_i];
         }
         var args = rest.concat(0, 0, this.config.width, this.config.height).filter(function (item) { return typeof item === 'number'; }).slice(0, 4);
-        var imgData = this.context.getImageData.apply(this.context, args);
+        var imgData = (_a = this.context).getImageData.apply(_a, args);
         if (name) {
             this.imgDatas['_' + name] = imgData;
         }
@@ -24678,8 +24794,13 @@ var Scene = /** @class */ (function () {
         return imgData;
     };
     Scene.prototype.restore = function (name, x, y) {
+        var _a;
         if (x === void 0) { x = 0; }
         if (y === void 0) { y = 0; }
+        var rest = [];
+        for (var _i = 3; _i < arguments.length; _i++) {
+            rest[_i - 3] = arguments[_i];
+        }
         var imgData;
         if (name && this.imgDatas[name]) {
             imgData = this.imgDatas[name];
@@ -24688,7 +24809,7 @@ var Scene = /** @class */ (function () {
         else {
             imgData = this.imgDatas.active;
         }
-        imgData && this.context.putImageData(imgData, x, y);
+        imgData && (_a = this.context).putImageData.apply(_a, __spreadArrays([imgData, x, y], rest));
         return imgData;
     };
     Scene.prototype.recordPath = function () {
@@ -24920,52 +25041,6 @@ var options = mergeOptions({
             });
         }
     },
-    'background1.jpg': {
-        personal: {
-            startX: .05,
-            startY: 0,
-            endX: 0.14,
-            changeX: .008,
-            animateTime: 80
-        },
-        animate: function (render) {
-            var _this = this;
-            var startX = this.personal.startX;
-            var restore = false;
-            return new Promise(function (resolve) {
-                var paly = function () {
-                    _this.personal.startX += _this.personal.changeX;
-                    // 正向运动
-                    if (_this.personal.changeX > 0) {
-                        if (_this.personal.startX > _this.personal.endX) {
-                            _this.personal.changeX *= -1;
-                        }
-                        else if (restore && _this.personal.startX > startX) {
-                            _this.personal.startX = 0;
-                            return resolve();
-                        }
-                    }
-                    else {
-                        if (_this.personal.startX < 0) {
-                            _this.personal.startX = 0;
-                            _this.personal.changeX *= -1;
-                            restore = true;
-                        }
-                    }
-                    render();
-                    setTimeout(paly, _this.personal.animateTime);
-                };
-                paly();
-            });
-        },
-        draw: function () {
-            var w = this.scene.config.width;
-            var h = this.scene.config.height;
-            var startX = this.personal.startX * this.img.width;
-            var startY = this.personal.startY * this.img.height;
-            this.context.drawImage(this.img, startX, startY, w, this.img.height, 0, 0, w, h);
-        }
-    },
     'Surface.jpg': {
         draw: function () {
             var w = this.scene.config.width;
@@ -25030,10 +25105,10 @@ var options = mergeOptions({
             this.draw();
         },
         draw: function () {
-            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c, scene = _a.scene;
+            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c;
             this.x = x + c * this.col;
             this.y = y + r * this.row;
-            scene.context.drawImage(this.img, this.x, this.y, this.img.width * this.scaleX, this.img.height * this.scaleY);
+            this.context.drawImage(this.img, this.x, this.y, this.img.width * this.scaleX, this.img.height * this.scaleY);
         }
     },
     // 花园
@@ -25055,10 +25130,10 @@ var options = mergeOptions({
             this.draw();
         },
         draw: function () {
-            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c, scene = _a.scene;
+            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c;
             this.x = x + c * this.col;
             this.y = y + r * this.row;
-            scene.context.drawImage(this.img, this.x, this.y, this.img.width, this.img.height);
+            this.context.drawImage(this.img, this.x, this.y, this.img.width, this.img.height);
         }
     },
     // 图鉴
@@ -25080,10 +25155,10 @@ var options = mergeOptions({
             this.draw();
         },
         draw: function () {
-            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c, scene = _a.scene;
+            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c;
             this.x = x + c * this.col;
             this.y = y + r * this.row;
-            scene.context.drawImage(this.img, this.x, this.y, this.img.width, this.img.height);
+            this.context.drawImage(this.img, this.x, this.y, this.img.width, this.img.height);
         }
     },
     // 冒险
@@ -25106,13 +25181,13 @@ var options = mergeOptions({
             menuTrigger(this, type);
         },
         draw: function () {
-            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c, scene = _a.scene;
+            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c;
             var _b = this, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY;
             var _c = this.img, width = _c.width, height = _c.height;
             this.x = x + c * this.col;
             this.y = y + r * this.row;
             this.height = height / 2;
-            scene.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2);
+            this.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2);
         }
     },
     // 解密
@@ -25135,13 +25210,13 @@ var options = mergeOptions({
             menuTrigger(this, type);
         },
         draw: function () {
-            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c, scene = _a.scene;
+            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c;
             var _b = this, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY;
             var _c = this.img, width = _c.width, height = _c.height;
             this.x = x + c * this.col;
             this.y = y + r * this.row;
             this.height = height / 2;
-            scene.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2);
+            this.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2);
         }
     },
     // 小游戏
@@ -25164,13 +25239,13 @@ var options = mergeOptions({
             menuTrigger(this, type);
         },
         draw: function () {
-            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c, scene = _a.scene;
+            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c;
             var _b = this, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY;
             var _c = this.img, width = _c.width, height = _c.height;
             this.x = x + c * this.col;
             this.y = y + r * this.row;
             this.height = height / 2;
-            scene.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2);
+            this.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2);
         }
     },
     // 开始游戏
@@ -25196,13 +25271,13 @@ var options = mergeOptions({
             menuTrigger(this, type);
         },
         draw: function () {
-            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c, scene = _a.scene;
+            var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c;
             var _b = this, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY;
             var _c = this.img, width = _c.width, height = _c.height;
             this.x = x + c * this.col;
             this.y = y + r * this.row * 1.05;
             this.height = height / 2;
-            scene.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2);
+            this.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2);
         }
     },
     'ZombieHand.png': {
@@ -25236,7 +25311,7 @@ var options = mergeOptions({
             });
         },
         draw: function () {
-            var _a = getProps(this), x = _a.x, y = _a.y, w = _a.w, h = _a.h, scene = _a.scene;
+            var _a = getProps(this), x = _a.x, y = _a.y, w = _a.w, h = _a.h;
             var _b = this, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY, width = _b.width, height = _b.height;
             this.x = x - w * .2;
             this.y = y - h * .3;
@@ -25244,7 +25319,7 @@ var options = mergeOptions({
             startY = this.personal.currY % this.personal.lenY;
             width = width / this.personal.lenX;
             height = height / this.personal.lenY;
-            scene.context.drawImage(this.img, startX * width, startY * height, width, height, this.x, this.y, width * scaleX, height * scaleY);
+            this.context.drawImage(this.img, startX * width, startY * height, width, height, this.x, this.y, width * scaleX, height * scaleY);
         }
     }
 });
