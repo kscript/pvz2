@@ -23795,11 +23795,13 @@ var Task = /** @class */ (function () {
         this.state = 'resolved';
         this.resolve = Promise.resolve;
         this.reject = Promise.reject;
+        this.name = '';
     }
-    Task.prototype.init = function () {
+    Task.prototype.init = function (name) {
         return __awaiter(this, void 0, void 0, function () {
             var _this = this;
             return __generator(this, function (_a) {
+                this.name = name;
                 if (this.state !== 'pending') {
                     this.state = 'pending';
                     return [2 /*return*/, new Promise(function (resolve, reject) {
@@ -24279,7 +24281,7 @@ var Scene = /** @class */ (function () {
                     case 2:
                         _a.sent();
                         // 需要等待用户点击开始
-                        return [4 /*yield*/, this.task.init()];
+                        return [4 /*yield*/, this.task.init('init')];
                     case 3:
                         // 需要等待用户点击开始
                         _a.sent();
@@ -24304,7 +24306,7 @@ var Scene = /** @class */ (function () {
                     case 0: return [4 /*yield*/, this.showMenu()];
                     case 1:
                         _a.sent();
-                        return [4 /*yield*/, this.task.init()];
+                        return [4 /*yield*/, this.task.init('mount')];
                     case 2:
                         _a.sent();
                         return [2 /*return*/];
@@ -24313,9 +24315,16 @@ var Scene = /** @class */ (function () {
         });
     };
     Scene.prototype.play = function () {
-        return __awaiter(this, void 0, void 0, function () { return __generator(this, function (_a) {
-            return [2 /*return*/];
-        }); });
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.setBackground('background1.jpg')];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
     };
     Scene.prototype.loadResource = function () {
         return __awaiter(this, void 0, void 0, function () {
@@ -24377,6 +24386,9 @@ var Scene = /** @class */ (function () {
                 }
             });
         });
+    };
+    Scene.prototype.startGame = function () {
+        this.task.resolve('init');
     };
     Scene.prototype.mountCom = function (com) {
         var _this = this;
@@ -24599,7 +24611,7 @@ var Scene = /** @class */ (function () {
                         _a.sent();
                         this.clearCanvas();
                         this.clearMounted();
-                        return [4 /*yield*/, this.task.resolve()];
+                        return [4 /*yield*/, this.task.resolve('mount')];
                     case 2:
                         _a.sent();
                         return [2 /*return*/];
@@ -24628,7 +24640,7 @@ var Scene = /** @class */ (function () {
                             }); })];
                     case 1:
                         _a.sent();
-                        this.toggleMusic('./sound/hugewave');
+                        this.toggleMusic('./sound/hugewave.mp3').loop = false;
                         return [2 /*return*/];
                 }
             });
@@ -24674,11 +24686,11 @@ var Scene = /** @class */ (function () {
                 if (this.sounds[src].paused) {
                     this.sounds[src].play();
                 }
-                return this.sounds[src];
             }
             else {
-                return this.sounds[src] = this.music(src);
+                this.sounds[src] = this.music(src);
             }
+            return this.sounds[src];
         }
         return this.sounds[src] = this.music(src);
     };
@@ -24864,6 +24876,19 @@ var options = mergeOptions({
             });
         }
     },
+    'background1.jpg': {
+        personal: {
+            startX: .1
+        },
+        animate: function (render) {
+        },
+        draw: function () {
+            var w = this.scene.config.width;
+            var h = this.scene.config.height;
+            var startX = this.personal.startX * this.img.width;
+            this.context.drawImage(this.img, startX, 0, this.img.width - startX * 2, this.img.height, 0, 0, w, h);
+        }
+    },
     'Surface.jpg': {
         draw: function () {
             var w = this.scene.config.width;
@@ -24901,7 +24926,7 @@ var options = mergeOptions({
         },
         trigger: function (type, event) {
             if (type === 'click') {
-                this.scene.task.resolve();
+                this.scene.startGame();
             }
             else {
                 this.scene.container.style.cursor = type === 'leave' ? 'auto' : 'pointer';
@@ -25289,7 +25314,7 @@ var zombie$1 = {
 
 var config = {
     // size: 'fullScreen',
-    width: 1400,
+    width: 1200,
     height: 700,
     coms: {
         Menu: menu,
