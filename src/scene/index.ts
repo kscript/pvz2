@@ -21,6 +21,7 @@ export default class Scene {
   public hitCom: anyObject<Model[]> = {}
   public mod: number = 0
   public sounds: anyObject = {}
+  public imgDatas: anyObject<ImageData> = {}
   constructor(container: HTMLCanvasElement, config: anyObject = {}) {
     this.container = container
     config = this.config = Object.assign({}, defaultConfig, config)
@@ -43,15 +44,23 @@ export default class Scene {
     this.toggleMusic()
     this.clearCanvas()
     this.clearMounted()
-    await this.setBackground()
+    this.setBackground()
     await this.loadMenu()
   }
+  startGame() {
+    this.task.resolve('init')
+  }
   async mount() {
-    await this.showMenu()
     await this.task.init('mount')
   }
   async play() {
-    await this.setBackground('background1.jpg')
+    const com = this.getCom('background1.jpg')
+    this.save()
+    await com.animate(() => {
+      this.clearCanvas()
+      this.restore()
+      com.draw()
+    })
   }
 
   async loadResource() {
@@ -87,15 +96,6 @@ export default class Scene {
       console.log(err)
     }
   }
-  startGame() {
-    this.task.resolve('init')
-  }
-  mountCom(com: Model | Model[]) {
-    (Array.isArray(com) ? com : [com]).map(item => {
-      this.comsMountedMap[item.id] = item
-      this.comsMounted.push(item)
-    })
-  }
   async loading() {
     const coms: Model[] = ['popcap_logo.png', 'SodRollCap.png', 'LoadBar.png'].map(item => this.getCom(item))
     this.loadCount++
@@ -126,21 +126,6 @@ export default class Scene {
       const rate = this.loadCount / count * 100
       this.loadAnimate(rate)
     }
-  }
-  async setBackground(name: string = 'Surface.jpg') {
-    const com = this.getCom(name || '')
-    if (com) {
-      com.draw()
-    }
-  }
-  clearCanvas() {
-    this.context.clearRect(0, 0, this.config.width, this.config.width)
-  }
-  clearMounted() {
-    this.comsMounted.splice(0).forEach(item => {
-      delete this.comsMountedMap[item.id]
-      item.destory()
-    })
   }
   async addEvents() {
     this.container.addEventListener('mousedown', (event: Event) => {
@@ -175,6 +160,72 @@ export default class Scene {
         })
         hover.splice(0)
       }
+    })
+  }
+  async loadMenu() {
+    const coms: Model[] = [
+      'SelectorScreen_Store.png',
+      // 花园
+      'SelectorScreen_ZenGarden.png',
+      // 图鉴
+      'SelectorScreen_Almanac.png',
+      // 冒险
+      'SelectorScreenAdventure.png',
+      // 解密
+      'SelectorScreenChallenges.png',
+      // 小游戏
+      'SelectorScreenSurvival.png',
+      // 开始游戏
+      'SelectorScreenStartAdventur.png'
+    ].map(item => {
+      const com = this.getCom(item)
+      this.mountCom(com)
+      com.draw()
+      com.setHitArea(true)
+      // com.drawHitArea()
+      return com
+    })
+  }
+  async selectMenu(index: number) {
+    this.mod = index
+    await this.selectAfter()
+    this.clearCanvas()
+    this.clearMounted()
+    await this.task.resolve('mount')
+  }
+  async selectAfter() {
+    const sound = this.toggleMusic('./sound/evillaugh.mp3')
+    const com = this.getCom('ZombieHand.png')
+    this.mountCom(com)
+    this.save()
+    sound.loop = false
+    await new Promise(async resolve => {
+      sound.onended = () => {
+        resolve()
+      }
+      await com.animate(async () => {
+        this.clearCanvas()
+        this.restore()
+        com.draw()
+      })
+    })
+    this.toggleMusic('./sound/hugewave.mp3').loop = false
+  }
+  
+  // 工具方法
+  mountCom(com: Model | Model[]) {
+    (Array.isArray(com) ? com : [com]).map(item => {
+      this.comsMountedMap[item.id] = item
+      this.comsMounted.push(item)
+    })
+  }
+  clearCanvas() {
+    this.context.clearRect(0, 0, this.config.width, this.config.width)
+  }
+  clearMounted() {
+    this.comsMounted.splice(0).forEach(item => {
+      delete this.comsMountedMap[item.id]
+      item.destory()
     })
   }
   // 碰撞到组件时执行
@@ -223,51 +274,34 @@ export default class Scene {
     !com && console.log('未能找到 ' + key + ' 组件')
     return com
   }
-  async loadMenu() {
-    const coms: Model[] = [
-      'SelectorScreen_Store.png',
-      // 花园
-      'SelectorScreen_ZenGarden.png',
-      // 图鉴
-      'SelectorScreen_Almanac.png',
-      // 冒险
-      'SelectorScreenAdventure.png',
-      // 解密
-      'SelectorScreenChallenges.png',
-      // 小游戏
-      'SelectorScreenSurvival.png',
-      // 开始游戏
-      'SelectorScreenStartAdventur.png'
-    ].map(item => {
-      const com = this.getCom(item)
-      this.mountCom(com)
+  async setBackground(name: string = 'Surface.jpg') {
+    const com = this.getCom(name || '')
+    if (com) {
       com.draw()
-      com.setHitArea(true)
-      // com.drawHitArea()
-      return com
-    })
+    }
+    return com
   }
-  async showMenu() {}
-  async selectMenu(index: number) {
-    this.mod = index
-    await this.selectAfter()
-    this.clearCanvas()
-    this.clearMounted()
-    await this.task.resolve('mount')
+  save(name?: string, ...rest: any) {
+    const args = rest.concat(0, 0, this.config.width, this.config.height).filter((item: any) => typeof item === 'number').slice(0, 4)
+    const imgData = this.context.getImageData.apply(this.context, args)
+    if(name) {
+      this.imgDatas['_' + name] = imgData
+    } else {
+      this.imgDatas.active = imgData
+    }
+    return imgData
   }
-  async selectAfter() {
-    this.toggleMusic('./sound/evillaugh.mp3')
-    const com = this.getCom('ZombieHand.png')
-    this.mountCom(com)
-    const imgData = this.context.getImageData(0, 0, this.config.width, this.config.height)
-    await com.animate(async () => {
-      this.clearCanvas()
-      this.context.putImageData(imgData, 0, 0)
-      com.draw()
-    })
-    this.toggleMusic('./sound/hugewave.mp3').loop = false
+  restore(name?: string, x = 0, y = 0) {
+    let imgData
+    if (name && this.imgDatas[name]) {
+      imgData = this.imgDatas[name]
+      delete this.imgDatas[name]
+    } else {
+      imgData = this.imgDatas.active
+    }
+    imgData && this.context.putImageData(imgData, x, y)
+    return imgData
   }
-  // 工具方法
   recordPath() {
     const pointers: number[] = []
     console.log(pointers)

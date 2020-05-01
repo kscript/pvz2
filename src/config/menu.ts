@@ -160,16 +160,45 @@ const options: anyObject = mergeOptions({
   },
   'background1.jpg': {
     personal: {
-      startX: .1
+      startX: .05,
+      startY: 0,
+      endX: 0.14,
+      changeX: .008,
+      animateTime: 80
     },
     animate(render: Function) {
-      
+      const startX = this.personal.startX
+      let restore = false
+      return new Promise(resolve => {
+        const paly = () => {
+          this.personal.startX += this.personal.changeX
+          // 正向运动
+          if (this.personal.changeX > 0) {
+            if (this.personal.startX > this.personal.endX) {
+              this.personal.changeX *= -1
+            } else if(restore && this.personal.startX > startX) {
+              this.personal.startX = 0
+              return resolve()
+            }
+          } else {
+            if (this.personal.startX < 0) {
+              this.personal.startX = 0
+              this.personal.changeX *= -1
+              restore = true
+            }
+          }
+          render()
+          setTimeout(paly, this.personal.animateTime)
+        }
+        paly()
+      })
     },
     draw() {
       let w = this.scene.config.width
       let h = this.scene.config.height
       let startX = this.personal.startX * this.img.width
-      this.context.drawImage(this.img, startX, 0, this.img.width - startX * 2, this.img.height, 0, 0, w, h)
+      let startY = this.personal.startY * this.img.height
+      this.context.drawImage(this.img, startX, startY, w, this.img.height, 0, 0, w, h)
     }
   },
   'Surface.jpg': {
@@ -192,6 +221,7 @@ const options: anyObject = mergeOptions({
       this.context.restore()
     }
   },
+  // 加载进度条
   'LoadBar.png': {
     hitAble: true,
     draw(rate: number) {
@@ -413,7 +443,7 @@ const options: anyObject = mergeOptions({
       lenY: 1,
       currX: 0,
       currY: 0,
-      animateTime: 300
+      animateTime: 150
     },
     async animate(render: Function) {
       return new Promise(resolve => {
@@ -424,9 +454,7 @@ const options: anyObject = mergeOptions({
             setTimeout(paly, this.personal.animateTime)
           } else {
             this.personal.currX = 0
-            setTimeout(() => {
-              resolve()
-            }, this.personal.animateTime * 3)
+            resolve()
           }
         }
         paly()
