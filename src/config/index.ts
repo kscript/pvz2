@@ -5,7 +5,7 @@ import Zombie from './zombie'
 
 export default {
   // size: 'fullScreen',
-  width: 1400,
+  width: 1200,
   height: 700,
   coms: {
     Menu,

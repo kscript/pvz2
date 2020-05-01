@@ -39,7 +39,7 @@ export default class Scene {
     await this.loadResource()
     await this.addEvents()
     // 需要等待用户点击开始
-    await this.task.init()
+    await this.task.init('init')
     this.toggleMusic()
     this.clearCanvas()
     this.clearMounted()
@@ -48,9 +48,11 @@ export default class Scene {
   }
   async mount() {
     await this.showMenu()
-    await this.task.init()
+    await this.task.init('mount')
   }
-  async play() {}
+  async play() {
+    await this.setBackground('background1.jpg')
+  }
 
   async loadResource() {
     const coms = this.config.coms
@@ -84,6 +86,9 @@ export default class Scene {
     } catch (err) {
       console.log(err)
     }
+  }
+  startGame() {
+    this.task.resolve('init')
   }
   mountCom(com: Model | Model[]) {
     (Array.isArray(com) ? com : [com]).map(item => {
@@ -248,7 +253,7 @@ export default class Scene {
     await this.selectAfter()
     this.clearCanvas()
     this.clearMounted()
-    await this.task.resolve()
+    await this.task.resolve('mount')
   }
   async selectAfter() {
     this.toggleMusic('./sound/evillaugh.mp3')
@@ -260,7 +265,7 @@ export default class Scene {
       this.context.putImageData(imgData, 0, 0)
       com.draw()
     })
-    this.toggleMusic('./sound/hugewave')
+    this.toggleMusic('./sound/hugewave.mp3').loop = false
   }
   // 工具方法
   recordPath() {
@@ -295,10 +300,10 @@ export default class Scene {
         if (this.sounds[src].paused) {
           this.sounds[src].play()
         }
-        return this.sounds[src]
       } else {
-        return this.sounds[src] = this.music(src)
+        this.sounds[src] = this.music(src)
       }
+      return this.sounds[src]
     }
     return this.sounds[src] = this.music(src)
   }

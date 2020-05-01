@@ -158,6 +158,20 @@ const options: anyObject = mergeOptions({
       })
     }
   },
+  'background1.jpg': {
+    personal: {
+      startX: .1
+    },
+    animate(render: Function) {
+      
+    },
+    draw() {
+      let w = this.scene.config.width
+      let h = this.scene.config.height
+      let startX = this.personal.startX * this.img.width
+      this.context.drawImage(this.img, startX, 0, this.img.width - startX * 2, this.img.height, 0, 0, w, h)
+    }
+  },
   'Surface.jpg': {
     draw() {
       let w = this.scene.config.width
@@ -195,7 +209,7 @@ const options: anyObject = mergeOptions({
     },
     trigger(type: string, event: Event) {
       if (type === 'click') {
-        this.scene.task.resolve()
+        this.scene.startGame()
       } else {
         this.scene.container.style.cursor = type === 'leave' ? 'auto' : 'pointer'
       }

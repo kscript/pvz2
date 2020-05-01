@@ -4,7 +4,9 @@ export class Task {
   public state: string = 'resolved'
   resolve: (value?: {} | PromiseLike<{}> | undefined) => any = Promise.resolve
   reject:  (reason?: any) => void = Promise.reject
-  async init() {
+  public name: string = ''
+  async init(name: string) {
+    this.name = name
     if (this.state !== 'pending') {
       this.state = 'pending'
       return new Promise((resolve, reject)=> {
