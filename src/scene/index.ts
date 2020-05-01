@@ -1,13 +1,13 @@
 import Com from '@/com'
 import Model from '@/com/model'
 import { Task, hitTest, isCollide, drawHitArea } from '@/utils'
-import { GifCanvas } from '@/utils/canvas'
+import { GifCanvas, offlineCanvas } from '@/utils/canvas'
 const defaultConfig = {
   width: 1366,
   height: 720
 }
 export default class Scene {
-  [prop:string]: any
+  [prop: string]: any
   public config: anyObject
   public container: HTMLCanvasElement
   public context: CanvasContextEx
@@ -22,6 +22,7 @@ export default class Scene {
   public mod: number = 0
   public sounds: anyObject = {}
   public imgDatas: anyObject<ImageData> = {}
+  public offlineCanvas: offlineCanvas = offlineCanvas
   constructor(container: HTMLCanvasElement, config: anyObject = {}) {
     this.container = container
     config = this.config = Object.assign({}, defaultConfig, config)
@@ -44,7 +45,7 @@ export default class Scene {
     this.toggleMusic()
     this.clearCanvas()
     this.clearMounted()
-    this.setBackground()
+    await this.setBackground()
     await this.loadMenu()
   }
   startGame() {
@@ -54,22 +55,30 @@ export default class Scene {
     await this.task.init('mount')
   }
   async play() {
-    const com = this.getCom('background1.jpg')
-    this.save()
-    await com.animate(() => {
-      this.clearCanvas()
-      this.restore()
-      com.draw()
-    })
+    const com = await this.getCom('background1.jpg')
+    com.init()
+    const imageData = offlineCanvas.getImageData(com.img, com.img.width, this.config.height)
+    await this.wobble({
+      start: .05,
+      left: 0,
+      right: .14,
+      change: .005,
+      time: 50
+    }, ({
+      start
+    }: anyObject) => {
+        this.clearCanvas()
+        this.context.putImageData(imageData, 0 - start * this.config.width, 0)
+      })
   }
 
   async loadResource() {
     const coms = this.config.coms
     let list: any[] = []
-    for(let key in coms) {
+    for (let key in coms) {
       const Ctor = Com[key]
       list = list.concat(coms[key].list.map((item: string) => {
-        return new Promise(async (resolve) =>{
+        return new Promise(async (resolve) => {
           if (Ctor && this.comMap[item]) {
             console.log('Map中 ' + item + ' 属性将被覆盖')
           }
@@ -80,7 +89,7 @@ export default class Scene {
               container: this.container,
             }, coms[key].options[item])
             const instance = new Ctor(item, config)
-            return resolve(this.comMap[key + '_' + item] = this.comMap[item] = instance )
+            return resolve(this.comMap[key + '_' + item] = this.comMap[item] = instance)
           }
           resolve()
         })
@@ -103,7 +112,7 @@ export default class Scene {
     this.mountCom(coms[0])
     await coms[0].draw()
     await Promise.all(coms.slice(1).map(async com => {
-      if(com) {
+      if (com) {
         this.loadCount++
         await com.init()
         this.mountCom(coms)
@@ -121,7 +130,7 @@ export default class Scene {
   }
   stateChange(type: string, url: string, index: number, gif: GifCanvas) {
     const count = this.coms.length
-    if (index === gif.imageUrls.length -1) {
+    if (index === gif.imageUrls.length - 1) {
       this.loadCount++
       const rate = this.loadCount / count * 100
       this.loadAnimate(rate)
@@ -134,7 +143,7 @@ export default class Scene {
       })
     })
     this.container.addEventListener('mouseup', (event: Event) => {
-      
+
     })
     this.container.addEventListener('mousemove', (event: Event) => {
       let old = this.hitCom.hover || []
@@ -156,7 +165,7 @@ export default class Scene {
       const hover = this.hitCom['hover']
       if (hover && hover.length) {
         hover.map(com => {
-          com.trigger('leave', event)        
+          com.trigger('leave', event)
         })
         hover.splice(0)
       }
@@ -211,8 +220,41 @@ export default class Scene {
     })
     this.toggleMusic('./sound/hugewave.mp3').loop = false
   }
-  
+
   // 工具方法
+
+  // 晃动镜头
+  wobble(option: anyObject = {}, render: (option: anyObject) => void) {
+    let { start, change, left, right, time, ...rest } = option
+    const oldStart = start
+    let restore = false
+    return new Promise(resolve => {
+      const paly = () => {
+        start += change
+        if (change > 0) {
+          // 正向运动完毕
+          if (start > right) {
+            change *= -1
+            // 复位完毕
+          } else if (restore && start > oldStart) {
+            start = oldStart
+            return resolve()
+          }
+        } else {
+          // 反向运动完毕
+          if (start < left) {
+            change *= -1
+            restore = true
+          }
+        }
+        render({
+          start, change, left, right, time, ...rest
+        })
+        setTimeout(paly, time)
+      }
+      paly()
+    })
+  }
   mountCom(com: Model | Model[]) {
     (Array.isArray(com) ? com : [com]).map(item => {
       this.comsMountedMap[item.id] = item
@@ -247,7 +289,7 @@ export default class Scene {
     const { offsetX: x, offsetY: y } = event
     const hit: Model[] = []
     this.comsMounted.map(com => {
-      const hitArea = (com.hitArea||[]).slice(0)
+      const hitArea = (com.hitArea || []).slice(0)
       // 如果没有指定当前环节要碰撞检测, 且默认不检测, 则跳过
       if (!com.hitState.hasOwnProperty(this.state) && !com.hitAble) {
         return
@@ -259,7 +301,7 @@ export default class Scene {
           if (hitTest.apply(null, [x, y].concat(hitArea))) {
             hit.push(com)
           }
-        } else if(hitArea.length){
+        } else if (hitArea.length) {
           if (isCollide([x, y, x + 1, y, x + 1, y + 1], hitArea)) {
             hit.push(com)
           }
@@ -277,21 +319,21 @@ export default class Scene {
   async setBackground(name: string = 'Surface.jpg') {
     const com = this.getCom(name || '')
     if (com) {
-      com.draw()
+      await com.draw()
     }
     return com
   }
   save(name?: string, ...rest: any) {
     const args = rest.concat(0, 0, this.config.width, this.config.height).filter((item: any) => typeof item === 'number').slice(0, 4)
-    const imgData = this.context.getImageData.apply(this.context, args)
-    if(name) {
+    const imgData = this.context.getImageData(...args)
+    if (name) {
       this.imgDatas['_' + name] = imgData
     } else {
       this.imgDatas.active = imgData
     }
     return imgData
   }
-  restore(name?: string, x = 0, y = 0) {
+  restore(name?: string, x = 0, y = 0, ...rest: number[]) {
     let imgData
     if (name && this.imgDatas[name]) {
       imgData = this.imgDatas[name]
@@ -299,7 +341,7 @@ export default class Scene {
     } else {
       imgData = this.imgDatas.active
     }
-    imgData && this.context.putImageData(imgData, x, y)
+    imgData && this.context.putImageData(imgData, x, y, ...rest)
     return imgData
   }
   recordPath() {
@@ -317,7 +359,7 @@ export default class Scene {
     drawHitArea(color, cxt, area)
   }
   public stopMuisc(src?: string) {
-    try{
+    try {
       if (src) {
         this.sounds[src].pause()
       } else {
@@ -325,7 +367,7 @@ export default class Scene {
           this.sounds[key].pause()
         }
       }
-    } catch(e) {}
+    } catch (e) { }
   }
   public toggleMusic(src: string = './sound/Faster.mp3', stop: boolean = true, cache: boolean = false) {
     stop && this.stopMuisc()
@@ -350,8 +392,8 @@ export default class Scene {
     sound.onload = () => {
     }
     sound.oncanplay = () => {
-        sound.muted = false
-        sound.play()
+      sound.muted = false
+      sound.play()
     }
     return sound
   }

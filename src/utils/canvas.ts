@@ -7,6 +7,7 @@ export class OfflineCanvas {
     public height: number
     public context: CanvasContextEx
     public canvas: HTMLCanvasElement
+    public imageData: ImageData | null = null
     constructor(width: number = 100, height: number = 100) {
         this.width = width
         this.height = height
@@ -14,12 +15,35 @@ export class OfflineCanvas {
         this.context = <CanvasContextEx>this.canvas.getContext('2d')
         return this
     }
+    drawImage(img: HTMLImageElement) {
+        this.context.drawImage(img, 0, 0, this.width, this.height)
+        return this
+    }
+    putImageData(...rest: any[]) {
+        if(!rest.length) return this
+        const [imageData, width, height] = rest
+        if (rest.length === 3) {
+            this.clear().resize(width, height)
+        }
+        this.imageData = imageData
+        return this
+    }
+    getImageData(...rest: any[]): ImageData {
+        const [img, width, height] = rest
+        if (rest.length === 1) {
+            return this.clear().drawImage(img).getImageData()
+        } else if (rest.length === 3) {
+            return this.clear().resize(width, height).drawImage(img).getImageData()
+        }
+        return this.imageData = this.context.getImageData(0, 0, this.width, this.height)
+    }
     resize(width: number, height: number) {
         this.canvas.width = this.width = width
         this.canvas.height = this.height = height
         return this
     }
     clear() {
+        this.imageData = null
         this.context.clearRect(0, 0, this.width, this.height)
         return this
     }

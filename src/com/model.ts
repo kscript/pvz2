@@ -128,6 +128,7 @@ export default class Model {
     return gif
   }
   public async draw(...rest: any[]) {
+    this.img && this.scene.context.drawImage(this.img, this.x, this.y, this.width, this.height)
   }
   public async animate(...rest: any[]) {}
   public attack(...rest: any[]) {}

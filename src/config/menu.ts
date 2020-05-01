@@ -158,49 +158,6 @@ const options: anyObject = mergeOptions({
       })
     }
   },
-  'background1.jpg': {
-    personal: {
-      startX: .05,
-      startY: 0,
-      endX: 0.14,
-      changeX: .008,
-      animateTime: 80
-    },
-    animate(render: Function) {
-      const startX = this.personal.startX
-      let restore = false
-      return new Promise(resolve => {
-        const paly = () => {
-          this.personal.startX += this.personal.changeX
-          // 正向运动
-          if (this.personal.changeX > 0) {
-            if (this.personal.startX > this.personal.endX) {
-              this.personal.changeX *= -1
-            } else if(restore && this.personal.startX > startX) {
-              this.personal.startX = 0
-              return resolve()
-            }
-          } else {
-            if (this.personal.startX < 0) {
-              this.personal.startX = 0
-              this.personal.changeX *= -1
-              restore = true
-            }
-          }
-          render()
-          setTimeout(paly, this.personal.animateTime)
-        }
-        paly()
-      })
-    },
-    draw() {
-      let w = this.scene.config.width
-      let h = this.scene.config.height
-      let startX = this.personal.startX * this.img.width
-      let startY = this.personal.startY * this.img.height
-      this.context.drawImage(this.img, startX, startY, w, this.img.height, 0, 0, w, h)
-    }
-  },
   'Surface.jpg': {
     draw() {
       let w = this.scene.config.width
@@ -266,7 +223,7 @@ const options: anyObject = mergeOptions({
       let { x, y, r, c, scene } = getProps(this)
       this.x = x  + c * this.col
       this.y = y + r * this.row
-      scene.context.drawImage(this.img, this.x, this.y, this.img.width * this.scaleX, this.img.height * this.scaleY)
+      this.context.drawImage(this.img, this.x, this.y, this.img.width * this.scaleX, this.img.height * this.scaleY)
     }
   },
   // 花园
@@ -290,7 +247,7 @@ const options: anyObject = mergeOptions({
       let { x, y, r, c, scene } = getProps(this)
       this.x = x  + c * this.col
       this.y = y + r * this.row
-      scene.context.drawImage(this.img, this.x, this.y, this.img.width, this.img.height)
+      this.context.drawImage(this.img, this.x, this.y, this.img.width, this.img.height)
     }
   },
   // 图鉴
@@ -314,7 +271,7 @@ const options: anyObject = mergeOptions({
       let { x, y, r, c, scene } = getProps(this)
       this.x = x  + c * this.col
       this.y = y + r * this.row
-      scene.context.drawImage(this.img, this.x, this.y, this.img.width, this.img.height)
+      this.context.drawImage(this.img, this.x, this.y, this.img.width, this.img.height)
     }
   },
   // 冒险
@@ -343,7 +300,7 @@ const options: anyObject = mergeOptions({
       this.x = x  + c * this.col
       this.y = y + r * this.row
       this.height = height / 2
-      scene.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2)
+      this.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2)
     }
   },
   // 解密
@@ -372,7 +329,7 @@ const options: anyObject = mergeOptions({
       this.x = x  + c * this.col
       this.y = y + r * this.row
       this.height = height / 2
-      scene.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2)
+      this.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2)
     }
   },
   // 小游戏
@@ -401,7 +358,7 @@ const options: anyObject = mergeOptions({
       this.x = x  + c * this.col
       this.y = y + r * this.row
       this.height = height / 2
-      scene.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2)
+      this.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2)
     }
   },
   // 开始游戏
@@ -433,7 +390,7 @@ const options: anyObject = mergeOptions({
       this.x = x  + c * this.col
       this.y = y + r * this.row * 1.05
       this.height = height / 2
-      scene.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2)
+      this.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2)
     }
   },
   'ZombieHand.png': {
@@ -469,7 +426,7 @@ const options: anyObject = mergeOptions({
       startY = this.personal.currY % this.personal.lenY
       width = width / this.personal.lenX
       height = height / this.personal.lenY
-      scene.context.drawImage(this.img, startX * width, startY * height, width, height, this.x, this.y, width * scaleX, height * scaleY)
+      this.context.drawImage(this.img, startX * width, startY * height, width, height, this.x, this.y, width * scaleX, height * scaleY)
     }
   }
 })
