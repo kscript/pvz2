@@ -24382,6 +24382,20 @@ var Scene = /** @class */ (function () {
             });
         });
     };
+    Scene.prototype.beforePlay = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.selectAfter()];
+                    case 1:
+                        _a.sent();
+                        this.clearCanvas();
+                        this.clearMounted();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
     Scene.prototype.play = function () {
         return __awaiter(this, void 0, void 0, function () {
             var com, imageData;
@@ -24603,13 +24617,8 @@ var Scene = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         this.mod = index;
-                        return [4 /*yield*/, this.selectAfter()];
-                    case 1:
-                        _a.sent();
-                        this.clearCanvas();
-                        this.clearMounted();
                         return [4 /*yield*/, this.task.resolve('mount')];
-                    case 2:
+                    case 1:
                         _a.sent();
                         return [2 /*return*/];
                 }
@@ -25492,8 +25501,11 @@ var Core = function (container) { return __awaiter(void 0, void 0, void 0, funct
                 return [4 /*yield*/, execHook(scene, 'mount')];
             case 3:
                 _a.sent();
-                return [4 /*yield*/, execHook(scene, 'play')];
+                return [4 /*yield*/, execHook(scene, 'beforePlay')];
             case 4:
+                _a.sent();
+                return [4 /*yield*/, execHook(scene, 'play')];
+            case 5:
                 _a.sent();
                 return [2 /*return*/, scene];
         }
