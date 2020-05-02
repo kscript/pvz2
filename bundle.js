@@ -23579,7 +23579,7 @@ arguments[4][6][0].apply(exports,arguments)
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var path$4 = require('path');
+var path$5 = require('path');
 var pixelGif = _interopDefault(require('pixel-gif'));
 var png = require('@rgba-image/png');
 
@@ -23765,7 +23765,7 @@ var GifCanvas = /** @class */ (function () {
             x: 0,
             y: 0
         }, { x: x, y: y, fps: fps });
-        var type = path$4.extname(url).slice(1);
+        var type = path$5.extname(url).slice(1);
         this.type = type;
         this.imageDatas = this.parseGif(url);
     }
@@ -23855,65 +23855,6 @@ var GifCanvas = /** @class */ (function () {
     return GifCanvas;
 }());
 
-var Task = /** @class */ (function () {
-    function Task() {
-        this.state = 'resolved';
-        this.resolve = Promise.resolve;
-        this.reject = Promise.reject;
-        this.name = '';
-    }
-    Task.prototype.init = function (name) {
-        return __awaiter(this, void 0, void 0, function () {
-            var _this = this;
-            return __generator(this, function (_a) {
-                this.name = name;
-                if (this.state !== 'pending') {
-                    this.state = 'pending';
-                    return [2 /*return*/, new Promise(function (resolve, reject) {
-                            _this.resolve = function () {
-                                _this.state = 'resolved';
-                                resolve();
-                            };
-                            _this.reject = function () {
-                                _this.state = 'rejected';
-                                reject();
-                            };
-                        })];
-                }
-                else {
-                    throw new Error('有任务正在执行, 请先调用实例方法resolve/reject结束它');
-                }
-            });
-        });
-    };
-    return Task;
-}());
-var replaceTpl = function (tpl, data) {
-    if (data === void 0) { data = {}; }
-    return tpl.replace(/\$\{(.*?)\}/g, function (s, $1) {
-        return data[$1] || $1;
-    });
-};
-var execHook = function (source, hook) {
-    var rest = [];
-    for (var _i = 2; _i < arguments.length; _i++) {
-        rest[_i - 2] = arguments[_i];
-    }
-    return __awaiter(void 0, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    source.state = hook;
-                    if (!(typeof source[hook] === 'function')) return [3 /*break*/, 2];
-                    return [4 /*yield*/, source[hook].apply(source, rest)];
-                case 1:
-                    _a.sent();
-                    _a.label = 2;
-                case 2: return [2 /*return*/];
-            }
-        });
-    });
-};
 var hitTest = function () {
     var rest = [];
     for (var _i = 0; _i < arguments.length; _i++) {
@@ -23998,13 +23939,6 @@ var Model = /** @class */ (function () {
         // 坐标
         this.x = 0;
         this.y = 0;
-        // 剪切图像
-        // public sx: number = 0
-        // public sy: number = 0
-        // public sw: number = 0
-        // public sh: number = 0
-        // public dw: number = 0
-        // public dh: number = 0
         // 偏移量
         this.ox = 0;
         this.oy = 0;
@@ -24080,6 +24014,7 @@ var Model = /** @class */ (function () {
         this.startX = 0;
         this.startY = 0;
         this.personal = {};
+        this.data = {};
     }
     Model.prototype.init = function (stateChange) {
         return __awaiter(this, void 0, void 0, function () {
@@ -24127,7 +24062,7 @@ var Model = /** @class */ (function () {
             var image, gif;
             return __generator(this, function (_a) {
                 image = this.image;
-                gif = this.gif || new GifCanvas(src || path$4.join(image.path, image.name), this);
+                gif = this.gif || new GifCanvas(src || path$5.join(image.path, image.name), this);
                 return [2 /*return*/, gif];
             });
         });
@@ -24293,12 +24228,62 @@ var Zombie = /** @class */ (function (_super) {
     return Zombie;
 }(Model));
 
+var Group = /** @class */ (function (_super) {
+    __extends(Group, _super);
+    function Group(name, options) {
+        if (options === void 0) { options = {}; }
+        var _this = _super.call(this) || this;
+        _this.options = {};
+        _this.group = [];
+        _this.name = name;
+        _this.type = 'group';
+        _this.options = options;
+        return _this;
+    }
+    return Group;
+}(Model));
+
 var Ctors = {
     Menu: Menu,
     Bullet: Bullet,
     Plant: Plant,
-    Zombie: Zombie
+    Zombie: Zombie,
+    Group: Group
 };
+
+var Task = /** @class */ (function () {
+    function Task() {
+        this.state = 'resolved';
+        this.resolve = Promise.resolve;
+        this.reject = Promise.reject;
+        this.name = '';
+    }
+    Task.prototype.init = function (name) {
+        return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
+            return __generator(this, function (_a) {
+                this.name = name;
+                if (this.state !== 'pending') {
+                    this.state = 'pending';
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            _this.resolve = function () {
+                                _this.state = 'resolved';
+                                resolve();
+                            };
+                            _this.reject = function () {
+                                _this.state = 'rejected';
+                                reject();
+                            };
+                        })];
+                }
+                else {
+                    throw new Error('有任务正在执行, 请先调用实例方法resolve/reject结束它');
+                }
+            });
+        });
+    };
+    return Task;
+}());
 
 var defaultConfig = {
     width: 1366,
@@ -24923,6 +24908,26 @@ var Scene = /** @class */ (function () {
     return Scene;
 }());
 
+var replaceTpl = function (tpl, data) {
+    if (data === void 0) { data = {}; }
+    return tpl.replace(/\$\{(.*?)\}/g, function (s, $1) {
+        return data[$1] || $1;
+    });
+};
+var mergeOptions = function (path, name, list, options, data) {
+    if (data === void 0) { data = {}; }
+    list.forEach(function (item) {
+        if (!(options[item] instanceof Object)) {
+            options[item] = {};
+        }
+        options[item].image = Object.assign({
+            path: path,
+            name: replaceTpl(name, __assign({ name: item }, data))
+        }, options[item].image instanceof Object ? options[item].image : {});
+    });
+    return options;
+};
+
 var path = './images/interface/';
 var name = '${name}';
 var list = [
@@ -24969,20 +24974,6 @@ var list = [
     'ZombieHand.png',
     'Tombstone_mounds.png'
 ];
-var mergeOptions = function (options) {
-    list.forEach(function (item) {
-        if (!(options[item] instanceof Object)) {
-            options[item] = {};
-        }
-        options[item].image = Object.assign({
-            path: path,
-            name: replaceTpl(name, {
-                name: item
-            })
-        }, options[item].image instanceof Object ? options[item].image : {});
-    });
-    return options;
-};
 var conf = {
     // 菜单项起始位置坐标与场景中尺寸的比例
     // 游戏模式选项
@@ -25057,7 +25048,7 @@ var menuTrigger = function (com, type, event) {
     }
     com.draw();
 };
-var options = mergeOptions({
+var options = mergeOptions(path, name, list, {
     'popcap_logo.png': {
         draw: function () {
             return __awaiter(this, void 0, void 0, function () {
@@ -25384,21 +25375,7 @@ var list$1 = [
     'PB10',
     'PB-10'
 ];
-var mergeOptions$1 = function (options) {
-    list$1.forEach(function (item) {
-        if (!(options[item] instanceof Object)) {
-            options[item] = {};
-        }
-        options[item].image = Object.assign({
-            path: path$1,
-            name: replaceTpl(name$1, {
-                name: item
-            })
-        }, options[item].image instanceof Object ? options[item].image : {});
-    });
-    return options;
-};
-var options$1 = mergeOptions$1({});
+var options$1 = mergeOptions(path$1, name$1, list$1, {});
 var zombie = {
     path: path$1,
     name: name$1,
@@ -25448,21 +25425,7 @@ var list$2 = [
     'TwinSunflower',
     'WallNut'
 ];
-var mergeOptions$2 = function (options) {
-    list$2.forEach(function (item) {
-        if (!(options[item] instanceof Object)) {
-            options[item] = {};
-        }
-        options[item].image = Object.assign({
-            path: path$2,
-            name: replaceTpl(name$2, {
-                name: item
-            })
-        }, options[item].image instanceof Object ? options[item].image : {});
-    });
-    return options;
-};
-var options$2 = mergeOptions$2({});
+var options$2 = mergeOptions(path$2, name$2, list$2, {});
 var plant = {
     path: path$2,
     name: name$2,
@@ -25488,26 +25451,23 @@ var list$3 = [
     'Zombie',
     'Zomboni'
 ];
-var mergeOptions$3 = function (options) {
-    list$3.forEach(function (item) {
-        if (!(options[item] instanceof Object)) {
-            options[item] = {};
-        }
-        options[item].image = Object.assign({
-            path: path$3,
-            name: replaceTpl(name$3, {
-                name: item
-            })
-        }, options[item].image instanceof Object ? options[item].image : {});
-    });
-    return options;
-};
-var options$3 = mergeOptions$3({});
+var options$3 = mergeOptions(path$3, name$3, list$3, {});
 var zombie$1 = {
     path: path$3,
     name: name$3,
     list: list$3,
     options: options$3
+};
+
+var path$4 = './images/interface/';
+var name$4 = '${name}';
+var list$4 = [];
+var options$4 = mergeOptions(path$4, name$4, list$4, {});
+var group = {
+    path: path$4,
+    name: name$4,
+    list: list$4,
+    options: options$4
 };
 
 var config = {
@@ -25518,8 +25478,30 @@ var config = {
         Menu: menu,
         Bullet: zombie,
         Plant: plant,
-        Zombie: zombie$1
+        Zombie: zombie$1,
+        Group: group
     }
+};
+
+var execHook = function (source, hook) {
+    var rest = [];
+    for (var _i = 2; _i < arguments.length; _i++) {
+        rest[_i - 2] = arguments[_i];
+    }
+    return __awaiter(void 0, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    source.state = hook;
+                    if (!(typeof source[hook] === 'function')) return [3 /*break*/, 2];
+                    return [4 /*yield*/, source[hook].apply(source, rest)];
+                case 1:
+                    _a.sent();
+                    _a.label = 2;
+                case 2: return [2 /*return*/];
+            }
+        });
+    });
 };
 
 var Core = function (container) { return __awaiter(void 0, void 0, void 0, function () {
