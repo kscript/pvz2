@@ -54,6 +54,11 @@ export default class Scene {
   async mount() {
     await this.task.init('mount')
   }
+  async beforePlay() {
+    await this.selectAfter()
+    this.clearCanvas()
+    this.clearMounted()
+  }
   async play() {
     const com = await this.getCom('background1.jpg')
     com.init()
@@ -197,9 +202,6 @@ export default class Scene {
   }
   async selectMenu(index: number) {
     this.mod = index
-    await this.selectAfter()
-    this.clearCanvas()
-    this.clearMounted()
     await this.task.resolve('mount')
   }
   async selectAfter() {

@@ -9,6 +9,7 @@ export const Core = async (container: HTMLCanvasElement) => {
   await execHook(scene, 'beforeInit')
   await execHook(scene, 'init')
   await execHook(scene, 'mount')
+  await execHook(scene, 'beforePlay')
   await execHook(scene, 'play')
   return scene
 }
