@@ -24340,7 +24340,9 @@ var Scene = /** @class */ (function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.loadResource()];
+                    case 0:
+                        this.toggleMusic();
+                        return [4 /*yield*/, this.loadResource()];
                     case 1:
                         _a.sent();
                         return [4 /*yield*/, this.addEvents()
@@ -24353,7 +24355,6 @@ var Scene = /** @class */ (function () {
                     case 3:
                         // 需要等待用户点击开始
                         _a.sent();
-                        this.toggleMusic();
                         this.clearCanvas();
                         this.clearMounted();
                         return [4 /*yield*/, this.setBackground()];
@@ -24402,14 +24403,14 @@ var Scene = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.getCom('background1.jpg')];
+                    case 0: return [4 /*yield*/, this.getCom('background1unsodded.jpg')];
                     case 1:
                         com = _a.sent();
                         com.init();
-                        imageData = offlineCanvas.getImageData(com.img, com.img.width, this.config.height);
+                        imageData = offlineCanvas.getImageData(com.img, com.width, this.config.height);
                         return [4 /*yield*/, this.wobble({
-                                start: .05,
-                                left: 0,
+                                start: 0,
+                                left: .08,
                                 right: .14,
                                 change: .005,
                                 time: 50
@@ -24674,17 +24675,21 @@ var Scene = /** @class */ (function () {
         var start = option.start, change = option.change, left = option.left, right = option.right, time = option.time, rest = __rest(option, ["start", "change", "left", "right", "time"]);
         var oldStart = start;
         var restore = false;
+        var count = start > left ? 3 : 2;
         return new Promise(function (resolve) {
             var paly = function () {
+                if (!count) {
+                    return resolve();
+                }
                 start += change;
                 if (change > 0) {
                     // 正向运动完毕
                     if (start > right) {
                         change *= -1;
+                        count--;
                         // 复位完毕
                     }
                     else if (restore && start > oldStart) {
-                        start = oldStart;
                         return resolve();
                     }
                 }
@@ -24692,6 +24697,7 @@ var Scene = /** @class */ (function () {
                     // 反向运动完毕
                     if (start < left) {
                         change *= -1;
+                        count--;
                         restore = true;
                     }
                 }
@@ -24927,6 +24933,7 @@ var list = [
     'popcap_logo.png',
     // loading
     'SodRollCap.png',
+    'SodRoll.png',
     'LoadBar.png',
     'ZombieHand.png',
     'Tombstone_mounds.png'
@@ -25026,8 +25033,8 @@ var options = mergeOptions({
                 var iw, ih, sw, sh;
                 var _this = this;
                 return __generator(this, function (_a) {
-                    iw = this.img.width;
-                    ih = this.img.height;
+                    iw = this.width;
+                    ih = this.height;
                     sw = this.scene.config.width;
                     sh = this.scene.config.height;
                     return [2 /*return*/, new Promise(function (resolve) {
@@ -25117,7 +25124,7 @@ var options = mergeOptions({
             var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c;
             this.x = x + c * this.col;
             this.y = y + r * this.row;
-            this.context.drawImage(this.img, this.x, this.y, this.img.width * this.scaleX, this.img.height * this.scaleY);
+            this.context.drawImage(this.img, this.x, this.y, this.width * this.scaleX, this.height * this.scaleY);
         }
     },
     // 花园
@@ -25142,7 +25149,7 @@ var options = mergeOptions({
             var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c;
             this.x = x + c * this.col;
             this.y = y + r * this.row;
-            this.context.drawImage(this.img, this.x, this.y, this.img.width, this.img.height);
+            this.context.drawImage(this.img, this.x, this.y, this.width, this.height);
         }
     },
     // 图鉴
@@ -25167,7 +25174,7 @@ var options = mergeOptions({
             var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c;
             this.x = x + c * this.col;
             this.y = y + r * this.row;
-            this.context.drawImage(this.img, this.x, this.y, this.img.width, this.img.height);
+            this.context.drawImage(this.img, this.x, this.y, this.width, this.height);
         }
     },
     // 冒险
@@ -25175,7 +25182,7 @@ var options = mergeOptions({
         hitAble: true,
         col: 0,
         row: 0,
-        scaleX: 1.3,
+        scaleX: 1.2,
         scaleY: .9,
         ctype: 'mod',
         startX: 0,
@@ -25204,7 +25211,7 @@ var options = mergeOptions({
         hitAble: true,
         col: 0,
         row: 1,
-        scaleX: 1.4,
+        scaleX: 1.3,
         scaleY: .96,
         startX: 0,
         startY: 0,
@@ -25233,7 +25240,7 @@ var options = mergeOptions({
         hitAble: true,
         col: 0,
         row: 2,
-        scaleX: 1.3,
+        scaleX: 1.2,
         scaleY: .9,
         startX: 0,
         startY: 0,
@@ -25263,7 +25270,7 @@ var options = mergeOptions({
         col: 0,
         row: 3,
         // 缩放
-        scaleX: 1.3,
+        scaleX: 1.1,
         scaleY: .8,
         // 图像截取时位移
         startX: 0,
