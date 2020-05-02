@@ -1,5 +1,5 @@
-import { replaceTpl } from '@/utils'
-import Model from '@/com/model';
+import { mergeOptions } from '@/utils/model'
+import Model from '@/com/model'
 
 const path = './images/interface/'
 const name = '${name}'
@@ -49,20 +49,7 @@ const list: string[] = [
   'ZombieHand.png',
   'Tombstone_mounds.png'
 ]
-const mergeOptions = (options: anyObject) => {
-  list.forEach(item => {
-    if (!(options[item] instanceof Object)) {
-      options[item] = {}
-    }
-    options[item].image = Object.assign({
-      path,
-      name: replaceTpl(name, {
-        name: item
-      })
-    }, options[item].image instanceof Object ? options[item].image : {})
-  })
-  return options
-}
+
 const conf: anyObject = {
   // 菜单项起始位置坐标与场景中尺寸的比例
   // 游戏模式选项
@@ -136,7 +123,7 @@ const menuTrigger = (com: Model, type: string, event?: Event) => {
   }
   com.draw()
 }
-const options: anyObject = mergeOptions({
+const options: anyObject = mergeOptions(path, name, list, {
   'popcap_logo.png': {
     async draw() {
       let iw = this.width

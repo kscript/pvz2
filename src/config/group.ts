@@ -1,17 +1,14 @@
 import { mergeOptions } from '@/utils/model'
 
-const path = './images/Plants/'
-const name = '${name}.gif'
+const path = './images/interface/'
+const name = '${name}'
 const list: string[] = [
-  'PB01',
-  'PB10',
-  'PB-10'
 ]
 const options: anyObject = mergeOptions(path, name, list, {})
-const zombie = {
+const group = {
   path,
   name,
   list,
   options
 }
-export default zombie
+export default group

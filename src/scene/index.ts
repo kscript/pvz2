@@ -1,6 +1,7 @@
 import Com from '@/com'
 import Model from '@/com/model'
-import { Task, hitTest, isCollide, drawHitArea } from '@/utils'
+import { Task } from '@/utils/task'
+import { hitTest, isCollide, drawHitArea } from '@/utils/hit'
 import { GifCanvas, offlineCanvas } from '@/utils/canvas'
 const defaultConfig = {
   width: 1366,
@@ -86,9 +87,11 @@ export default class Scene {
 
   async beforeGame() {
     // TODO 动画, 重置一些配置
+
+
   }
   async statrGame() {
-    
+
   }
   async afterGame() {
 

@@ -1,19 +1,11 @@
 import * as path from 'path'
-import { GifCanvas } from '@/utils/canvas'
 import Scene from '@/scene'
-import { drawHitArea } from '@/utils'
+import { GifCanvas } from '@/utils/canvas'
+import { drawHitArea } from '@/utils/hit'
 export default class Model {
   // 坐标
   public x: number = 0
   public y: number = 0
-
-  // 剪切图像
-  // public sx: number = 0
-  // public sy: number = 0
-  // public sw: number = 0
-  // public sh: number = 0
-  // public dw: number = 0
-  // public dh: number = 0
 
   // 偏移量
   public ox: number = 0
@@ -101,6 +93,7 @@ export default class Model {
   public startX: number = 0
   public startY: number = 0
   public personal: anyObject = {}
+  public data: anyObject = {}
   constructor() {}
   public async init(stateChange?: (type: string, url: string, index: number, gif: GifCanvas) => void) {
     if (this.state > 0) { return }
