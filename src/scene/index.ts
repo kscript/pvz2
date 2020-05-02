@@ -38,11 +38,11 @@ export default class Scene {
 
   }
   async init() {
+    this.toggleMusic()
     await this.loadResource()
     await this.addEvents()
     // 需要等待用户点击开始
     await this.task.init('init')
-    this.toggleMusic()
     this.clearCanvas()
     this.clearMounted()
     await this.setBackground()
@@ -60,21 +60,21 @@ export default class Scene {
     this.clearMounted()
   }
   async play() {
-    const com = await this.getCom('background1.jpg')
+    const com = await this.getCom('background1unsodded.jpg')
     com.init()
-    const imageData = offlineCanvas.getImageData(com.img, com.img.width, this.config.height)
+    const imageData = offlineCanvas.getImageData(com.img, com.width, this.config.height)
     await this.wobble({
-      start: .05,
-      left: 0,
+      start: 0,
+      left: .08,
       right: .14,
       change: .005,
       time: 50
     }, ({
       start
     }: anyObject) => {
-        this.clearCanvas()
-        this.context.putImageData(imageData, 0 - start * this.config.width, 0)
-      })
+      this.clearCanvas()
+      this.context.putImageData(imageData, 0 - start * this.config.width, 0)
+    })
   }
 
   async loadResource() {
@@ -230,22 +230,27 @@ export default class Scene {
     let { start, change, left, right, time, ...rest } = option
     const oldStart = start
     let restore = false
+    let count = start > left ? 3 : 2
     return new Promise(resolve => {
       const paly = () => {
+        if (!count) {
+          return resolve()
+        }
         start += change
         if (change > 0) {
           // 正向运动完毕
           if (start > right) {
             change *= -1
+            count--
             // 复位完毕
           } else if (restore && start > oldStart) {
-            start = oldStart
             return resolve()
           }
         } else {
           // 反向运动完毕
           if (start < left) {
             change *= -1
+            count--
             restore = true
           }
         }

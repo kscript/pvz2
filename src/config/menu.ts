@@ -43,7 +43,9 @@ const list: string[] = [
   'popcap_logo.png',
   // loading
   'SodRollCap.png',
+  'SodRoll.png',
   'LoadBar.png',
+  
   'ZombieHand.png',
   'Tombstone_mounds.png'
 ]
@@ -137,8 +139,8 @@ const menuTrigger = (com: Model, type: string, event?: Event) => {
 const options: anyObject = mergeOptions({
   'popcap_logo.png': {
     async draw() {
-      let iw = this.img.width
-      let ih = this.img.height
+      let iw = this.width
+      let ih = this.height
       let sw = this.scene.config.width
       let sh = this.scene.config.height
       return new Promise(resolve => {
@@ -223,7 +225,7 @@ const options: anyObject = mergeOptions({
       let { x, y, r, c, scene } = getProps(this)
       this.x = x  + c * this.col
       this.y = y + r * this.row
-      this.context.drawImage(this.img, this.x, this.y, this.img.width * this.scaleX, this.img.height * this.scaleY)
+      this.context.drawImage(this.img, this.x, this.y, this.width * this.scaleX, this.height * this.scaleY)
     }
   },
   // 花园
@@ -247,7 +249,7 @@ const options: anyObject = mergeOptions({
       let { x, y, r, c, scene } = getProps(this)
       this.x = x  + c * this.col
       this.y = y + r * this.row
-      this.context.drawImage(this.img, this.x, this.y, this.img.width, this.img.height)
+      this.context.drawImage(this.img, this.x, this.y, this.width, this.height)
     }
   },
   // 图鉴
@@ -271,7 +273,7 @@ const options: anyObject = mergeOptions({
       let { x, y, r, c, scene } = getProps(this)
       this.x = x  + c * this.col
       this.y = y + r * this.row
-      this.context.drawImage(this.img, this.x, this.y, this.img.width, this.img.height)
+      this.context.drawImage(this.img, this.x, this.y, this.width, this.height)
     }
   },
   // 冒险
@@ -279,7 +281,7 @@ const options: anyObject = mergeOptions({
     hitAble: true,
     col: 0,
     row: 0,
-    scaleX: 1.3,
+    scaleX: 1.2,
     scaleY: .9,
     ctype: 'mod',
     startX: 0,
@@ -308,7 +310,7 @@ const options: anyObject = mergeOptions({
     hitAble: true,
     col: 0,
     row: 1,
-    scaleX: 1.4,
+    scaleX: 1.3,
     scaleY: .96,
     startX: 0,
     startY: 0,
@@ -337,7 +339,7 @@ const options: anyObject = mergeOptions({
     hitAble: true,
     col: 0,
     row: 2,
-    scaleX: 1.3,
+    scaleX: 1.2,
     scaleY: .9,
     startX: 0,
     startY: 0,
@@ -367,7 +369,7 @@ const options: anyObject = mergeOptions({
     col: 0,
     row: 3,
     // 缩放
-    scaleX: 1.3,
+    scaleX: 1.1,
     scaleY: .8,
     // 图像截取时位移
     startX: 0,
