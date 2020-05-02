@@ -112,7 +112,7 @@ const menuTrigger = (com: Model, type: string, event?: Event) => {
       if (menus.selected) {
         menus.selected.trigger('leave')
       }
-      com.scene.selectMenu(index)
+      com.scene.resolveMount(index)
     } else {
       menus.index = com.index
       if (menus.selected) {
@@ -198,7 +198,7 @@ const options: anyObject = mergeOptions({
     },
     trigger(type: string, event: Event) {
       if (type === 'click') {
-        this.scene.startGame()
+        this.scene.resolveInit()
       } else {
         this.scene.container.style.cursor = type === 'leave' ? 'auto' : 'pointer'
       }

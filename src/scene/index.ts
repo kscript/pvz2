@@ -43,16 +43,20 @@ export default class Scene {
     await this.addEvents()
     // 需要等待用户点击开始
     await this.task.init('init')
+  }
+  resolveInit() {
+    this.task.resolve('init')
+  }
+  async mount() {
     this.clearCanvas()
     this.clearMounted()
     await this.setBackground()
     await this.loadMenu()
-  }
-  startGame() {
-    this.task.resolve('init')
-  }
-  async mount() {
     await this.task.init('mount')
+  }
+  async resolveMount(index: number) {
+    this.mod = index
+    await this.task.resolve('mount')
   }
   async beforePlay() {
     await this.selectAfter()
@@ -75,6 +79,19 @@ export default class Scene {
       this.clearCanvas()
       this.context.putImageData(imageData, 0 - start * this.config.width, 0)
     })
+    await this.beforeGame()
+    await this.statrGame()
+    await this.afterGame()
+  }
+
+  async beforeGame() {
+    // TODO 动画, 重置一些配置
+  }
+  async statrGame() {
+    
+  }
+  async afterGame() {
+
   }
 
   async loadResource() {
@@ -199,10 +216,6 @@ export default class Scene {
       // com.drawHitArea()
       return com
     })
-  }
-  async selectMenu(index: number) {
-    this.mod = index
-    await this.task.resolve('mount')
   }
   async selectAfter() {
     const sound = this.toggleMusic('./sound/evillaugh.mp3')
