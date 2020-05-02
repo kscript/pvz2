@@ -24355,27 +24355,42 @@ var Scene = /** @class */ (function () {
                     case 3:
                         // 需要等待用户点击开始
                         _a.sent();
-                        this.clearCanvas();
-                        this.clearMounted();
-                        return [4 /*yield*/, this.setBackground()];
-                    case 4:
-                        _a.sent();
-                        return [4 /*yield*/, this.loadMenu()];
-                    case 5:
-                        _a.sent();
                         return [2 /*return*/];
                 }
             });
         });
     };
-    Scene.prototype.startGame = function () {
+    Scene.prototype.resolveInit = function () {
         this.task.resolve('init');
     };
     Scene.prototype.mount = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.task.init('mount')];
+                    case 0:
+                        this.clearCanvas();
+                        this.clearMounted();
+                        return [4 /*yield*/, this.setBackground()];
+                    case 1:
+                        _a.sent();
+                        return [4 /*yield*/, this.loadMenu()];
+                    case 2:
+                        _a.sent();
+                        return [4 /*yield*/, this.task.init('mount')];
+                    case 3:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    Scene.prototype.resolveMount = function (index) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        this.mod = index;
+                        return [4 /*yield*/, this.task.resolve('mount')];
                     case 1:
                         _a.sent();
                         return [2 /*return*/];
@@ -24421,8 +24436,38 @@ var Scene = /** @class */ (function () {
                             })];
                     case 2:
                         _a.sent();
+                        return [4 /*yield*/, this.beforeGame()];
+                    case 3:
+                        _a.sent();
+                        return [4 /*yield*/, this.statrGame()];
+                    case 4:
+                        _a.sent();
+                        return [4 /*yield*/, this.afterGame()];
+                    case 5:
+                        _a.sent();
                         return [2 /*return*/];
                 }
+            });
+        });
+    };
+    Scene.prototype.beforeGame = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/];
+            });
+        });
+    };
+    Scene.prototype.statrGame = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/];
+            });
+        });
+    };
+    Scene.prototype.afterGame = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/];
             });
         });
     };
@@ -24609,20 +24654,6 @@ var Scene = /** @class */ (function () {
                     return com;
                 });
                 return [2 /*return*/];
-            });
-        });
-    };
-    Scene.prototype.selectMenu = function (index) {
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        this.mod = index;
-                        return [4 /*yield*/, this.task.resolve('mount')];
-                    case 1:
-                        _a.sent();
-                        return [2 /*return*/];
-                }
             });
         });
     };
@@ -25001,7 +25032,7 @@ var menuTrigger = function (com, type, event) {
             if (menus.selected) {
                 menus.selected.trigger('leave');
             }
-            com.scene.selectMenu(index);
+            com.scene.resolveMount(index);
         }
         else {
             menus.index = com.index;
@@ -25095,7 +25126,7 @@ var options = mergeOptions({
         },
         trigger: function (type, event) {
             if (type === 'click') {
-                this.scene.startGame();
+                this.scene.resolveInit();
             }
             else {
                 this.scene.container.style.cursor = type === 'leave' ? 'auto' : 'pointer';
