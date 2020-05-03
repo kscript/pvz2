@@ -24015,6 +24015,9 @@ var Model = /** @class */ (function () {
         this.startY = 0;
         this.personal = {};
         this.data = {};
+        this.group = [];
+        this.imageData = void 0;
+        this.offlineCanvas = offlineCanvas;
     }
     Model.prototype.init = function (stateChange) {
         return __awaiter(this, void 0, void 0, function () {
@@ -24067,6 +24070,12 @@ var Model = /** @class */ (function () {
             });
         });
     };
+    Model.prototype.createImageData = function (img) {
+        if (img || this.img) {
+            return this.imageData = offlineCanvas.getImageData(img || this.img, this.width, this.height);
+        }
+        return new ImageData(1, 1);
+    };
     Model.prototype.draw = function () {
         var rest = [];
         for (var _i = 0; _i < arguments.length; _i++) {
@@ -24074,8 +24083,49 @@ var Model = /** @class */ (function () {
         }
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                this.img && this.scene.context.drawImage(this.img, this.x, this.y, this.width, this.height);
+                if (this.img) {
+                    // this.scene.context.putImageData(this.createImageData(), this.x, this.y)
+                    this.img && this.scene.context.drawImage(this.img, this.x, this.y, this.width, this.height);
+                }
                 return [2 /*return*/];
+            });
+        });
+    };
+    Model.prototype.drawGroup = function () {
+        var rest = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            rest[_i] = arguments[_i];
+        }
+        return __awaiter(this, void 0, void 0, function () {
+            var res;
+            var _a;
+            var _this = this;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0: return [4 /*yield*/, this.draw.apply(this, rest)];
+                    case 1:
+                        res = _b.sent();
+                        this.group.reduce(function (prev, curr) { return __awaiter(_this, void 0, void 0, function () {
+                            var data, res;
+                            var _a;
+                            return __generator(this, function (_b) {
+                                switch (_b.label) {
+                                    case 0: return [4 /*yield*/, prev];
+                                    case 1:
+                                        data = _b.sent();
+                                        return [4 /*yield*/, curr.draw(data)];
+                                    case 2:
+                                        res = _b.sent();
+                                        return [2 /*return*/, Object.assign(data, (_a = {},
+                                                _a[curr.name] = res !== void 0 ? res : curr,
+                                                _a))];
+                                }
+                            });
+                        }); }, Promise.resolve((_a = {},
+                            _a[this.name] = res !== void 0 ? res : this,
+                            _a)));
+                        return [2 /*return*/];
+                }
             });
         });
     };
@@ -24113,9 +24163,9 @@ var Model = /** @class */ (function () {
                     case 2:
                         img = _a;
                         _b = this, x = _b.x, y = _b.y, scaleX = _b.scaleX, scaleY = _b.scaleY, tilt1 = _b.tilt1, tilt2 = _b.tilt2, tilt3 = _b.tilt3, tilt4 = _b.tilt4, tiltX_1 = _b.tiltX, tiltY_1 = _b.tiltY, tiltW = _b.tiltW, tiltH = _b.tiltH;
-                        if (!this.hitArea.length) {
-                            this.width = img.width;
-                            this.height = img.height;
+                        if (!refresh) {
+                            this.width = img.width * this.scene.config.scaleX;
+                            this.height = img.height * this.scene.config.scaleY;
                         }
                         if ([tilt1, tilt2, tilt3, tilt4].some(function (item) { return item !== 0; }) || tiltX_1 !== 1 || tiltY_1 !== 1) {
                             strength_1 = new Array(8);
@@ -24286,8 +24336,8 @@ var Task = /** @class */ (function () {
 }());
 
 var defaultConfig = {
-    width: 1366,
-    height: 720
+    width: 1200,
+    height: 700
 };
 var Scene = /** @class */ (function () {
     function Scene(container, config) {
@@ -24312,6 +24362,8 @@ var Scene = /** @class */ (function () {
         }
         this.container.width = config.width;
         this.container.height = config.height;
+        config.scaleX = config.width / defaultConfig.width;
+        config.scaleY = config.height / defaultConfig.height;
         this.context = container.getContext('2d');
     }
     Scene.prototype.beforeInit = function () {
@@ -24437,7 +24489,13 @@ var Scene = /** @class */ (function () {
     };
     Scene.prototype.beforeGame = function () {
         return __awaiter(this, void 0, void 0, function () {
+            var header, body, footer;
             return __generator(this, function (_a) {
+                header = this.getCom('bgHeader.jpg');
+                body = this.getCom('bgBody.jpg');
+                footer = this.getCom('bgFooter.jpg');
+                header.group.push(body, footer);
+                header.drawGroup();
                 return [2 /*return*/];
             });
         });
@@ -24993,6 +25051,10 @@ var conf = {
         sr: 0
     }
 };
+var menus = {
+    selected: null,
+    index: 0
+};
 var getProps = function (com) {
     var type = com.ctype;
     var scene = com.scene;
@@ -25005,9 +25067,11 @@ var getProps = function (com) {
     var r = h * info.sr;
     return { scene: scene, w: w, h: h, info: info, x: x, y: y, r: r, c: c };
 };
-var menus = {
-    selected: null,
-    index: 0
+var getSize = function (com, width, height) {
+    return {
+        vw: width / com.scene.config.scaleX,
+        vh: height / com.scene.config.scaleY
+    };
 };
 var menuTrigger = function (com, type, event) {
     if (com.scene.state !== 'mount' || menus.index === com.index) {
@@ -25015,7 +25079,7 @@ var menuTrigger = function (com, type, event) {
     }
     if (type === 'click') {
         com.scene.container.style.cursor = 'pointer';
-        com.startY = .5;
+        com.startY = 1;
         com.draw();
         if (com.name === 'SelectorScreenStartAdventur.png') {
             var index = menus.index;
@@ -25036,7 +25100,7 @@ var menuTrigger = function (com, type, event) {
     }
     if (type === 'hover') {
         com.scene.container.style.cursor = 'pointer';
-        com.startY = .5;
+        com.startY = 1;
         com.scene.stopMuisc('./sound/mouseclick.wav');
         var sound = com.scene.toggleMusic('./sound/mouseclick.wav', false, true);
         sound.loop = false;
@@ -25095,7 +25159,7 @@ var options = mergeOptions(path, name, list, {
             this.context.save();
             this.context.translate(x + lw - LoadBar.width / 2 - 10, y - LoadBar.height / 2 + 10);
             this.context.rotate(rate * 10.8 * Math.PI / 180);
-            this.context.drawImage(this.img, -this.width / 2, -this.height / 2);
+            this.context.drawImage(this.img, -this.width / this.scene.config.scaleX / 2, -this.height / this.scene.config.scaleY / 2);
             this.context.restore();
         }
     },
@@ -25110,9 +25174,11 @@ var options = mergeOptions(path, name, list, {
             // 如果需要进行碰撞检测的话, 每次画之前要设置好左上角
             this.x = x - this.width / 2;
             this.y = y - this.height / 2;
-            this.context.drawImage(this.img, 0, 0, lw, this.height, x - this.width / 2, y - this.height / 2, lw, this.height);
+            var vw = lw / this.scene.config.scaleX;
+            var vh = this.height / this.scene.config.scaleY;
+            this.context.drawImage(this.img, 0, 0, vw, vh, x - this.width / 2, y - this.height / 2, lw, this.height);
             this.context.globalAlpha = .4;
-            this.context.drawImage(this.img, x - this.width / 2, y - this.height / 2);
+            this.context.drawImage(this.img, x - this.width / 2, y - this.height / 2, this.width, this.height);
             this.context.globalAlpha = 1;
         },
         trigger: function (type, event) {
@@ -25220,12 +25286,14 @@ var options = mergeOptions(path, name, list, {
         },
         draw: function () {
             var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c;
-            var _b = this, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY;
-            var _c = this.img, width = _c.width, height = _c.height;
+            var _b = this, width = _b.width, height = _b.height, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY;
             this.x = x + c * this.col;
             this.y = y + r * this.row;
-            this.height = height / 2;
-            this.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2);
+            if (!this.personal.newHeight) {
+                this.personal.newHeight = this.height = height = height / 2;
+            }
+            var _c = getSize(this, width, height), vw = _c.vw, vh = _c.vh;
+            this.context.drawImage(this.img, startX * vw, startY * vh, vw, vh, this.x, this.y, width * scaleX, height * scaleY);
         }
     },
     // 解密
@@ -25249,12 +25317,14 @@ var options = mergeOptions(path, name, list, {
         },
         draw: function () {
             var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c;
-            var _b = this, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY;
-            var _c = this.img, width = _c.width, height = _c.height;
+            var _b = this, width = _b.width, height = _b.height, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY;
             this.x = x + c * this.col;
             this.y = y + r * this.row;
-            this.height = height / 2;
-            this.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2);
+            if (!this.personal.newHeight) {
+                this.personal.newHeight = this.height = height = height / 2;
+            }
+            var _c = getSize(this, width, height), vw = _c.vw, vh = _c.vh;
+            this.context.drawImage(this.img, startX * vw, startY * vh, vw, vh, this.x, this.y, width * scaleX, height * scaleY);
         }
     },
     // 小游戏
@@ -25278,12 +25348,14 @@ var options = mergeOptions(path, name, list, {
         },
         draw: function () {
             var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c;
-            var _b = this, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY;
-            var _c = this.img, width = _c.width, height = _c.height;
+            var _b = this, width = _b.width, height = _b.height, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY;
             this.x = x + c * this.col;
             this.y = y + r * this.row;
-            this.height = height / 2;
-            this.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2);
+            if (!this.personal.newHeight) {
+                this.personal.newHeight = this.height = height = height / 2;
+            }
+            var _c = getSize(this, width, height), vw = _c.vw, vh = _c.vh;
+            this.context.drawImage(this.img, startX * vw, startY * vh, vw, vh, this.x, this.y, width * scaleX, height * scaleY);
         }
     },
     // 开始游戏
@@ -25310,12 +25382,14 @@ var options = mergeOptions(path, name, list, {
         },
         draw: function () {
             var _a = getProps(this), x = _a.x, y = _a.y, r = _a.r, c = _a.c;
-            var _b = this, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY;
-            var _c = this.img, width = _c.width, height = _c.height;
+            var _b = this, width = _b.width, height = _b.height, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY;
             this.x = x + c * this.col;
             this.y = y + r * this.row * 1.05;
-            this.height = height / 2;
-            this.context.drawImage(this.img, startX * width, startY * height, width, height / 2, this.x, this.y, width * scaleX, height * scaleY / 2);
+            if (!this.personal.newHeight) {
+                this.personal.newHeight = this.height = height /= 2;
+            }
+            var _c = getSize(this, width, height), vw = _c.vw, vh = _c.vh;
+            this.context.drawImage(this.img, startX * vw, startY * vh, vw, vh, this.x, this.y, width * scaleX, height * scaleY);
         }
     },
     'ZombieHand.png': {
@@ -25357,7 +25431,8 @@ var options = mergeOptions(path, name, list, {
             startY = this.personal.currY % this.personal.lenY;
             width = width / this.personal.lenX;
             height = height / this.personal.lenY;
-            this.context.drawImage(this.img, startX * width, startY * height, width, height, this.x, this.y, width * scaleX, height * scaleY);
+            var _c = getSize(this, width, height), vw = _c.vw, vh = _c.vh;
+            this.context.drawImage(this.img, startX * vw, startY * vh, vw, vh, this.x, this.y, width * scaleX, height * scaleY);
         }
     }
 });
@@ -25461,8 +25536,44 @@ var zombie$1 = {
 
 var path$4 = './images/interface/';
 var name$4 = '${name}';
-var list$4 = [];
-var options$4 = mergeOptions(path$4, name$4, list$4, {});
+var list$4 = [
+    'bgHeader.jpg',
+    'bgBody.jpg',
+    'bgFooter.jpg'
+];
+var options$4 = mergeOptions(path$4, name$4, list$4, {
+    'bgHeader.jpg': {
+        personal: {},
+        draw: function () {
+            var _a = this, img = _a.img, width = _a.width, height = _a.height;
+            var x = this.scene.config.height * .01;
+            var y = x;
+            img && this.scene.context.drawImage(img, x, y, width, height);
+            return { x: x, y: y, width: width, height: height };
+        }
+    },
+    'bgBody.jpg': {
+        draw: function (data) {
+            var header = data["bgHeader.jpg"];
+            var x = header.x;
+            var y = header.y + header.height;
+            var _a = this, img = _a.img, width = _a.width, height = _a.height;
+            height = this.scene.config.height * .025;
+            img && this.scene.context.drawImage(img, x, y, width, height);
+            return { x: x, y: y, width: width, height: height };
+        }
+    },
+    'bgFooter.jpg': {
+        draw: function (data) {
+            var body = data["bgBody.jpg"];
+            var x = body.x;
+            var y = body.y + body.height;
+            var _a = this, img = _a.img, width = _a.width, height = _a.height;
+            img && this.scene.context.drawImage(img, x, y, width, height);
+            return { x: x, y: y, width: width, height: height };
+        }
+    },
+});
 var group = {
     path: path$4,
     name: name$4,
@@ -25471,9 +25582,9 @@ var group = {
 };
 
 var config = {
-    // size: 'fullScreen',
-    width: 1200,
-    height: 700,
+    size: 'fullScreen',
+    // width: 1200,
+    // height: 700,
     coms: {
         Menu: menu,
         Bullet: zombie,
