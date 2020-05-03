@@ -24018,6 +24018,7 @@ var Model = /** @class */ (function () {
         this.group = [];
         this.imageData = void 0;
         this.offlineCanvas = offlineCanvas;
+        this.coms = [];
     }
     Model.prototype.init = function (stateChange) {
         return __awaiter(this, void 0, void 0, function () {
@@ -24250,6 +24251,7 @@ var Plant = /** @class */ (function (_super) {
         if (options === void 0) { options = {}; }
         var _this = _super.call(this) || this;
         _this.options = {};
+        _this.level = 1;
         _this.name = name;
         _this.type = 'plant';
         _this.options = options;
@@ -24267,6 +24269,7 @@ var Zombie = /** @class */ (function (_super) {
         if (options === void 0) { options = {}; }
         var _this = _super.call(this) || this;
         _this.options = {};
+        _this.level = 1;
         _this.name = name;
         _this.type = 'zombie';
         _this.options = options;
@@ -24354,6 +24357,7 @@ var Scene = /** @class */ (function () {
         this.sounds = {};
         this.imgDatas = {};
         this.offlineCanvas = offlineCanvas;
+        this.cardBar = void 0;
         this.container = container;
         config = this.config = Object.assign({}, defaultConfig, config);
         if (config.size === 'fullScreen') {
@@ -24455,7 +24459,7 @@ var Scene = /** @class */ (function () {
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.getCom('background1unsodded.jpg')];
+                    case 0: return [4 /*yield*/, this.getCom('background1unsodded_1.jpg')];
                     case 1:
                         com = _a.sent();
                         com.init();
@@ -24473,15 +24477,6 @@ var Scene = /** @class */ (function () {
                             })];
                     case 2:
                         _a.sent();
-                        return [4 /*yield*/, this.beforeGame()];
-                    case 3:
-                        _a.sent();
-                        return [4 /*yield*/, this.statrGame()];
-                    case 4:
-                        _a.sent();
-                        return [4 /*yield*/, this.afterGame()];
-                    case 5:
-                        _a.sent();
                         return [2 /*return*/];
                 }
             });
@@ -24489,14 +24484,22 @@ var Scene = /** @class */ (function () {
     };
     Scene.prototype.beforeGame = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var header, body, footer;
             return __generator(this, function (_a) {
-                header = this.getCom('bgHeader.jpg');
-                body = this.getCom('bgBody.jpg');
-                footer = this.getCom('bgFooter.jpg');
-                header.group.push(body, footer);
-                header.drawGroup();
-                return [2 /*return*/];
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.mountGameZombie()];
+                    case 1:
+                        _a.sent();
+                        return [4 /*yield*/, this.mountCardBar()];
+                    case 2:
+                        _a.sent();
+                        return [4 /*yield*/, this.selectGameCard()];
+                    case 3:
+                        _a.sent();
+                        return [4 /*yield*/, this.mountGameCard()];
+                    case 4:
+                        _a.sent();
+                        return [2 /*return*/];
+                }
             });
         });
     };
@@ -24508,6 +24511,45 @@ var Scene = /** @class */ (function () {
         });
     };
     Scene.prototype.afterGame = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                return [2 /*return*/];
+            });
+        });
+    };
+    Scene.prototype.mountCardBar = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var header, body, footer;
+            return __generator(this, function (_a) {
+                header = this.getCom('bgHeader.jpg');
+                body = this.getCom('bgBody.jpg');
+                footer = this.getCom('bgFooter.jpg');
+                header.group.push(body, footer);
+                return [2 /*return*/, this.cardBar = header];
+            });
+        });
+    };
+    Scene.prototype.mountGameZombie = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var coms;
+            var _this = this;
+            return __generator(this, function (_a) {
+                coms = this.coms.filter(function (com) {
+                    return com.type === 'zombie' && com.level < _this.config.level.default;
+                });
+                return [2 /*return*/];
+            });
+        });
+    };
+    Scene.prototype.selectGameCard = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                this.cardBar && this.cardBar.drawGroup();
+                return [2 /*return*/];
+            });
+        });
+    };
+    Scene.prototype.mountGameCard = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 return [2 /*return*/];
@@ -24985,6 +25027,12 @@ var mergeOptions = function (path, name, list, options, data) {
     });
     return options;
 };
+var getSize = function (com, width, height) {
+    return {
+        vw: width / com.scene.config.scaleX,
+        vh: height / com.scene.config.scaleY
+    };
+};
 
 var path = './images/interface/';
 var name = '${name}';
@@ -25066,12 +25114,6 @@ var getProps = function (com) {
     var c = w * info.sc;
     var r = h * info.sr;
     return { scene: scene, w: w, h: h, info: info, x: x, y: y, r: r, c: c };
-};
-var getSize = function (com, width, height) {
-    return {
-        vw: width / com.scene.config.scaleX,
-        vh: height / com.scene.config.scaleY
-    };
 };
 var menuTrigger = function (com, type, event) {
     if (com.scene.state !== 'mount' || menus.index === com.index) {
@@ -25548,8 +25590,9 @@ var options$4 = mergeOptions(path$4, name$4, list$4, {
             var _a = this, img = _a.img, width = _a.width, height = _a.height;
             var x = this.scene.config.height * .01;
             var y = x;
-            img && this.scene.context.drawImage(img, x, y, width, height);
-            return { x: x, y: y, width: width, height: height };
+            var _b = getSize(this, width, height), vw = _b.vw, vh = _b.vh;
+            img && this.scene.context.drawImage(img, x, y, vw, vh);
+            return { x: x, y: y, width: vw, height: vh };
         }
     },
     'bgBody.jpg': {
@@ -25558,9 +25601,10 @@ var options$4 = mergeOptions(path$4, name$4, list$4, {
             var x = header.x;
             var y = header.y + header.height;
             var _a = this, img = _a.img, width = _a.width, height = _a.height;
-            height = this.scene.config.height * .025;
-            img && this.scene.context.drawImage(img, x, y, width, height);
-            return { x: x, y: y, width: width, height: height };
+            this.height = height = (width - 1) / 10 - header.height;
+            var _b = getSize(this, width, height), vw = _b.vw, vh = _b.vh;
+            img && this.scene.context.drawImage(img, x, y, vw, vh);
+            return { x: x, y: y, width: vw, height: vh };
         }
     },
     'bgFooter.jpg': {
@@ -25569,8 +25613,9 @@ var options$4 = mergeOptions(path$4, name$4, list$4, {
             var x = body.x;
             var y = body.y + body.height;
             var _a = this, img = _a.img, width = _a.width, height = _a.height;
-            img && this.scene.context.drawImage(img, x, y, width, height);
-            return { x: x, y: y, width: width, height: height };
+            var _b = getSize(this, width, height), vw = _b.vw, vh = _b.vh;
+            img && this.scene.context.drawImage(img, x, y, vw, vh);
+            return { x: x, y: y, width: vw, height: vh };
         }
     },
 });
@@ -25581,10 +25626,16 @@ var group = {
     options: options$4
 };
 
+var level = Number(localStorage.getItem('level') || 1);
+var level$1 = {
+    default: isNaN(level) || level < 1 ? 1 : ~~level,
+};
+
 var config = {
     size: 'fullScreen',
     // width: 1200,
     // height: 700,
+    level: level$1,
     coms: {
         Menu: menu,
         Bullet: zombie,
@@ -25637,6 +25688,18 @@ var Core = function (container) { return __awaiter(void 0, void 0, void 0, funct
                 _a.sent();
                 return [4 /*yield*/, execHook(scene, 'play')];
             case 5:
+                _a.sent();
+                return [4 /*yield*/, execHook(scene, 'beforeGame')];
+            case 6:
+                _a.sent();
+                return [4 /*yield*/, execHook(scene, 'startGame')];
+            case 7:
+                _a.sent();
+                return [4 /*yield*/, execHook(scene, 'afterGame')];
+            case 8:
+                _a.sent();
+                return [4 /*yield*/, execHook(scene, 'afterPlay')];
+            case 9:
                 _a.sent();
                 return [2 /*return*/, scene];
         }
