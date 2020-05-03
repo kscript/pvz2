@@ -5,9 +5,9 @@ import Zombie from './zombie'
 import Group from './group'
 
 export default {
-  // size: 'fullScreen',
-  width: 1200,
-  height: 700,
+  size: 'fullScreen',
+  // width: 1200,
+  // height: 700,
   coms: {
     Menu,
     Bullet,

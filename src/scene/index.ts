@@ -4,8 +4,8 @@ import { Task } from '@/utils/task'
 import { hitTest, isCollide, drawHitArea } from '@/utils/hit'
 import { GifCanvas, offlineCanvas } from '@/utils/canvas'
 const defaultConfig = {
-  width: 1366,
-  height: 720
+  width: 1200,
+  height: 700
 }
 export default class Scene {
   [prop: string]: any
@@ -33,6 +33,8 @@ export default class Scene {
     }
     this.container.width = config.width
     this.container.height = config.height
+    config.scaleX = config.width / defaultConfig.width
+    config.scaleY = config.height / defaultConfig.height
     this.context = <CanvasContextEx>container.getContext('2d')
   }
   async beforeInit() {
@@ -86,9 +88,12 @@ export default class Scene {
   }
 
   async beforeGame() {
+    const header = this.getCom('bgHeader.jpg')
+    const body = this.getCom('bgBody.jpg')
+    const footer = this.getCom('bgFooter.jpg')
+    header.group.push(body, footer)
+    header.drawGroup()
     // TODO 动画, 重置一些配置
-
-
   }
   async statrGame() {
 

@@ -1,6 +1,6 @@
 import * as path from 'path'
 import Scene from '@/scene'
-import { GifCanvas } from '@/utils/canvas'
+import { GifCanvas, offlineCanvas, OfflineCanvas } from '@/utils/canvas'
 import { drawHitArea } from '@/utils/hit'
 export default class Model {
   // 坐标
@@ -94,6 +94,9 @@ export default class Model {
   public startY: number = 0
   public personal: anyObject = {}
   public data: anyObject = {}
+  public group: Model[] = []
+  public imageData: ImageData | void = void 0
+  public offlineCanvas: OfflineCanvas = offlineCanvas
   constructor() {}
   public async init(stateChange?: (type: string, url: string, index: number, gif: GifCanvas) => void) {
     if (this.state > 0) { return }
@@ -120,8 +123,29 @@ export default class Model {
     let gif = this.gif || new GifCanvas(src || path.join(image.path, image.name), this)
     return gif
   }
+  public createImageData(img?: HTMLImageElement) {
+    if (img || this.img) {
+      return this.imageData = offlineCanvas.getImageData(img || this.img, this.width, this.height)
+    }
+    return new ImageData(1, 1)
+  }
   public async draw(...rest: any[]) {
-    this.img && this.scene.context.drawImage(this.img, this.x, this.y, this.width, this.height)
+    if (this.img) {
+      // this.scene.context.putImageData(this.createImageData(), this.x, this.y)
+      this.img && this.scene.context.drawImage(this.img, this.x, this.y, this.width, this.height)
+    }
+  }
+  public async drawGroup(...rest: any[]) {
+    const res = await this.draw(...rest)
+    this.group.reduce(async (prev: anyObject, curr: Model) => {
+      const data = await prev
+      const res = await curr.draw(data)
+      return Object.assign(data, {
+        [curr.name]: res !== void 0 ? res : curr
+      })
+    }, Promise.resolve({
+      [this.name]: res !== void 0 ? res : this
+    }))
   }
   public async animate(...rest: any[]) {}
   public attack(...rest: any[]) {}
@@ -131,9 +155,9 @@ export default class Model {
     if ((!this.hitArea.length || refresh) && this.gif) {
       let img = this.img || (await this.gif.imgElems)[0]
       let { x, y, scaleX, scaleY, tilt1, tilt2, tilt3, tilt4, tiltX, tiltY, tiltW, tiltH } = this
-      if (!this.hitArea.length) {
-        this.width = img.width
-        this.height = img.height
+      if (!refresh) {
+        this.width = img.width * this.scene.config.scaleX
+        this.height = img.height * this.scene.config.scaleY
       }
       if ([tilt1, tilt2, tilt3, tilt4].some(item => item !== 0) || tiltX !== 1 || tiltY !== 1) {
         const strength = new Array(8)
