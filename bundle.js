@@ -24234,10 +24234,10 @@ var Group = /** @class */ (function (_super) {
         if (options === void 0) { options = {}; }
         var _this = _super.call(this) || this;
         _this.options = {};
-        _this.group = [];
         _this.name = name;
         _this.type = 'group';
         _this.options = options;
+        Object.assign(_this, options);
         return _this;
     }
     return Group;
