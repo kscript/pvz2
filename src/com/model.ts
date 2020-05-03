@@ -97,6 +97,7 @@ export default class Model {
   public group: Model[] = []
   public imageData: ImageData | void = void 0
   public offlineCanvas: OfflineCanvas = offlineCanvas
+  public coms: Model[] = []
   constructor() {}
   public async init(stateChange?: (type: string, url: string, index: number, gif: GifCanvas) => void) {
     if (this.state > 0) { return }

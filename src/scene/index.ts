@@ -24,6 +24,7 @@ export default class Scene {
   public sounds: anyObject = {}
   public imgDatas: anyObject<ImageData> = {}
   public offlineCanvas: offlineCanvas = offlineCanvas
+  public cardBar: Model | void = void 0
   constructor(container: HTMLCanvasElement, config: anyObject = {}) {
     this.container = container
     config = this.config = Object.assign({}, defaultConfig, config)
@@ -67,7 +68,7 @@ export default class Scene {
     this.clearMounted()
   }
   async play() {
-    const com = await this.getCom('background1unsodded.jpg')
+    const com = await this.getCom('background1unsodded_1.jpg')
     com.init()
     const imageData = offlineCanvas.getImageData(com.img, com.width, this.config.height)
     await this.wobble({
@@ -82,18 +83,13 @@ export default class Scene {
       this.clearCanvas()
       this.context.putImageData(imageData, 0 - start * this.config.width, 0)
     })
-    await this.beforeGame()
-    await this.statrGame()
-    await this.afterGame()
   }
 
   async beforeGame() {
-    const header = this.getCom('bgHeader.jpg')
-    const body = this.getCom('bgBody.jpg')
-    const footer = this.getCom('bgFooter.jpg')
-    header.group.push(body, footer)
-    header.drawGroup()
-    // TODO 动画, 重置一些配置
+    await this.mountGameZombie()
+    await this.mountCardBar()
+    await this.selectGameCard()
+    await this.mountGameCard()
   }
   async statrGame() {
 
@@ -101,7 +97,24 @@ export default class Scene {
   async afterGame() {
 
   }
-
+  async mountCardBar() {
+    const header = this.getCom('bgHeader.jpg')
+    const body = this.getCom('bgBody.jpg')
+    const footer = this.getCom('bgFooter.jpg')
+    header.group.push(body, footer)
+    return this.cardBar = header
+  }
+  async mountGameZombie() {
+    const coms = this.coms.filter(com => {
+      return com.type === 'zombie' && com.level < this.config.level.default
+    })
+  }
+  async selectGameCard() {
+    this.cardBar && this.cardBar.drawGroup()
+  }
+  async mountGameCard() {
+    
+  }
   async loadResource() {
     const coms = this.config.coms
     let list: any[] = []

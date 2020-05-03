@@ -1,4 +1,4 @@
-import { mergeOptions } from '@/utils/model'
+import { mergeOptions, getSize } from '@/utils/model'
 import Model from '@/com/model'
 
 const path = './images/interface/'
@@ -84,12 +84,6 @@ const getProps = (com: Model) => {
   let c = w * info.sc
   let r = h * info.sr
   return { scene, w, h, info, x, y, r, c }
-}
-const getSize = (com: Model, width: number, height: number) => {
-  return {
-    vw: width / com.scene.config.scaleX,
-    vh: height / com.scene.config.scaleY
-  }
 }
 const menuTrigger = (com: Model, type: string, event?: Event) => {
   if (com.scene.state !== 'mount' || menus.index === com.index) {

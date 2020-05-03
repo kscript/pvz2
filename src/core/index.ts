@@ -11,6 +11,10 @@ export const Core = async (container: HTMLCanvasElement) => {
   await execHook(scene, 'mount')
   await execHook(scene, 'beforePlay')
   await execHook(scene, 'play')
+  await execHook(scene, 'beforeGame')
+  await execHook(scene, 'startGame')
+  await execHook(scene, 'afterGame')
+  await execHook(scene, 'afterPlay')
   return scene
 }
 export default Core
