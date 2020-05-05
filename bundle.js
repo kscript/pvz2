@@ -23970,7 +23970,7 @@ var Model = /** @class */ (function () {
         // 所处的层级
         this.index = 1;
         // 帧频
-        this.fps = 60;
+        this.fps = 12;
         this.id = '';
         // 类型
         this.type = '';
@@ -24083,12 +24083,18 @@ var Model = /** @class */ (function () {
             rest[_i] = arguments[_i];
         }
         return __awaiter(this, void 0, void 0, function () {
+            var img;
             return __generator(this, function (_a) {
-                if (this.img) {
-                    // this.scene.context.putImageData(this.createImageData(), this.x, this.y)
-                    this.img && this.scene.context.drawImage(this.img, this.x, this.y, this.width, this.height);
+                switch (_a.label) {
+                    case 0:
+                        if (!this.gif) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.gif.currentImg()];
+                    case 1:
+                        img = _a.sent();
+                        img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height);
+                        _a.label = 2;
+                    case 2: return [2 /*return*/];
                 }
-                return [2 /*return*/];
             });
         });
     };
@@ -24269,7 +24275,7 @@ var Zombie = /** @class */ (function (_super) {
         if (options === void 0) { options = {}; }
         var _this = _super.call(this) || this;
         _this.options = {};
-        _this.level = 1;
+        _this.level = 2;
         _this.name = name;
         _this.type = 'zombie';
         _this.options = options;
@@ -24338,6 +24344,18 @@ var Task = /** @class */ (function () {
     return Task;
 }());
 
+localStorage.setItem('username', 'test');
+localStorage.setItem('userdata', '{"test": {"level": 1, "current": 1, "money": "1000", "time": 1588664255188, "card": [], "prop": []}}');
+var user = {
+    active: '',
+    data: {}
+};
+try {
+    user.active = localStorage.getItem('username') || '';
+    user.data = JSON.parse(localStorage.getItem('userdata') || '') || user.data;
+}
+catch (e) { }
+
 var defaultConfig = {
     width: 1200,
     height: 700
@@ -24354,10 +24372,12 @@ var Scene = /** @class */ (function () {
         this.loadCount = 0;
         this.hitCom = {};
         this.mod = 0;
+        this.user = {};
         this.sounds = {};
         this.imgDatas = {};
         this.offlineCanvas = offlineCanvas;
         this.cardBar = void 0;
+        this.useCard = [];
         this.container = container;
         config = this.config = Object.assign({}, defaultConfig, config);
         if (config.size === 'fullScreen') {
@@ -24369,6 +24389,7 @@ var Scene = /** @class */ (function () {
         config.scaleX = config.width / defaultConfig.width;
         config.scaleY = config.height / defaultConfig.height;
         this.context = container.getContext('2d');
+        this.formatUser();
     }
     Scene.prototype.beforeInit = function () {
         return __awaiter(this, void 0, void 0, function () {
@@ -24455,7 +24476,7 @@ var Scene = /** @class */ (function () {
     };
     Scene.prototype.play = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var com, imageData;
+            var com, useComs, imageData;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -24463,20 +24484,37 @@ var Scene = /** @class */ (function () {
                     case 1:
                         com = _a.sent();
                         com.init();
+                        return [4 /*yield*/, this.mountGameZombie()];
+                    case 2:
+                        useComs = (_a.sent()).map(function (com) {
+                            return {
+                                com: com,
+                                x: com.x
+                            };
+                        });
                         imageData = offlineCanvas.getImageData(com.img, com.width, this.config.height);
                         return [4 /*yield*/, this.wobble({
                                 start: 0,
-                                left: .08,
-                                right: .14,
-                                change: .005,
-                                time: 50
+                                left: .1,
+                                right: .15,
+                                change: .002,
+                                time: 30
                             }, function (_a) {
                                 var start = _a.start;
                                 _this.clearCanvas();
                                 _this.context.putImageData(imageData, 0 - start * _this.config.width, 0);
+                                useComs.forEach(function (_a) {
+                                    var com = _a.com, x = _a.x;
+                                    com.x = x - start * _this.config.width;
+                                    com.draw();
+                                });
                             })];
-                    case 2:
+                    case 3:
                         _a.sent();
+                        useComs.forEach(function (_a) {
+                            var com = _a.com, x = _a.x;
+                            com.x = x;
+                        });
                         return [2 /*return*/];
                 }
             });
@@ -24484,20 +24522,19 @@ var Scene = /** @class */ (function () {
     };
     Scene.prototype.beforeGame = function () {
         return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.mountGameZombie()];
+            var _a, _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0: return [4 /*yield*/, this.mountCardBar()];
                     case 1:
-                        _a.sent();
-                        return [4 /*yield*/, this.mountCardBar()];
-                    case 2:
-                        _a.sent();
+                        _c.sent();
                         return [4 /*yield*/, this.selectGameCard()];
-                    case 3:
-                        _a.sent();
+                    case 2:
+                        _c.sent();
+                        _b = (_a = console).log;
                         return [4 /*yield*/, this.mountGameCard()];
-                    case 4:
-                        _a.sent();
+                    case 3:
+                        _b.apply(_a, [_c.sent()]);
                         return [2 /*return*/];
                 }
             });
@@ -24529,32 +24566,96 @@ var Scene = /** @class */ (function () {
             });
         });
     };
+    Scene.prototype.rowFunc = function () {
+        return 2;
+        // return ~~(Math.random() * 5)
+    };
     Scene.prototype.mountGameZombie = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var coms;
+            var Zombie, useComs, coms;
             var _this = this;
             return __generator(this, function (_a) {
-                coms = this.coms.filter(function (com) {
-                    return com.type === 'zombie' && com.level < _this.config.level.default;
-                });
-                return [2 /*return*/];
+                switch (_a.label) {
+                    case 0:
+                        Zombie = Ctors.Zombie;
+                        useComs = this.coms.filter(function (com) {
+                            return com.type === 'zombie' && com.level <= _this.user.level;
+                        });
+                        coms = this.mountCom(Array(10).fill(1).map(function () {
+                            var zi = Math.floor(Math.random() * useComs.length);
+                            var zombie = new Zombie(useComs[zi].name, useComs[zi].options);
+                            zombie.x = _this.config.width * .9;
+                            zombie.y = _this.config.height / 5.5 * (0.25 + _this.rowFunc());
+                            return zombie;
+                        }));
+                        return [4 /*yield*/, Promise.all(coms.map(function (com) { return __awaiter(_this, void 0, void 0, function () {
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0: return [4 /*yield*/, com.init()];
+                                        case 1:
+                                            _a.sent();
+                                            com.draw();
+                                            return [2 /*return*/, com];
+                                    }
+                                });
+                            }); }))];
+                    case 1: return [2 /*return*/, _a.sent()];
+                }
             });
         });
     };
     Scene.prototype.selectGameCard = function () {
         return __awaiter(this, void 0, void 0, function () {
+            var _this = this;
             return __generator(this, function (_a) {
                 this.cardBar && this.cardBar.drawGroup();
+                this.useCard = [
+                    'SunFlower',
+                    'Peashooter'
+                ].map(function (name) { return _this.getCom(name); });
                 return [2 /*return*/];
             });
         });
     };
     Scene.prototype.mountGameCard = function () {
         return __awaiter(this, void 0, void 0, function () {
+            var Ctor, useComs, coms;
+            var _this = this;
             return __generator(this, function (_a) {
-                return [2 /*return*/];
+                switch (_a.label) {
+                    case 0:
+                        Ctor = Ctors.Plant;
+                        useComs = this.coms.filter(function (com) {
+                            return com.type === 'plant' && com.level <= _this.user.level;
+                        });
+                        coms = this.mountCom(this.useCard.map(function (comSource, index) {
+                            var com = new Ctor(comSource.name, comSource.options);
+                            com.x = _this.cardBar.x + (_this.cardBar.width / 10 * .95 + 1) * index + _this.cardBar.height / 1.5;
+                            com.y = _this.cardBar.y + _this.cardBar.height;
+                            return com;
+                        }));
+                        return [4 /*yield*/, Promise.all(coms.map(function (com) { return __awaiter(_this, void 0, void 0, function () {
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0: return [4 /*yield*/, com.init()];
+                                        case 1:
+                                            _a.sent();
+                                            com.width = this.cardBar.width / 10 * .9;
+                                            com.height = this.cardBar.width / 10 * .9;
+                                            com.draw();
+                                            return [2 /*return*/, com];
+                                    }
+                                });
+                            }); }))];
+                    case 1: return [2 /*return*/, _a.sent()];
+                }
             });
         });
+    };
+    Scene.prototype.formatUser = function () {
+        if (user.active && user.data.hasOwnProperty(user.active)) {
+            this.user = user.data[user.active];
+        }
     };
     Scene.prototype.loadResource = function () {
         return __awaiter(this, void 0, void 0, function () {
@@ -24825,9 +24926,10 @@ var Scene = /** @class */ (function () {
     };
     Scene.prototype.mountCom = function (com) {
         var _this = this;
-        (Array.isArray(com) ? com : [com]).map(function (item) {
+        return (Array.isArray(com) ? com : [com]).map(function (item) {
             _this.comsMountedMap[item.id] = item;
             _this.comsMounted.push(item);
+            return item;
         });
     };
     Scene.prototype.clearCanvas = function () {
@@ -25551,7 +25653,7 @@ var plant = {
 };
 
 var path$3 = './images/Zombies/';
-var name$3 = '${name}/0.gif';
+var name$3 = '${name}/${name}.gif';
 var list$3 = [
     'BackupDancer',
     'BucketheadZombie',
@@ -25568,7 +25670,14 @@ var list$3 = [
     'Zombie',
     'Zomboni'
 ];
-var options$3 = mergeOptions(path$3, name$3, list$3, {});
+var options$3 = mergeOptions(path$3, name$3, list$3, {
+    Zombie: {
+        level: 1
+    },
+    ConeheadZombie: {
+        level: 1
+    }
+});
 var zombie$1 = {
     path: path$3,
     name: name$3,
@@ -25590,9 +25699,8 @@ var options$4 = mergeOptions(path$4, name$4, list$4, {
             var _a = this, img = _a.img, width = _a.width, height = _a.height;
             var x = this.scene.config.height * .01;
             var y = x;
-            var _b = getSize(this, width, height), vw = _b.vw, vh = _b.vh;
-            img && this.scene.context.drawImage(img, x, y, vw, vh);
-            return { x: x, y: y, width: vw, height: vh };
+            img && this.scene.context.drawImage(img, x, y, width, height);
+            return { x: x, y: y, width: width, height: height };
         }
     },
     'bgBody.jpg': {
@@ -25601,10 +25709,9 @@ var options$4 = mergeOptions(path$4, name$4, list$4, {
             var x = header.x;
             var y = header.y + header.height;
             var _a = this, img = _a.img, width = _a.width, height = _a.height;
-            this.height = height = (width - 1) / 10 - header.height;
-            var _b = getSize(this, width, height), vw = _b.vw, vh = _b.vh;
-            img && this.scene.context.drawImage(img, x, y, vw, vh);
-            return { x: x, y: y, width: vw, height: vh };
+            this.height = height = width / 10 - 1 - header.height;
+            img && this.scene.context.drawImage(img, x, y, width, height);
+            return { x: x, y: y, width: width, height: height };
         }
     },
     'bgFooter.jpg': {
@@ -25613,9 +25720,8 @@ var options$4 = mergeOptions(path$4, name$4, list$4, {
             var x = body.x;
             var y = body.y + body.height;
             var _a = this, img = _a.img, width = _a.width, height = _a.height;
-            var _b = getSize(this, width, height), vw = _b.vw, vh = _b.vh;
-            img && this.scene.context.drawImage(img, x, y, vw, vh);
-            return { x: x, y: y, width: vw, height: vh };
+            img && this.scene.context.drawImage(img, x, y, width, height);
+            return { x: x, y: y, width: width, height: height };
         }
     },
 });
@@ -25626,16 +25732,10 @@ var group = {
     options: options$4
 };
 
-var level = Number(localStorage.getItem('level') || 1);
-var level$1 = {
-    default: isNaN(level) || level < 1 ? 1 : ~~level,
-};
-
 var config = {
     size: 'fullScreen',
     // width: 1200,
     // height: 700,
-    level: level$1,
     coms: {
         Menu: menu,
         Bullet: zombie,
