@@ -2,6 +2,7 @@ import Com from '@/com'
 import Model from '@/com/model'
 import { Task } from '@/utils/task'
 import { hitTest, isCollide, drawHitArea } from '@/utils/hit'
+import user from '@/user'
 import { GifCanvas, offlineCanvas } from '@/utils/canvas'
 const defaultConfig = {
   width: 1200,
@@ -21,10 +22,12 @@ export default class Scene {
   public loadCount = 0
   public hitCom: anyObject<Model[]> = {}
   public mod: number = 0
+  public user: anyObject = {}
   public sounds: anyObject = {}
   public imgDatas: anyObject<ImageData> = {}
   public offlineCanvas: offlineCanvas = offlineCanvas
   public cardBar: Model | void = void 0
+  public useCard: Model[] = []
   constructor(container: HTMLCanvasElement, config: anyObject = {}) {
     this.container = container
     config = this.config = Object.assign({}, defaultConfig, config)
@@ -37,6 +40,7 @@ export default class Scene {
     config.scaleX = config.width / defaultConfig.width
     config.scaleY = config.height / defaultConfig.height
     this.context = <CanvasContextEx>container.getContext('2d')
+    this.formatUser()
   }
   async beforeInit() {
 
@@ -70,26 +74,38 @@ export default class Scene {
   async play() {
     const com = await this.getCom('background1unsodded_1.jpg')
     com.init()
+    const useComs = (await this.mountGameZombie()).map(com => {
+      return {
+        com,
+        x: com.x
+      }
+    })
     const imageData = offlineCanvas.getImageData(com.img, com.width, this.config.height)
     await this.wobble({
       start: 0,
-      left: .08,
-      right: .14,
-      change: .005,
-      time: 50
+      left: .1,
+      right: .15,
+      change: .002,
+      time: 30
     }, ({
       start
     }: anyObject) => {
       this.clearCanvas()
       this.context.putImageData(imageData, 0 - start * this.config.width, 0)
+      useComs.forEach(({ com, x }) => {
+        com.x = x - start * this.config.width
+        com.draw()
+      })
+    })
+    useComs.forEach(({ com, x }) => {
+      com.x = x
     })
   }
 
   async beforeGame() {
-    await this.mountGameZombie()
     await this.mountCardBar()
     await this.selectGameCard()
-    await this.mountGameCard()
+    console.log(await this.mountGameCard())
   }
   async statrGame() {
 
@@ -104,16 +120,58 @@ export default class Scene {
     header.group.push(body, footer)
     return this.cardBar = header
   }
+  rowFunc() {
+    return 2
+    // return ~~(Math.random() * 5)
+  }
   async mountGameZombie() {
-    const coms = this.coms.filter(com => {
-      return com.type === 'zombie' && com.level < this.config.level.default
+    const Zombie = Com.Zombie
+    const useComs = this.coms.filter(com => {
+      return com.type === 'zombie' && com.level <= this.user.level
     })
+    const coms = this.mountCom(Array(10).fill(1).map(() => {
+      let zi = Math.floor(Math.random() * useComs.length)
+      const zombie = new Zombie(useComs[zi].name, useComs[zi].options)
+      zombie.x = this.config.width * .9
+      zombie.y = this.config.height / 5.5 * (0.25 + this.rowFunc())
+      return zombie
+    }))
+    return await Promise.all(coms.map(async com => {
+      await com.init()
+      com.draw()
+      return com
+    }))
   }
   async selectGameCard() {
     this.cardBar && this.cardBar.drawGroup()
+    this.useCard = [
+      'SunFlower',
+      'Peashooter'
+    ].map(name => this.getCom(name))
   }
   async mountGameCard() {
-    
+    const Ctor = Com.Plant
+    const useComs = this.coms.filter(com => {
+      return com.type === 'plant' && com.level <= this.user.level
+    })
+    const coms = this.mountCom(this.useCard.map((comSource, index) => {
+      const com = new Ctor(comSource.name, comSource.options)
+      com.x = this.cardBar.x + (this.cardBar.width / 10 * .95 + 1) * index + this.cardBar.height / 1.5
+      com.y = this.cardBar.y + this.cardBar.height
+      return com
+    }))
+    return await Promise.all(coms.map(async com => {
+      await com.init()
+      com.width = this.cardBar.width / 10 * .9
+      com.height = this.cardBar.width / 10 * .9
+      com.draw()
+      return com
+    }))
+  }
+  formatUser() {
+    if (user.active && user.data.hasOwnProperty(user.active)) {
+      this.user = user.data[user.active]
+    }
   }
   async loadResource() {
     const coms = this.config.coms
@@ -297,9 +355,10 @@ export default class Scene {
     })
   }
   mountCom(com: Model | Model[]) {
-    (Array.isArray(com) ? com : [com]).map(item => {
+    return (Array.isArray(com) ? com : [com]).map(item => {
       this.comsMountedMap[item.id] = item
       this.comsMounted.push(item)
+      return item
     })
   }
   clearCanvas() {

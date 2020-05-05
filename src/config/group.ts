@@ -16,9 +16,8 @@ const options: anyObject = mergeOptions(path, name, list, {
       let { img, width, height } = this
       let x = this.scene.config.height * .01
       let y = x
-      let { vw, vh } = getSize(this, width, height)
-      img && this.scene.context.drawImage(img, x, y, vw, vh)
-      return { x, y, width: vw, height: vh }
+      img && this.scene.context.drawImage(img, x, y, width, height)
+      return { x, y, width, height }
     }
   },
   'bgBody.jpg': {
@@ -27,10 +26,9 @@ const options: anyObject = mergeOptions(path, name, list, {
       let x = header.x
       let y = header.y + header.height
       let { img, width, height } = this
-      this.height = height = (width - 1) / 10 - header.height
-      let { vw, vh } = getSize(this, width, height)
-      img && this.scene.context.drawImage(img, x, y, vw, vh)
-      return { x, y, width: vw, height: vh }
+      this.height = height = width / 10 - 1 - header.height
+      img && this.scene.context.drawImage(img, x, y, width, height)
+      return { x, y, width, height }
     }
   },
   'bgFooter.jpg': {
@@ -39,9 +37,8 @@ const options: anyObject = mergeOptions(path, name, list, {
       let x = body.x
       let y = body.y + body.height
       let { img, width, height } = this
-      let { vw, vh } = getSize(this, width, height)
-      img && this.scene.context.drawImage(img, x, y, vw, vh)
-      return { x, y, width: vw, height: vh }
+      img && this.scene.context.drawImage(img, x, y, width, height)
+      return { x, y, width, height }
     }
   },
 })

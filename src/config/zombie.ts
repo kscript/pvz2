@@ -1,7 +1,7 @@
 import { mergeOptions } from '@/utils/model'
 
 const path = './images/Zombies/'
-const name = '${name}/0.gif'
+const name = '${name}/${name}.gif'
 const list: string[] = [
   'BackupDancer',
   'BucketheadZombie',
@@ -18,7 +18,14 @@ const list: string[] = [
   'Zombie',
   'Zomboni'
 ]
-const options: anyObject = mergeOptions(path, name, list, {})
+const options: anyObject = mergeOptions(path, name, list, {
+  Zombie: {
+    level: 1
+  },
+  ConeheadZombie: {
+    level: 1
+  }
+})
 const zombie = {
   path,
   name,

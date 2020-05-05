@@ -44,7 +44,7 @@ export default class Model {
   public index: number = 1
   
   // 帧频
-  public fps: number = 60
+  public fps: number = 12
   
   public id: string = ''
   // 类型
@@ -131,9 +131,9 @@ export default class Model {
     return new ImageData(1, 1)
   }
   public async draw(...rest: any[]) {
-    if (this.img) {
-      // this.scene.context.putImageData(this.createImageData(), this.x, this.y)
-      this.img && this.scene.context.drawImage(this.img, this.x, this.y, this.width, this.height)
+    if (this.gif) {
+      let img = await this.gif.currentImg()
+      img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
     }
   }
   public async drawGroup(...rest: any[]) {
