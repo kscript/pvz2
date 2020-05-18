@@ -56,6 +56,7 @@ export default class Model {
   // 方向: 'left,right'
   public direction: string = ''
 
+  public static: boolean = false
   // 死亡
   public die: boolean = false
   // 暂停
@@ -98,16 +99,26 @@ export default class Model {
   public imageData: ImageData | void = void 0
   public offlineCanvas: OfflineCanvas = offlineCanvas
   public coms: Model[] = []
+  public options: anyObject = {}
   constructor() {}
   public async init(stateChange?: (type: string, url: string, index: number, gif: GifCanvas) => void) {
     if (this.state > 0) { return }
     this.state = 1
     this.initProp()
     if (this.initBefore()) {
-      this.gif = await this.initGif()
-      await this.gif.toBlobUrl()
-      this.img = (await this.gif.loadImage(stateChange))[0]
+      // gif和img属性可以缓存到options里, 如果要复制组件, 可以直接复用或手动重置
+      if (!this.gif) {
+        this.gif = await this.initGif()
+        await this.gif.toBlobUrl()
+      }
+      if (!this.img) {
+        this.img = (await this.gif.loadImage(stateChange))[0]
+      }
       await this.setHitArea()
+      Object.assign(this.options, {
+        gif: this.gif,
+        img: this.img
+      })
     }
   }
   public initBefore() {
@@ -132,10 +143,11 @@ export default class Model {
   }
   public async draw(...rest: any[]) {
     if (this.gif) {
-      let img = await this.gif.currentImg()
+      let img = await this.gif.currentImg(this.static)
       img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
     }
   }
+  public drag(event: Event, oldEvent: Event) {}
   public async drawGroup(...rest: any[]) {
     const res = await this.draw(...rest)
     this.group.reduce(async (prev: anyObject, curr: Model) => {

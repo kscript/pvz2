@@ -138,9 +138,9 @@ export class GifCanvas {
             })
         })
     }
-    public async currentImg() {
+    public async currentImg(first: boolean = false) {
         let elms = await this.imgElems
-        if (this.type !== 'gif') {
+        if (this.type !== 'gif' || first) {
             return elms[0]
         }
         let time = new Date().getTime() - this.time

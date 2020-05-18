@@ -3,7 +3,7 @@ import Model from '@/com/model'
 import { Task } from '@/utils/task'
 import { hitTest, isCollide, drawHitArea } from '@/utils/hit'
 import user from '@/user'
-import { GifCanvas, offlineCanvas } from '@/utils/canvas'
+import { GifCanvas, offlineCanvas, OfflineCanvas } from '@/utils/canvas'
 const defaultConfig = {
   width: 1200,
   height: 700
@@ -22,12 +22,19 @@ export default class Scene {
   public loadCount = 0
   public hitCom: anyObject<Model[]> = {}
   public mod: number = 0
+  public row: number = 5
+  public stop: boolean = false
   public user: anyObject = {}
   public sounds: anyObject = {}
-  public imgDatas: anyObject<ImageData> = {}
-  public offlineCanvas: offlineCanvas = offlineCanvas
-  public cardBar: Model | void = void 0
+  public imageDatas: anyObject<ImageData> = {}
+  public offlineCanvas: OfflineCanvas = offlineCanvas
+  public cardBar?: Model
   public useCard: Model[] = []
+  public dragCom: anyObject = {
+    com: null,
+    event: null
+  }
+  public validArea: number[] = []
   constructor(container: HTMLCanvasElement, config: anyObject = {}) {
     this.container = container
     config = this.config = Object.assign({}, defaultConfig, config)
@@ -72,15 +79,16 @@ export default class Scene {
     this.clearMounted()
   }
   async play() {
-    const com = await this.getCom('background1unsodded_1.jpg')
+    const com = await this.getCom('background1.jpg')
     com.init()
+    const imageData = offlineCanvas.getImageData(com.img, com.width, this.config.height)
+    this.context.putImageData(imageData, 0, 0)
     const useComs = (await this.mountGameZombie()).map(com => {
       return {
         com,
         x: com.x
       }
     })
-    const imageData = offlineCanvas.getImageData(com.img, com.width, this.config.height)
     await this.wobble({
       start: 0,
       left: .1,
@@ -92,23 +100,46 @@ export default class Scene {
     }: anyObject) => {
       this.clearCanvas()
       this.context.putImageData(imageData, 0 - start * this.config.width, 0)
+      this.imageDatas.bg = this.context.getImageData(0, 0, this.config.width, this.config.width)
       useComs.forEach(({ com, x }) => {
         com.x = x - start * this.config.width
         com.draw()
       })
     })
-    useComs.forEach(({ com, x }) => {
-      com.x = x
-    })
+    // useComs.forEach(({ com, x }) => {
+    //   com.x = x
+    // })
+    this.setValidArea()
   }
 
+  setValidArea(row: number = 0, num: number = 0) {
+    // 横向14份
+    // 纵向7/6份
+    // 左边距1.25份
+    // 右边距3.75份
+    // 上边距.5份
+    // 下边距.5份
+    const width = this.config.width / 14
+    const height = this.config.height / (this.row + 1)
+    row = row < 0 || row > this.row ? 0 : row
+    num = num < 0 || num > this.row ? 0 : num
+    this.validArea = [
+      1.25  * width,
+      (row + .5) * height,
+      9 * width,
+      (this.row - num) * height,
+      width,
+      height
+    ]
+  }
   async beforeGame() {
     await this.mountCardBar()
     await this.selectGameCard()
-    console.log(await this.mountGameCard())
+    await this.mountGameCard()
   }
-  async statrGame() {
-
+  async startGame() {
+    this.refresh()
+    return new Promise(resolve => resolve)
   }
   async afterGame() {
 
@@ -118,6 +149,7 @@ export default class Scene {
     const body = this.getCom('bgBody.jpg')
     const footer = this.getCom('bgFooter.jpg')
     header.group.push(body, footer)
+    this.mountCom(header, true)
     return this.cardBar = header
   }
   rowFunc() {
@@ -133,7 +165,7 @@ export default class Scene {
       let zi = Math.floor(Math.random() * useComs.length)
       const zombie = new Zombie(useComs[zi].name, useComs[zi].options)
       zombie.x = this.config.width * .9
-      zombie.y = this.config.height / 5.5 * (0.25 + this.rowFunc())
+      zombie.y = this.config.height / (this.row + .5) * (0.25 + this.rowFunc())
       return zombie
     }))
     return await Promise.all(coms.map(async com => {
@@ -150,23 +182,73 @@ export default class Scene {
     ].map(name => this.getCom(name))
   }
   async mountGameCard() {
-    const Ctor = Com.Plant
+    const Plant = Com.Plant
+    const cardBar = this.cardBar as Model
     const useComs = this.coms.filter(com => {
       return com.type === 'plant' && com.level <= this.user.level
     })
     const coms = this.mountCom(this.useCard.map((comSource, index) => {
-      const com = new Ctor(comSource.name, comSource.options)
-      com.x = this.cardBar.x + (this.cardBar.width / 10 * .95 + 1) * index + this.cardBar.height / 1.5
-      com.y = this.cardBar.y + this.cardBar.height
+      const com = new Plant(comSource.name, Object.assign({}, comSource.options, {
+        type: 'card',
+        static: true
+      }))
+      com.x = cardBar.x + (cardBar.width / 10 * .95 + 1) * index + cardBar.height / 1.5
+      com.y = cardBar.y + cardBar.height
       return com
     }))
     return await Promise.all(coms.map(async com => {
       await com.init()
-      com.width = this.cardBar.width / 10 * .9
-      com.height = this.cardBar.width / 10 * .9
+      com.width = cardBar.width / 10 * .9
+      com.height = cardBar.width / 10 * .9
       com.draw()
       return com
     }))
+  }
+  
+  async dragStart(com: Model, event: MouseEvent) {
+    const Plant = Com.Plant
+    const comCopy = new Plant(com.name, Object.assign({}, com.options, {
+      type: 'plant',
+      x: com.x,
+      y: com.y,
+      static: true
+    }))
+    await comCopy.init()
+    this.mountCom(comCopy)
+    Object.assign(this.dragCom, {
+      com: comCopy,
+      event,
+      source: {
+        x: com.x,
+        y: com.y
+      }
+    })
+  }
+  async dragEnd(com: Model, event: MouseEvent) {
+    const pos = this.validDrag(com, event)
+    const [l, t, w, h, width, height] = this.validArea
+    if (!pos.length) {
+      this.dumpCom(com)
+    } else {
+      com.x = l + width * .925 * pos[0] + width / 2
+      com.y = t + height * .935 * pos[1] + height / 2
+      com.hitAble = false
+      com.static = false
+    }
+    Object.assign(this.dragCom, {
+      com: null,
+      event: null,
+      source: null
+    })
+  }
+  validDrag(com: Model, event: MouseEvent) {
+    const x = event.offsetX
+    const y = event.offsetY
+    const [l, t, w, h, width, height] = this.validArea
+    if (x >= l && x <= l + w && y >= t && y <= t + h) {
+      return [~~((x - l)/ width), ~~((y - t) / height)]
+    }
+    return []
   }
   formatUser() {
     if (user.active && user.data.hasOwnProperty(user.active)) {
@@ -244,23 +326,30 @@ export default class Scene {
       })
     })
     this.container.addEventListener('mouseup', (event: Event) => {
-
+      this.hitExec(true, this.hitCom['mouseup'] = this.hitTest(event), (com) => {
+        com.trigger('mouseup', event)
+      })
     })
     this.container.addEventListener('mousemove', (event: Event) => {
-      let old = this.hitCom.hover || []
-      let hover = this.hitCom.hover = this.hitTest(event)
-      this.hitExec(true, hover.slice(0), (com) => {
-        // 如果在旧数组找不到, 则触发hover
-        if (!old.some(item => item.id === com.id)) {
-          com.trigger('hover', event)
-        }
-      })
-      // 如果在新数组找不到, 则触发leave
-      old.forEach(com => {
-        if (!hover.some(item => item.id === com.id)) {
-          com.trigger('leave', event)
-        }
-      })
+      const com = this.dragCom.com as Model
+      if (!com) {
+        let old = this.hitCom.hover || []
+        let hover = this.hitCom.hover = this.hitTest(event)
+        this.hitExec(true, hover.slice(0), (com) => {
+          // 如果在旧数组找不到, 则触发hover
+          if (!old.some(item => item.id === com.id)) {
+            com.trigger('hover', event)
+          }
+        })
+        // 如果在新数组找不到, 则触发leave
+        old.forEach(com => {
+          if (!hover.some(item => item.id === com.id)) {
+            com.trigger('leave', event)
+          }
+        })
+      } else {
+        com.drag(event, this.dragCom.event)
+      }
     })
     this.container.addEventListener('mouseleave', (event: Event) => {
       const hover = this.hitCom['hover']
@@ -314,6 +403,22 @@ export default class Scene {
     })
     this.toggleMusic('./sound/hugewave.mp3').loop = false
   }
+  refresh() {
+    requestAnimationFrame(async () => {
+      if (!this.stop) {
+        this.clearCanvas()
+        this.context.putImageData(this.imageDatas.bg, 0, 0)
+        let queue = Promise.resolve()
+        this.comsMounted.forEach(async com => {
+          queue = queue.then(async () => {
+            return com.group.length ? await com.drawGroup() : com.draw()
+          })
+        })
+        await queue
+        this.refresh()
+      }
+    })
+  }
 
   // 工具方法
 
@@ -354,11 +459,23 @@ export default class Scene {
       paly()
     })
   }
-  mountCom(com: Model | Model[]) {
+  mountCom(com: Model | Model[], insert: boolean = false) {
     return (Array.isArray(com) ? com : [com]).map(item => {
       this.comsMountedMap[item.id] = item
-      this.comsMounted.push(item)
+      if (insert) {
+        this.comsMounted.unshift(item)
+      } else {
+        this.comsMounted.push(item)
+      }
       return item
+    })
+  }
+  dumpCom(com: Model) {
+    delete this.comsMountedMap[com.id]
+    this.comsMounted.slice(0).forEach((item, index) => {
+      if (item.id === com.id) {
+        this.comsMounted.splice(index, 1)
+      }
     })
   }
   clearCanvas() {
@@ -425,24 +542,26 @@ export default class Scene {
   }
   save(name?: string, ...rest: any) {
     const args = rest.concat(0, 0, this.config.width, this.config.height).filter((item: any) => typeof item === 'number').slice(0, 4)
-    const imgData = this.context.getImageData(...args)
+    // @ts-ignore
+    const imageData = this.context.getImageData(...args)
     if (name) {
-      this.imgDatas['_' + name] = imgData
+      this.imageDatas['_' + name] = imageData
     } else {
-      this.imgDatas.active = imgData
+      this.imageDatas.active = imageData
     }
-    return imgData
+    return imageData
   }
   restore(name?: string, x = 0, y = 0, ...rest: number[]) {
-    let imgData
-    if (name && this.imgDatas[name]) {
-      imgData = this.imgDatas[name]
-      delete this.imgDatas[name]
+    let imageData
+    if (name && this.imageDatas[name]) {
+      imageData = this.imageDatas[name]
+      delete this.imageDatas[name]
     } else {
-      imgData = this.imgDatas.active
+      imageData = this.imageDatas.active
     }
-    imgData && this.context.putImageData(imgData, x, y, ...rest)
-    return imgData
+    // @ts-ignore
+    imageData && this.context.putImageData(imageData, x, y, ...rest)
+    return imageData
   }
   recordPath() {
     const pointers: number[] = []

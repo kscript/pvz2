@@ -1,7 +1,7 @@
 localStorage.setItem('username', 'test')
 localStorage.setItem('userdata', '{"test": {"level": 1, "current": 1, "money": "1000", "time": 1588664255188, "card": [], "prop": []}}')
 
-const user = {
+const user: anyObject = {
   active: '',
   data: {}
 }
