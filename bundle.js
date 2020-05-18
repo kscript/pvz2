@@ -7299,10 +7299,6 @@ arguments[4][9][0].apply(exports,arguments)
 
 var base64 = require('base64-js')
 var ieee754 = require('ieee754')
-var customInspectSymbol =
-  (typeof Symbol === 'function' && typeof Symbol.for === 'function')
-    ? Symbol.for('nodejs.util.inspect.custom')
-    : null
 
 exports.Buffer = Buffer
 exports.SlowBuffer = SlowBuffer
@@ -7339,9 +7335,7 @@ function typedArraySupport () {
   // Can typed array instances can be augmented?
   try {
     var arr = new Uint8Array(1)
-    var proto = { foo: function () { return 42 } }
-    Object.setPrototypeOf(proto, Uint8Array.prototype)
-    Object.setPrototypeOf(arr, proto)
+    arr.__proto__ = { __proto__: Uint8Array.prototype, foo: function () { return 42 } }
     return arr.foo() === 42
   } catch (e) {
     return false
@@ -7370,7 +7364,7 @@ function createBuffer (length) {
   }
   // Return an augmented `Uint8Array` instance
   var buf = new Uint8Array(length)
-  Object.setPrototypeOf(buf, Buffer.prototype)
+  buf.__proto__ = Buffer.prototype
   return buf
 }
 
@@ -7420,7 +7414,7 @@ function from (value, encodingOrOffset, length) {
   }
 
   if (value == null) {
-    throw new TypeError(
+    throw TypeError(
       'The first argument must be one of type string, Buffer, ArrayBuffer, Array, ' +
       'or Array-like Object. Received type ' + (typeof value)
     )
@@ -7472,8 +7466,8 @@ Buffer.from = function (value, encodingOrOffset, length) {
 
 // Note: Change prototype *after* Buffer.from is defined to workaround Chrome bug:
 // https://github.com/feross/buffer/pull/148
-Object.setPrototypeOf(Buffer.prototype, Uint8Array.prototype)
-Object.setPrototypeOf(Buffer, Uint8Array)
+Buffer.prototype.__proto__ = Uint8Array.prototype
+Buffer.__proto__ = Uint8Array
 
 function assertSize (size) {
   if (typeof size !== 'number') {
@@ -7577,8 +7571,7 @@ function fromArrayBuffer (array, byteOffset, length) {
   }
 
   // Return an augmented `Uint8Array` instance
-  Object.setPrototypeOf(buf, Buffer.prototype)
-
+  buf.__proto__ = Buffer.prototype
   return buf
 }
 
@@ -7900,9 +7893,6 @@ Buffer.prototype.inspect = function inspect () {
   if (this.length > max) str += ' ... '
   return '<Buffer ' + str + '>'
 }
-if (customInspectSymbol) {
-  Buffer.prototype[customInspectSymbol] = Buffer.prototype.inspect
-}
 
 Buffer.prototype.compare = function compare (target, start, end, thisStart, thisEnd) {
   if (isInstance(target, Uint8Array)) {
@@ -8028,7 +8018,7 @@ function bidirectionalIndexOf (buffer, val, byteOffset, encoding, dir) {
         return Uint8Array.prototype.lastIndexOf.call(buffer, val, byteOffset)
       }
     }
-    return arrayIndexOf(buffer, [val], byteOffset, encoding, dir)
+    return arrayIndexOf(buffer, [ val ], byteOffset, encoding, dir)
   }
 
   throw new TypeError('val must be string, number or Buffer')
@@ -8357,7 +8347,7 @@ function hexSlice (buf, start, end) {
 
   var out = ''
   for (var i = start; i < end; ++i) {
-    out += hexSliceLookupTable[buf[i]]
+    out += toHex(buf[i])
   }
   return out
 }
@@ -8394,8 +8384,7 @@ Buffer.prototype.slice = function slice (start, end) {
 
   var newBuf = this.subarray(start, end)
   // Return an augmented `Uint8Array` instance
-  Object.setPrototypeOf(newBuf, Buffer.prototype)
-
+  newBuf.__proto__ = Buffer.prototype
   return newBuf
 }
 
@@ -8884,8 +8873,6 @@ Buffer.prototype.fill = function fill (val, start, end, encoding) {
     }
   } else if (typeof val === 'number') {
     val = val & 255
-  } else if (typeof val === 'boolean') {
-    val = Number(val)
   }
 
   // Invalid ranges are not set to a default, so can range check early.
@@ -8941,6 +8928,11 @@ function base64clean (str) {
     str = str + '='
   }
   return str
+}
+
+function toHex (n) {
+  if (n < 16) return '0' + n.toString(16)
+  return n.toString(16)
 }
 
 function utf8ToBytes (string, units) {
@@ -9072,20 +9064,6 @@ function numberIsNaN (obj) {
   // For IE11 support
   return obj !== obj // eslint-disable-line no-self-compare
 }
-
-// Create lookup table for `toString('hex')`
-// See: https://github.com/feross/buffer/issues/219
-var hexSliceLookupTable = (function () {
-  var alphabet = '0123456789abcdef'
-  var table = new Array(256)
-  for (var i = 0; i < 16; ++i) {
-    var i16 = i * 16
-    for (var j = 0; j < 16; ++j) {
-      table[i16 + j] = alphabet[i] + alphabet[j]
-    }
-  }
-  return table
-})()
 
 }).call(this,require("buffer").Buffer)
 },{"base64-js":7,"buffer":13,"ieee754":17}],14:[function(require,module,exports){
@@ -23831,7 +23809,8 @@ var GifCanvas = /** @class */ (function () {
             });
         });
     };
-    GifCanvas.prototype.currentImg = function () {
+    GifCanvas.prototype.currentImg = function (first) {
+        if (first === void 0) { first = false; }
         return __awaiter(this, void 0, void 0, function () {
             var elms, time, len, vlen, index, vIndex;
             return __generator(this, function (_a) {
@@ -23839,7 +23818,7 @@ var GifCanvas = /** @class */ (function () {
                     case 0: return [4 /*yield*/, this.imgElems];
                     case 1:
                         elms = _a.sent();
-                        if (this.type !== 'gif') {
+                        if (this.type !== 'gif' || first) {
                             return [2 /*return*/, elms[0]];
                         }
                         time = new Date().getTime() - this.time;
@@ -23980,6 +23959,7 @@ var Model = /** @class */ (function () {
         this.time = +new Date;
         // 方向: 'left,right'
         this.direction = '';
+        this.static = false;
         // 死亡
         this.die = false;
         // 暂停
@@ -24019,6 +23999,7 @@ var Model = /** @class */ (function () {
         this.imageData = void 0;
         this.offlineCanvas = offlineCanvas;
         this.coms = [];
+        this.options = {};
     }
     Model.prototype.init = function (stateChange) {
         return __awaiter(this, void 0, void 0, function () {
@@ -24031,7 +24012,8 @@ var Model = /** @class */ (function () {
                         }
                         this.state = 1;
                         this.initProp();
-                        if (!this.initBefore()) return [3 /*break*/, 5];
+                        if (!this.initBefore()) return [3 /*break*/, 7];
+                        if (!!this.gif) return [3 /*break*/, 3];
                         _a = this;
                         return [4 /*yield*/, this.initGif()];
                     case 1:
@@ -24039,15 +24021,23 @@ var Model = /** @class */ (function () {
                         return [4 /*yield*/, this.gif.toBlobUrl()];
                     case 2:
                         _c.sent();
+                        _c.label = 3;
+                    case 3:
+                        if (!!this.img) return [3 /*break*/, 5];
                         _b = this;
                         return [4 /*yield*/, this.gif.loadImage(stateChange)];
-                    case 3:
-                        _b.img = (_c.sent())[0];
-                        return [4 /*yield*/, this.setHitArea()];
                     case 4:
-                        _c.sent();
+                        _b.img = (_c.sent())[0];
                         _c.label = 5;
-                    case 5: return [2 /*return*/];
+                    case 5: return [4 /*yield*/, this.setHitArea()];
+                    case 6:
+                        _c.sent();
+                        Object.assign(this.options, {
+                            gif: this.gif,
+                            img: this.img
+                        });
+                        _c.label = 7;
+                    case 7: return [2 /*return*/];
                 }
             });
         });
@@ -24088,7 +24078,7 @@ var Model = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         if (!this.gif) return [3 /*break*/, 2];
-                        return [4 /*yield*/, this.gif.currentImg()];
+                        return [4 /*yield*/, this.gif.currentImg(this.static)];
                     case 1:
                         img = _a.sent();
                         img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height);
@@ -24098,6 +24088,7 @@ var Model = /** @class */ (function () {
             });
         });
     };
+    Model.prototype.drag = function (event, oldEvent) { };
     Model.prototype.drawGroup = function () {
         var rest = [];
         for (var _i = 0; _i < arguments.length; _i++) {
@@ -24372,12 +24363,18 @@ var Scene = /** @class */ (function () {
         this.loadCount = 0;
         this.hitCom = {};
         this.mod = 0;
+        this.row = 5;
+        this.stop = false;
         this.user = {};
         this.sounds = {};
-        this.imgDatas = {};
+        this.imageDatas = {};
         this.offlineCanvas = offlineCanvas;
-        this.cardBar = void 0;
         this.useCard = [];
+        this.dragCom = {
+            com: null,
+            event: null
+        };
+        this.validArea = [];
         this.container = container;
         config = this.config = Object.assign({}, defaultConfig, config);
         if (config.size === 'fullScreen') {
@@ -24476,14 +24473,16 @@ var Scene = /** @class */ (function () {
     };
     Scene.prototype.play = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var com, useComs, imageData;
+            var com, imageData, useComs;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.getCom('background1unsodded_1.jpg')];
+                    case 0: return [4 /*yield*/, this.getCom('background1.jpg')];
                     case 1:
                         com = _a.sent();
                         com.init();
+                        imageData = offlineCanvas.getImageData(com.img, com.width, this.config.height);
+                        this.context.putImageData(imageData, 0, 0);
                         return [4 /*yield*/, this.mountGameZombie()];
                     case 2:
                         useComs = (_a.sent()).map(function (com) {
@@ -24492,7 +24491,6 @@ var Scene = /** @class */ (function () {
                                 x: com.x
                             };
                         });
-                        imageData = offlineCanvas.getImageData(com.img, com.width, this.config.height);
                         return [4 /*yield*/, this.wobble({
                                 start: 0,
                                 left: .1,
@@ -24503,47 +24501,73 @@ var Scene = /** @class */ (function () {
                                 var start = _a.start;
                                 _this.clearCanvas();
                                 _this.context.putImageData(imageData, 0 - start * _this.config.width, 0);
+                                _this.imageDatas.bg = _this.context.getImageData(0, 0, _this.config.width, _this.config.width);
                                 useComs.forEach(function (_a) {
                                     var com = _a.com, x = _a.x;
                                     com.x = x - start * _this.config.width;
                                     com.draw();
                                 });
-                            })];
+                            })
+                            // useComs.forEach(({ com, x }) => {
+                            //   com.x = x
+                            // })
+                        ];
                     case 3:
                         _a.sent();
-                        useComs.forEach(function (_a) {
-                            var com = _a.com, x = _a.x;
-                            com.x = x;
-                        });
+                        // useComs.forEach(({ com, x }) => {
+                        //   com.x = x
+                        // })
+                        this.setValidArea();
                         return [2 /*return*/];
                 }
             });
         });
+    };
+    Scene.prototype.setValidArea = function (row, num) {
+        if (row === void 0) { row = 0; }
+        if (num === void 0) { num = 0; }
+        // 横向14份
+        // 纵向7/6份
+        // 左边距1.25份
+        // 右边距3.75份
+        // 上边距.5份
+        // 下边距.5份
+        var width = this.config.width / 14;
+        var height = this.config.height / (this.row + 1);
+        row = row < 0 || row > this.row ? 0 : row;
+        num = num < 0 || num > this.row ? 0 : num;
+        this.validArea = [
+            1.25 * width,
+            (row + .5) * height,
+            9 * width,
+            (this.row - num) * height,
+            width,
+            height
+        ];
     };
     Scene.prototype.beforeGame = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var _a, _b;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0: return [4 /*yield*/, this.mountCardBar()];
                     case 1:
-                        _c.sent();
+                        _a.sent();
                         return [4 /*yield*/, this.selectGameCard()];
                     case 2:
-                        _c.sent();
-                        _b = (_a = console).log;
+                        _a.sent();
                         return [4 /*yield*/, this.mountGameCard()];
                     case 3:
-                        _b.apply(_a, [_c.sent()]);
+                        _a.sent();
                         return [2 /*return*/];
                 }
             });
         });
     };
-    Scene.prototype.statrGame = function () {
+    Scene.prototype.startGame = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                return [2 /*return*/];
+                this.refresh();
+                return [2 /*return*/, new Promise(function (resolve) { return resolve; })];
             });
         });
     };
@@ -24562,6 +24586,7 @@ var Scene = /** @class */ (function () {
                 body = this.getCom('bgBody.jpg');
                 footer = this.getCom('bgFooter.jpg');
                 header.group.push(body, footer);
+                this.mountCom(header, true);
                 return [2 /*return*/, this.cardBar = header];
             });
         });
@@ -24585,7 +24610,7 @@ var Scene = /** @class */ (function () {
                             var zi = Math.floor(Math.random() * useComs.length);
                             var zombie = new Zombie(useComs[zi].name, useComs[zi].options);
                             zombie.x = _this.config.width * .9;
-                            zombie.y = _this.config.height / 5.5 * (0.25 + _this.rowFunc());
+                            zombie.y = _this.config.height / (_this.row + .5) * (0.25 + _this.rowFunc());
                             return zombie;
                         }));
                         return [4 /*yield*/, Promise.all(coms.map(function (com) { return __awaiter(_this, void 0, void 0, function () {
@@ -24619,19 +24644,23 @@ var Scene = /** @class */ (function () {
     };
     Scene.prototype.mountGameCard = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var Ctor, useComs, coms;
+            var Plant, cardBar, useComs, coms;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        Ctor = Ctors.Plant;
+                        Plant = Ctors.Plant;
+                        cardBar = this.cardBar;
                         useComs = this.coms.filter(function (com) {
                             return com.type === 'plant' && com.level <= _this.user.level;
                         });
                         coms = this.mountCom(this.useCard.map(function (comSource, index) {
-                            var com = new Ctor(comSource.name, comSource.options);
-                            com.x = _this.cardBar.x + (_this.cardBar.width / 10 * .95 + 1) * index + _this.cardBar.height / 1.5;
-                            com.y = _this.cardBar.y + _this.cardBar.height;
+                            var com = new Plant(comSource.name, Object.assign({}, comSource.options, {
+                                type: 'card',
+                                static: true
+                            }));
+                            com.x = cardBar.x + (cardBar.width / 10 * .95 + 1) * index + cardBar.height / 1.5;
+                            com.y = cardBar.y + cardBar.height;
                             return com;
                         }));
                         return [4 /*yield*/, Promise.all(coms.map(function (com) { return __awaiter(_this, void 0, void 0, function () {
@@ -24640,8 +24669,8 @@ var Scene = /** @class */ (function () {
                                         case 0: return [4 /*yield*/, com.init()];
                                         case 1:
                                             _a.sent();
-                                            com.width = this.cardBar.width / 10 * .9;
-                                            com.height = this.cardBar.width / 10 * .9;
+                                            com.width = cardBar.width / 10 * .9;
+                                            com.height = cardBar.width / 10 * .9;
                                             com.draw();
                                             return [2 /*return*/, com];
                                     }
@@ -24651,6 +24680,69 @@ var Scene = /** @class */ (function () {
                 }
             });
         });
+    };
+    Scene.prototype.dragStart = function (com, event) {
+        return __awaiter(this, void 0, void 0, function () {
+            var Plant, comCopy;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        Plant = Ctors.Plant;
+                        comCopy = new Plant(com.name, Object.assign({}, com.options, {
+                            type: 'plant',
+                            x: com.x,
+                            y: com.y,
+                            static: true
+                        }));
+                        return [4 /*yield*/, comCopy.init()];
+                    case 1:
+                        _a.sent();
+                        this.mountCom(comCopy);
+                        Object.assign(this.dragCom, {
+                            com: comCopy,
+                            event: event,
+                            source: {
+                                x: com.x,
+                                y: com.y
+                            }
+                        });
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    Scene.prototype.dragEnd = function (com, event) {
+        return __awaiter(this, void 0, void 0, function () {
+            var pos, _a, l, t, w, h, width, height;
+            return __generator(this, function (_b) {
+                pos = this.validDrag(com, event);
+                _a = this.validArea, l = _a[0], t = _a[1], w = _a[2], h = _a[3], width = _a[4], height = _a[5];
+                if (!pos.length) {
+                    this.dumpCom(com);
+                }
+                else {
+                    com.x = l + width * .925 * pos[0] + width / 2;
+                    com.y = t + height * .935 * pos[1] + height / 2;
+                    com.hitAble = false;
+                    com.static = false;
+                }
+                Object.assign(this.dragCom, {
+                    com: null,
+                    event: null,
+                    source: null
+                });
+                return [2 /*return*/];
+            });
+        });
+    };
+    Scene.prototype.validDrag = function (com, event) {
+        var x = event.offsetX;
+        var y = event.offsetY;
+        var _a = this.validArea, l = _a[0], t = _a[1], w = _a[2], h = _a[3], width = _a[4], height = _a[5];
+        if (x >= l && x <= l + w && y >= t && y <= t + h) {
+            return [~~((x - l) / width), ~~((y - t) / height)];
+        }
+        return [];
     };
     Scene.prototype.formatUser = function () {
         if (user.active && user.data.hasOwnProperty(user.active)) {
@@ -24782,22 +24874,31 @@ var Scene = /** @class */ (function () {
                     });
                 });
                 this.container.addEventListener('mouseup', function (event) {
+                    _this.hitExec(true, _this.hitCom['mouseup'] = _this.hitTest(event), function (com) {
+                        com.trigger('mouseup', event);
+                    });
                 });
                 this.container.addEventListener('mousemove', function (event) {
-                    var old = _this.hitCom.hover || [];
-                    var hover = _this.hitCom.hover = _this.hitTest(event);
-                    _this.hitExec(true, hover.slice(0), function (com) {
-                        // 如果在旧数组找不到, 则触发hover
-                        if (!old.some(function (item) { return item.id === com.id; })) {
-                            com.trigger('hover', event);
-                        }
-                    });
-                    // 如果在新数组找不到, 则触发leave
-                    old.forEach(function (com) {
-                        if (!hover.some(function (item) { return item.id === com.id; })) {
-                            com.trigger('leave', event);
-                        }
-                    });
+                    var com = _this.dragCom.com;
+                    if (!com) {
+                        var old_1 = _this.hitCom.hover || [];
+                        var hover_1 = _this.hitCom.hover = _this.hitTest(event);
+                        _this.hitExec(true, hover_1.slice(0), function (com) {
+                            // 如果在旧数组找不到, 则触发hover
+                            if (!old_1.some(function (item) { return item.id === com.id; })) {
+                                com.trigger('hover', event);
+                            }
+                        });
+                        // 如果在新数组找不到, 则触发leave
+                        old_1.forEach(function (com) {
+                            if (!hover_1.some(function (item) { return item.id === com.id; })) {
+                                com.trigger('leave', event);
+                            }
+                        });
+                    }
+                    else {
+                        com.drag(event, _this.dragCom.event);
+                    }
                 });
                 this.container.addEventListener('mouseleave', function (event) {
                     var hover = _this.hitCom['hover'];
@@ -24885,6 +24986,51 @@ var Scene = /** @class */ (function () {
             });
         });
     };
+    Scene.prototype.refresh = function () {
+        var _this = this;
+        requestAnimationFrame(function () { return __awaiter(_this, void 0, void 0, function () {
+            var queue_1;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!!this.stop) return [3 /*break*/, 2];
+                        this.clearCanvas();
+                        this.context.putImageData(this.imageDatas.bg, 0, 0);
+                        queue_1 = Promise.resolve();
+                        this.comsMounted.forEach(function (com) { return __awaiter(_this, void 0, void 0, function () {
+                            var _this = this;
+                            return __generator(this, function (_a) {
+                                queue_1 = queue_1.then(function () { return __awaiter(_this, void 0, void 0, function () {
+                                    var _a;
+                                    return __generator(this, function (_b) {
+                                        switch (_b.label) {
+                                            case 0:
+                                                if (!com.group.length) return [3 /*break*/, 2];
+                                                return [4 /*yield*/, com.drawGroup()];
+                                            case 1:
+                                                _a = _b.sent();
+                                                return [3 /*break*/, 3];
+                                            case 2:
+                                                _a = com.draw();
+                                                _b.label = 3;
+                                            case 3: return [2 /*return*/, _a];
+                                        }
+                                    });
+                                }); });
+                                return [2 /*return*/];
+                            });
+                        }); });
+                        return [4 /*yield*/, queue_1];
+                    case 1:
+                        _a.sent();
+                        this.refresh();
+                        _a.label = 2;
+                    case 2: return [2 /*return*/];
+                }
+            });
+        }); });
+    };
     // 工具方法
     // 晃动镜头
     Scene.prototype.wobble = function (option, render) {
@@ -24924,12 +25070,27 @@ var Scene = /** @class */ (function () {
             paly();
         });
     };
-    Scene.prototype.mountCom = function (com) {
+    Scene.prototype.mountCom = function (com, insert) {
         var _this = this;
+        if (insert === void 0) { insert = false; }
         return (Array.isArray(com) ? com : [com]).map(function (item) {
             _this.comsMountedMap[item.id] = item;
-            _this.comsMounted.push(item);
+            if (insert) {
+                _this.comsMounted.unshift(item);
+            }
+            else {
+                _this.comsMounted.push(item);
+            }
             return item;
+        });
+    };
+    Scene.prototype.dumpCom = function (com) {
+        var _this = this;
+        delete this.comsMountedMap[com.id];
+        this.comsMounted.slice(0).forEach(function (item, index) {
+            if (item.id === com.id) {
+                _this.comsMounted.splice(index, 1);
+            }
         });
     };
     Scene.prototype.clearCanvas = function () {
@@ -25017,14 +25178,15 @@ var Scene = /** @class */ (function () {
             rest[_i - 1] = arguments[_i];
         }
         var args = rest.concat(0, 0, this.config.width, this.config.height).filter(function (item) { return typeof item === 'number'; }).slice(0, 4);
-        var imgData = (_a = this.context).getImageData.apply(_a, args);
+        // @ts-ignore
+        var imageData = (_a = this.context).getImageData.apply(_a, args);
         if (name) {
-            this.imgDatas['_' + name] = imgData;
+            this.imageDatas['_' + name] = imageData;
         }
         else {
-            this.imgDatas.active = imgData;
+            this.imageDatas.active = imageData;
         }
-        return imgData;
+        return imageData;
     };
     Scene.prototype.restore = function (name, x, y) {
         var _a;
@@ -25034,16 +25196,17 @@ var Scene = /** @class */ (function () {
         for (var _i = 3; _i < arguments.length; _i++) {
             rest[_i - 3] = arguments[_i];
         }
-        var imgData;
-        if (name && this.imgDatas[name]) {
-            imgData = this.imgDatas[name];
-            delete this.imgDatas[name];
+        var imageData;
+        if (name && this.imageDatas[name]) {
+            imageData = this.imageDatas[name];
+            delete this.imageDatas[name];
         }
         else {
-            imgData = this.imgDatas.active;
+            imageData = this.imageDatas.active;
         }
-        imgData && (_a = this.context).putImageData.apply(_a, __spreadArrays([imgData, x, y], rest));
-        return imgData;
+        // @ts-ignore
+        imageData && (_a = this.context).putImageData.apply(_a, __spreadArrays([imageData, x, y], rest));
+        return imageData;
     };
     Scene.prototype.recordPath = function () {
         var pointers = [];
@@ -25603,7 +25766,7 @@ var zombie = {
 };
 
 var path$2 = './images/Plants/';
-var name$2 = '${name}/0.gif';
+var name$2 = '${name}/${name}.gif';
 var list$2 = [
     'Blover',
     'Cactus',
@@ -25644,7 +25807,43 @@ var list$2 = [
     'TwinSunflower',
     'WallNut'
 ];
+var cardSelect = function (com, type, event) {
+    var state = com.scene.state;
+    if (state === 'startGame') {
+        if (type === 'click') {
+            if (!com.scene.dragCom.com && com.type === 'card') {
+                com.scene.dragStart(com, event);
+            }
+        }
+        else if (type === 'mouseup') {
+            if (com.scene.dragCom.com) {
+                com.scene.dragEnd(com.scene.dragCom.com, event);
+            }
+        }
+    }
+};
+var cradDrag = function (com, event, oldEvent) {
+    var dragCom = com.scene.dragCom;
+    if (dragCom.com) {
+        com.x = dragCom.source.x + event.offsetX - oldEvent.offsetX;
+        com.y = dragCom.source.y + event.offsetY - oldEvent.offsetY;
+    }
+};
 var options$2 = mergeOptions(path$2, name$2, list$2, {});
+for (var key in options$2) {
+    if (options$2.hasOwnProperty(key)) {
+        options$2[key] = Object.assign({
+            trigger: function (type, event) {
+                // @ts-ignore
+                cardSelect(this, type, event);
+            },
+            drag: function (event, oldEvent) {
+                // @ts-ignore
+                cradDrag(this, event, oldEvent);
+            }
+        }, options$2[key]);
+    }
+}
 var plant = {
     path: path$2,
     name: name$2,
