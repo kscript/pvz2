@@ -23842,6 +23842,15 @@ var hitTest = function () {
     var x1 = rest[0], y1 = rest[1], x = rest[2], y = rest[3], w = rest[4], h = rest[5];
     return x1 >= x && x1 <= x + w && y1 >= y && y1 <= y + h;
 };
+var hitTest2 = function (a, b) {
+    var x1 = a[0], y1 = a[1], w1 = a[2], h1 = a[3];
+    var x2 = b[0], y2 = b[1], w2 = b[2], h2 = b[3];
+    return isCollide([
+        x1, y1, x1 + w1, y1, x1 + w1, y1 + h1, x1, y1 + h1
+    ], [
+        x2, y2, x2 + w2, y2, x2 + w2, y2 + h2, x2, y2 + h2
+    ]);
+};
 var dotV2 = function (v1, v2) {
     return v1.x * v2.x + v1.y * v2.y;
 };
@@ -23943,8 +23952,9 @@ var Model = /** @class */ (function () {
         this.loadSpeed = 1e4;
         // 攻击速度
         this.akSpeed = 5e3;
+        this.moveSpeedX = 0;
         // 触发攻击的范围
-        this.akX = 10;
+        this.akX = 1;
         this.akY = 1;
         // 所处的层级
         this.index = 1;
@@ -23970,6 +23980,13 @@ var Model = /** @class */ (function () {
         this.img = void 0;
         this.image = {};
         this.hitArea = [];
+        this.attackArea = [];
+        // 被攻击范围
+        this.attackArea2 = [];
+        // 放入场景后的位置
+        this.pos = [0, 0];
+        // 繁忙状态
+        this.pending = false;
         // scene处于哪些state时, 允许碰撞检测
         this.hitState = {};
         // 默认是否要进行碰撞检测
@@ -24143,6 +24160,9 @@ var Model = /** @class */ (function () {
         }
     };
     Model.prototype.stop = function () { };
+    Model.prototype.run = function () {
+        this.x += this.moveSpeedX;
+    };
     Model.prototype.destory = function () { };
     Model.prototype.setHitArea = function (refresh) {
         if (refresh === void 0) { refresh = false; }
@@ -24189,10 +24209,26 @@ var Model = /** @class */ (function () {
                             this.hitArea = [x, y, this.width * scaleX, this.height * scaleY];
                         }
                         _c.label = 3;
-                    case 3: return [2 /*return*/];
+                    case 3:
+                        this.setAttackArea();
+                        return [2 /*return*/];
                 }
             });
         });
+    };
+    Model.prototype.setAttackArea = function () {
+        var _a = this, akX = _a.akX, akY = _a.akY, pos = _a.pos;
+        var _b = this.scene, colScale = _b.colScale, rowScale = _b.rowScale;
+        var _c = this.scene.validArea, l = _c[0], t = _c[1], w = _c[2], h = _c[3], width = _c[4], height = _c[5];
+        // -2是为了不出现正好两边相交的情况
+        if (this.type === 'plant') {
+            this.attackArea = [l + (pos[0] * colScale - .75) * width, t + pos[1] * rowScale * height, akX * width, akY * height - 2];
+            this.attackArea2 = [l + (pos[0] * colScale - .75) * width, t + pos[1] * rowScale * height, width, height - 2];
+        }
+        else {
+            this.attackArea = [l + pos[0] * width, t + pos[1] * height, akX * width, akY * height - 2];
+            this.attackArea2 = [0, t + pos[1] * height, width, height - 2];
+        }
     };
     Model.prototype.drawHitArea = function (color, cxt, area) {
         if (color === void 0) { color = 'red'; }
@@ -24253,7 +24289,8 @@ var Plant = /** @class */ (function (_super) {
         _this.type = 'plant';
         _this.options = options;
         Object.assign(_this, {
-            hitAble: true
+            hitAble: true,
+            akX: 9
         }, options);
         return _this;
     }
@@ -24351,6 +24388,9 @@ var defaultConfig = {
     width: 1200,
     height: 700
 };
+var others = [];
+var plants = [];
+var zombies = [];
 var Scene = /** @class */ (function () {
     function Scene(container, config) {
         if (config === void 0) { config = {}; }
@@ -24364,6 +24404,11 @@ var Scene = /** @class */ (function () {
         this.hitCom = {};
         this.mod = 0;
         this.row = 5;
+        // 行高和列宽
+        this.rowH = 0;
+        this.colW = 0;
+        this.rowScale = .935;
+        this.colScale = .925;
         this.stop = false;
         this.user = {};
         this.sounds = {};
@@ -24386,6 +24431,9 @@ var Scene = /** @class */ (function () {
         config.scaleX = config.width / defaultConfig.width;
         config.scaleY = config.height / defaultConfig.height;
         this.context = container.getContext('2d');
+        this.colW = config.width / 14;
+        // row 可能是5或者是6
+        this.rowH = config.height / (this.row + 1);
         this.formatUser();
     }
     Scene.prototype.beforeInit = function () {
@@ -24481,6 +24529,7 @@ var Scene = /** @class */ (function () {
                     case 1:
                         com = _a.sent();
                         com.init();
+                        this.setValidArea();
                         imageData = offlineCanvas.getImageData(com.img, com.width, this.config.height);
                         this.context.putImageData(imageData, 0, 0);
                         return [4 /*yield*/, this.mountGameZombie()];
@@ -24514,42 +24563,18 @@ var Scene = /** @class */ (function () {
                         ];
                     case 3:
                         _a.sent();
-                        // useComs.forEach(({ com, x }) => {
-                        //   com.x = x
-                        // })
-                        this.setValidArea();
                         return [2 /*return*/];
                 }
             });
         });
     };
-    Scene.prototype.setValidArea = function (row, num) {
-        if (row === void 0) { row = 0; }
-        if (num === void 0) { num = 0; }
-        // 横向14份
-        // 纵向7/6份
-        // 左边距1.25份
-        // 右边距3.75份
-        // 上边距.5份
-        // 下边距.5份
-        var width = this.config.width / 14;
-        var height = this.config.height / (this.row + 1);
-        row = row < 0 || row > this.row ? 0 : row;
-        num = num < 0 || num > this.row ? 0 : num;
-        this.validArea = [
-            1.25 * width,
-            (row + .5) * height,
-            9 * width,
-            (this.row - num) * height,
-            width,
-            height
-        ];
-    };
     Scene.prototype.beforeGame = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.mountCardBar()];
+                    case 0:
+                        this.resetAttackArea();
+                        return [4 /*yield*/, this.mountCardBar()];
                     case 1:
                         _a.sent();
                         return [4 /*yield*/, this.selectGameCard()];
@@ -24597,11 +24622,12 @@ var Scene = /** @class */ (function () {
     };
     Scene.prototype.mountGameZombie = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var Zombie, useComs, coms;
+            var _a, l, t, w, h, width, height, Zombie, useComs, coms;
             var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
+                        _a = this.validArea, l = _a[0], t = _a[1], w = _a[2], h = _a[3], width = _a[4], height = _a[5];
                         Zombie = Ctors.Zombie;
                         useComs = this.coms.filter(function (com) {
                             return com.type === 'zombie' && com.level <= _this.user.level;
@@ -24610,7 +24636,9 @@ var Scene = /** @class */ (function () {
                             var zi = Math.floor(Math.random() * useComs.length);
                             var zombie = new Zombie(useComs[zi].name, useComs[zi].options);
                             zombie.x = _this.config.width * .9;
-                            zombie.y = _this.config.height / (_this.row + .5) * (0.25 + _this.rowFunc());
+                            // y固定, x是后期动态设置的
+                            zombie.pos = [10, _this.rowFunc()];
+                            zombie.y = t + (zombie.pos[1] + 1) * height - useComs[zi].height;
                             return zombie;
                         }));
                         return [4 /*yield*/, Promise.all(coms.map(function (com) { return __awaiter(_this, void 0, void 0, function () {
@@ -24624,7 +24652,7 @@ var Scene = /** @class */ (function () {
                                     }
                                 });
                             }); }))];
-                    case 1: return [2 /*return*/, _a.sent()];
+                    case 1: return [2 /*return*/, _b.sent()];
                 }
             });
         });
@@ -24681,6 +24709,33 @@ var Scene = /** @class */ (function () {
             });
         });
     };
+    Scene.prototype.setValidArea = function (row, num) {
+        if (row === void 0) { row = 0; }
+        if (num === void 0) { num = 0; }
+        // 横向14份
+        // 纵向7/6份
+        // 左边距1.25份
+        // 右边距3.75份
+        // 上边距.5份
+        // 下边距.5份
+        var width = this.config.width / 14;
+        var height = this.config.height / (this.row + 1);
+        row = row < 0 || row > this.row ? 0 : row;
+        num = num < 0 || num > this.row ? 0 : num;
+        this.validArea = [
+            1.25 * width,
+            (row + .5) * height,
+            9 * width,
+            (this.row - num) * height,
+            width,
+            height
+        ];
+    };
+    Scene.prototype.resetAttackArea = function () {
+        this.comsMounted.forEach(function (com) {
+            com.setAttackArea();
+        });
+    };
     Scene.prototype.dragStart = function (com, event) {
         return __awaiter(this, void 0, void 0, function () {
             var Plant, comCopy;
@@ -24714,17 +24769,20 @@ var Scene = /** @class */ (function () {
     Scene.prototype.dragEnd = function (com, event) {
         return __awaiter(this, void 0, void 0, function () {
             var pos, _a, l, t, w, h, width, height;
-            return __generator(this, function (_b) {
+            var _b;
+            return __generator(this, function (_c) {
                 pos = this.validDrag(com, event);
                 _a = this.validArea, l = _a[0], t = _a[1], w = _a[2], h = _a[3], width = _a[4], height = _a[5];
                 if (!pos.length) {
                     this.dumpCom(com);
                 }
                 else {
-                    com.x = l + width * .925 * pos[0] + width / 2;
-                    com.y = t + height * .935 * pos[1] + height / 2;
+                    com.x = l + width * this.colScale * pos[0] + width / 2;
+                    com.y = t + height * this.rowScale * pos[1] + height / 2;
                     com.hitAble = false;
                     com.static = false;
+                    (_b = com.pos).splice.apply(_b, __spreadArrays([0, 2], pos));
+                    com.setAttackArea();
                 }
                 Object.assign(this.dragCom, {
                     com: null,
@@ -24998,7 +25056,7 @@ var Scene = /** @class */ (function () {
                         this.clearCanvas();
                         this.context.putImageData(this.imageDatas.bg, 0, 0);
                         queue_1 = Promise.resolve();
-                        this.comsMounted.forEach(function (com) { return __awaiter(_this, void 0, void 0, function () {
+                        others.concat(plants, zombies).forEach(function (com) { return __awaiter(_this, void 0, void 0, function () {
                             var _this = this;
                             return __generator(this, function (_a) {
                                 queue_1 = queue_1.then(function () { return __awaiter(_this, void 0, void 0, function () {
@@ -25006,6 +25064,7 @@ var Scene = /** @class */ (function () {
                                     return __generator(this, function (_b) {
                                         switch (_b.label) {
                                             case 0:
+                                                com.run();
                                                 if (!com.group.length) return [3 /*break*/, 2];
                                                 return [4 /*yield*/, com.drawGroup()];
                                             case 1:
@@ -25024,6 +25083,7 @@ var Scene = /** @class */ (function () {
                         return [4 /*yield*/, queue_1];
                     case 1:
                         _a.sent();
+                        this.attackTest();
                         this.refresh();
                         _a.label = 2;
                     case 2: return [2 /*return*/];
@@ -25031,7 +25091,42 @@ var Scene = /** @class */ (function () {
             });
         }); });
     };
+    Scene.prototype.attackTest = function () {
+        plants.forEach(function (com1) {
+            zombies.forEach(function (com2) {
+                if (com1.id !== com2.id && com2.type === 'zombie') {
+                    // 移动 攻击/被攻击 边界, 只改变x
+                    com2.attackArea[0] = com2.x;
+                    com2.attackArea2[0] = com2.x;
+                    if (!com1.pending && hitTest2(com1.attackArea, com2.attackArea2)) {
+                        com1.attack(com2);
+                    }
+                    if (!com2.pending && hitTest2(com2.attackArea, com1.attackArea2)) {
+                        console.log(com2.attackArea.slice(0));
+                        console.log(com2.attackArea2.slice(0));
+                        com2.attack(com1);
+                    }
+                }
+            });
+        });
+    };
     // 工具方法
+    Scene.prototype.findAttackCom = function () {
+        plants.splice(0);
+        zombies.splice(0);
+        others.splice(0);
+        this.comsMounted.forEach(function (com) {
+            if (com.type === 'plant') {
+                plants.push(com);
+            }
+            else if (com.type === 'zombie') {
+                zombies.push(com);
+            }
+            else {
+                others.push(com);
+            }
+        });
+    };
     // 晃动镜头
     Scene.prototype.wobble = function (option, render) {
         if (option === void 0) { option = {}; }
@@ -25073,7 +25168,7 @@ var Scene = /** @class */ (function () {
     Scene.prototype.mountCom = function (com, insert) {
         var _this = this;
         if (insert === void 0) { insert = false; }
-        return (Array.isArray(com) ? com : [com]).map(function (item) {
+        var coms = (Array.isArray(com) ? com : [com]).map(function (item) {
             _this.comsMountedMap[item.id] = item;
             if (insert) {
                 _this.comsMounted.unshift(item);
@@ -25083,6 +25178,8 @@ var Scene = /** @class */ (function () {
             }
             return item;
         });
+        this.findAttackCom();
+        return coms;
     };
     Scene.prototype.dumpCom = function (com) {
         var _this = this;
@@ -25092,6 +25189,9 @@ var Scene = /** @class */ (function () {
                 _this.comsMounted.splice(index, 1);
             }
         });
+        if (com.type === 'plant' || com.type === 'zombie') {
+            this.findAttackCom();
+        }
     };
     Scene.prototype.clearCanvas = function () {
         this.context.clearRect(0, 0, this.config.width, this.config.width);
@@ -25840,6 +25940,11 @@ for (var key in options$2) {
             drag: function (event, oldEvent) {
                 // @ts-ignore
                 cradDrag(this, event, oldEvent);
+            },
+            attack: function (com) {
+                // @ts-ignore
+                this.pending = true;
+                console.log(this, com);
             }
         }, options$2[key]);
     }
@@ -25877,6 +25982,19 @@ var options$3 = mergeOptions(path$3, name$3, list$3, {
         level: 1
     }
 });
+for (var key$1 in options$3) {
+    if (options$3.hasOwnProperty(key$1)) {
+        options$3[key$1] = Object.assign({
+            moveSpeedX: -.5,
+            attack: function (com) {
+                // @ts-ignore
+                this.pending = true;
+                this.moveSpeedX = 0;
+                console.log(this, com);
+            }
+        }, options$3[key$1]);
+    }
+}
 var zombie$1 = {
     path: path$3,
     name: name$3,
