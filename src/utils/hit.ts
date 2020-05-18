@@ -3,6 +3,15 @@ export const hitTest = (...rest: number[]) => {
   const [x1, y1, x, y, w, h] = rest
   return x1 >= x && x1 <= x + w && y1 >= y && y1 <= y + h
 }
+export const hitTest2 = (a: number[], b: number[]) => {
+  const [x1, y1, w1, h1] = a
+  const [x2, y2, w2, h2] = b
+  return isCollide([
+    x1, y1, x1 + w1, y1, x1 + w1, y1 + h1, x1, y1 + h1
+  ], [
+    x2, y2, x2 + w2, y2, x2 + w2, y2 + h2, x2, y2 + h2
+  ])
+}
 const dotV2 = (v1: anyObject<number>, v2: anyObject<number>) => {
   return v1.x * v2.x + v1.y * v2.y
 }

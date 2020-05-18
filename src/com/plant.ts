@@ -8,7 +8,8 @@ export default class Plant extends Model {
     this.type = 'plant'
     this.options = options
     Object.assign(this, {
-      hitAble: true
+      hitAble: true,
+      akX: 9
     }, options)
   }
 }

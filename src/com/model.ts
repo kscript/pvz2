@@ -35,9 +35,10 @@ export default class Model {
   public loadSpeed: number = 1e4
   // 攻击速度
   public akSpeed: number = 5e3
+  public moveSpeedX: number = 0
 
   // 触发攻击的范围
-  public akX: number = 10
+  public akX: number = 1
   public akY: number = 1
 
   // 所处的层级
@@ -68,6 +69,13 @@ export default class Model {
   public image: anyObject = {
   }
   public hitArea: number[] = []
+  public attackArea: number[] = []
+  // 被攻击范围
+  public attackArea2: number[] = []
+  // 放入场景后的位置
+  public pos: number[] = [0, 0]
+  // 繁忙状态
+  public pending = false
   // scene处于哪些state时, 允许碰撞检测
   public hitState: anyObject<boolean> = {}
   // 默认是否要进行碰撞检测
@@ -163,6 +171,9 @@ export default class Model {
   public async animate(...rest: any[]) {}
   public attack(...rest: any[]) {}
   public stop() {}
+  public run() {
+    this.x += this.moveSpeedX
+  }
   public destory() {}
   public async setHitArea(refresh: boolean = false) {
     if ((!this.hitArea.length || refresh) && this.gif) {
@@ -194,6 +205,20 @@ export default class Model {
       } else {
         this.hitArea = [x, y, this.width * scaleX, this.height * scaleY]
       }
+    }
+    this.setAttackArea()
+  }
+  public setAttackArea() {
+    let { akX, akY, pos } = this
+    let  { colScale, rowScale } = this.scene
+    let [l, t, w, h, width, height] = this.scene.validArea
+    // -2是为了不出现正好两边相交的情况
+    if (this.type === 'plant') {
+      this.attackArea = [l + (pos[0] * colScale - .75) * width, t  + pos[1] * rowScale * height, akX * width, akY * height - 2]
+      this.attackArea2 = [l + (pos[0] * colScale - .75) * width, t  + pos[1] * rowScale * height, width, height - 2]
+    } else {
+      this.attackArea = [l + pos[0] * width, t  + pos[1] * height, akX * width, akY * height - 2]
+      this.attackArea2 = [0, t + pos[1] * height, width, height - 2]
     }
   }
   public drawHitArea(color = 'red', cxt = this.scene.context, area = this.hitArea) {

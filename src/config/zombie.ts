@@ -1,4 +1,5 @@
 import { mergeOptions } from '@/utils/model'
+import Model from '@/com/model'
 
 const path = './images/Zombies/'
 const name = '${name}/${name}.gif'
@@ -26,6 +27,20 @@ const options: anyObject = mergeOptions(path, name, list, {
     level: 1
   }
 })
+
+for(let key in options) {
+  if (options.hasOwnProperty(key)) {
+    options[key] = Object.assign({
+      moveSpeedX: -.5,
+      attack(com: Model) {
+        // @ts-ignore
+        this.pending = true
+        this.moveSpeedX = 0
+        console.log(this, com)
+      }
+    }, options[key])
+  }
+}
 const zombie = {
   path,
   name,

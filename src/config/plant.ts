@@ -79,6 +79,11 @@ for(let key in options) {
       drag(event: MouseEvent, oldEvent: MouseEvent) {
         // @ts-ignore
         cradDrag(this, event, oldEvent)
+      },
+      attack(com: Model) {
+        // @ts-ignore
+        this.pending = true
+        console.log(this, com)
       }
     }, options[key])
   }
