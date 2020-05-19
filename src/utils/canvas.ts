@@ -85,6 +85,8 @@ export class GifCanvas {
     public index: number = 0
     public time: number = +new Date()
     public type: string = 'gif'
+    public width: number = 0
+    public height: number = 0
     constructor(url: string, parent: Model) {
         this.url = url
         const { x, y, fps } = parent
@@ -94,6 +96,8 @@ export class GifCanvas {
             y: 0
         }, { x, y, fps })
         const type = path.extname(url).slice(1)
+        this.width =  this.options.width || this.width
+        this.height =  this.options.height || this.height
         this.type = type
         this.imageDatas = this.parseGif(url)
     }
@@ -121,6 +125,8 @@ export class GifCanvas {
         return this.imgElems = new Promise((resolve, reject) => {
             this.imageUrls.map((url, index) => {
                 return loadImg(url).then(img => {
+                    this.width = this.width || img.width
+                    this.height = this.height || img.height
                     current++
                     imgs[index] = img
                     stateChange('success', url, index, this)

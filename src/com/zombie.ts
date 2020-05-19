@@ -9,6 +9,7 @@ export default class Zombie extends Model {
     this.type = 'zombie'
     this.options = options
     Object.assign(this, {
+      attackAble: true,
       hitAble: true
     }, options)
   }

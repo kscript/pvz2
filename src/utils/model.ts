@@ -18,6 +18,24 @@ export const mergeOptions = (path: string, name: string, list: string[], options
         ...data
       })
     }, options[item].image instanceof Object ? options[item].image : {})
+    const medias = options[item].medias
+    if (medias instanceof  Object) {
+      for(let k in medias) {
+        if (medias[k] instanceof Object) {
+          medias[k] = Object.assign(medias[k], typeof medias[k].name === 'string' ? {
+            name:  replaceTpl(medias[k].name, {
+              name: item,
+              ...data
+            })
+          } : {})
+        } else if(typeof medias[k] === 'string'){
+          medias[k]= replaceTpl(medias[k], {
+            name: item,
+            ...data
+          })
+        }
+      }
+    }
   })
   return options
 }

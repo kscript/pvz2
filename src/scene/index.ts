@@ -10,7 +10,16 @@ const defaultConfig = {
 }
 const others: Model[] = []
 const plants: Model[] = []
+const bullets: Model[] = []
 const zombies: Model[] = []
+
+const coms: anyObject<Model[]> = {
+  plants,
+  zombies,
+  bullets,
+  others
+}
+console.log(coms)
 export default class Scene {
   [prop: string]: any
   public config: anyObject
@@ -333,9 +342,10 @@ export default class Scene {
     SodRollCap.draw(~~rate, LoadBar)
     console.log('已加载:' + rate.toFixed(2) + '%')
   }
-  stateChange(type: string, url: string, index: number, gif: GifCanvas) {
+  stateChange(type: string, url: string, index: number, gif: GifCanvas, total: number = 0) {
     const count = this.coms.length
-    if (index === gif.imageUrls.length - 1) {
+    const loadComplete = total ? index === total : index === gif.imageUrls.length - 1
+    if (loadComplete) {
       this.loadCount++
       const rate = this.loadCount / count * 100
       this.loadAnimate(rate)
@@ -431,7 +441,7 @@ export default class Scene {
         this.clearCanvas()
         this.context.putImageData(this.imageDatas.bg, 0, 0)
         let queue = Promise.resolve()
-        others.concat(plants, zombies).forEach(async com => {
+        others.concat(plants, bullets, zombies).forEach(async com => {
           queue = queue.then(async () => {
             com.run()
             return com.group.length ? await com.drawGroup() : com.draw()
@@ -444,24 +454,32 @@ export default class Scene {
     })
   }
   attackTest() {
-    let flag = false
-    plants.forEach(com1 => {
-      zombies.forEach(com2 => {
+    plants.concat(bullets).slice(0).forEach((com1, i1) => {
+      zombies.slice(0).forEach((com2, i2) => {
         if (com1.id !== com2.id && com2.type === 'zombie') {
           // 移动 攻击/被攻击 边界, 只改变x
           com2.attackArea[0] = com2.x
           com2.attackArea2[0] = com2.x
-          if(!com1.pending && hitTest2(com1.attackArea, com2.attackArea2)) {
+          if (com1.type === 'bullet') {
+            com1.attackArea[0] = com1.x - com1.width * 2
+            com1.attackArea2[0] = com1.x
+          }
+          if(!com1.pending && com1.attackAble && hitTest2(com1.attackArea, com2.attackArea2)) {
             com1.attack(com2)
           }
-          if(!com2.pending && hitTest2(com2.attackArea, com1.attackArea2)) {
-            console.log(com2.attackArea.slice(0))
-            console.log(com2.attackArea2.slice(0))
+          if(com1.type !== 'bullet' && !com2.pending && com2.attackAble && hitTest2(com2.attackArea, com1.attackArea2)) {
             com2.attack(com1)
+          }
+          if (com1.die) {
+            this.dumpCom(com1, false)
+          }
+          if (com2.die) {
+            this.dumpCom(com2, false)
           }
         }
       })
     })
+    this.findAttackCom()
   }
 
   // 工具方法
@@ -469,14 +487,10 @@ export default class Scene {
     plants.splice(0)
     zombies.splice(0)
     others.splice(0)
+    bullets.splice(0)
+    
     this.comsMounted.forEach(com => {
-      if (com.type === 'plant') {
-        plants.push(com)
-      }else if(com.type === 'zombie') {
-        zombies.push(com)
-      } else {
-        others.push(com)
-      }
+      (coms[com.type + 's'] || others).push(com)
     })
   }
   // 晃动镜头
@@ -529,14 +543,14 @@ export default class Scene {
     this.findAttackCom()
     return coms
   }
-  dumpCom(com: Model) {
+  dumpCom(com: Model, autoFind: boolean = true) {
     delete this.comsMountedMap[com.id]
     this.comsMounted.slice(0).forEach((item, index) => {
       if (item.id === com.id) {
         this.comsMounted.splice(index, 1)
       }
     })
-    if(com.type === 'plant' || com.type === 'zombie') {
+    if(autoFind && (com.type === 'plant' || com.type === 'zombie' || com.type === 'bullet')) {
       this.findAttackCom()
     }
   }

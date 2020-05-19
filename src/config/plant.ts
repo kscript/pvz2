@@ -67,6 +67,13 @@ const cradDrag = (com: Model, event: MouseEvent, oldEvent: MouseEvent) => {
   }
 }
 const options: anyObject = mergeOptions(path, name, list, {
+  Peashooter: {
+    attackAble: true,
+    bulletName: 'PB01',
+    // medias: {
+    //   attack: 'PB01.gif'
+    // }
+  }
 })
 
 for(let key in options) {
@@ -80,10 +87,30 @@ for(let key in options) {
         // @ts-ignore
         cradDrag(this, event, oldEvent)
       },
-      attack(com: Model) {
+      async attack(com: Model) {
         // @ts-ignore
-        this.pending = true
-        console.log(this, com)
+        const self: Model = this
+        // const attack = self.gifs.attack
+        const now = +new Date
+        if (now - self.akSpeed > self.attackTime) {
+          self.attackTime = now
+          if (self.bulletName) {
+            const bullet = self.scene.comMap[self.bulletName]
+            // @ts-ignore
+            const Bullet = bullet.__proto__.constructor
+            const {
+              x, y, width, pos, attackMoveX, attackMoveY
+            } = self
+            const bulletCopy = new Bullet(bullet.name, Object.assign({}, bullet.options, {
+              x: x + width, y, pos, attackMoveX, attackMoveY, source: self
+            }))
+            await bulletCopy.init()
+            self.scene.mountCom(bulletCopy)
+            self.bullets.push(bulletCopy)
+          } else {
+            self.setAttackResult(com)
+          }
+        }
       }
     }, options[key])
   }

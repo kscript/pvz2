@@ -2,6 +2,14 @@ import * as path from 'path'
 import Scene from '@/scene'
 import { GifCanvas, offlineCanvas, OfflineCanvas } from '@/utils/canvas'
 import { drawHitArea } from '@/utils/hit'
+const isEmpty = (obj: anyObject) => {
+  for(let k in obj) {
+    if (obj.hasOwnProperty(k)) {
+      return false
+    }
+  }
+  return true
+}
 export default class Model {
   // 坐标
   public x: number = 0
@@ -25,21 +33,29 @@ export default class Model {
   // 等级
   public level: number = 1
   // 生命值
-  public hp: number = 100
+  public hp: number = 50
   // 攻击力
   public ak: number = 20
   // 防御力
-  public dfe: number = 0
+  public dfe: number = 10
+  public akEffect: number = 1
+  public dfeEffect: number = 1
   
   // 装载速度
   public loadSpeed: number = 1e4
   // 攻击速度
   public akSpeed: number = 5e3
   public moveSpeedX: number = 0
-
+  
   // 触发攻击的范围
   public akX: number = 1
   public akY: number = 1
+  
+  public attackTime: number = +new Date
+  public attackMoveX: number = 1
+  public attackMoveY: number = 0
+  public attackX: number = 0
+  public attackY: number = 0
 
   // 所处的层级
   public index: number = 1
@@ -53,7 +69,7 @@ export default class Model {
   // 名称
   public name: string = ''
   // 创建时间
-  public time: number = +new Date
+  public time: number = 0
   // 方向: 'left,right'
   public direction: string = ''
 
@@ -65,6 +81,13 @@ export default class Model {
   // 水生类型
   public aquatic: boolean = false
   public gif: GifCanvas | void = void 0
+  // 额外的一些资源
+  public medias: anyObject<string> | anyObject = {}
+  // 额外资源解析结果
+  public gifs: anyObject<GifCanvas> = {}
+  // 所有资源总计帧数
+  public total: number = 0
+
   public img: HTMLImageElement | void = void 0
   public image: anyObject = {
   }
@@ -80,6 +103,7 @@ export default class Model {
   public hitState: anyObject<boolean> = {}
   // 默认是否要进行碰撞检测
   public hitAble: boolean = false
+  public attackAble: boolean = false
   public state: number = 0
   // @ts-ignore
   public scene: Scene
@@ -108,8 +132,10 @@ export default class Model {
   public offlineCanvas: OfflineCanvas = offlineCanvas
   public coms: Model[] = []
   public options: anyObject = {}
+  public bullets: Model[] = []
+  public bulletName = ''
   constructor() {}
-  public async init(stateChange?: (type: string, url: string, index: number, gif: GifCanvas) => void) {
+  public async init(stateChange?: (type: string, url: string, index: number, gif: GifCanvas, total?: number) => void) {
     if (this.state > 0) { return }
     this.state = 1
     this.initProp()
@@ -119,13 +145,42 @@ export default class Model {
         this.gif = await this.initGif()
         await this.gif.toBlobUrl()
       }
+      const gifs: GifCanvas[] = []
+      if (!isEmpty(this.medias) && isEmpty(this.gifs)) {
+        await Promise.all(Object.keys(this.medias).map(async (key: string) => {
+          let name = this.medias[key]
+          let imgPath = this.image.path
+          if (this.medias[key] instanceof Object) {
+            name =  this.medias[key].name
+            imgPath = this.medias[key].path || imgPath
+          }
+          if (name && typeof name === 'string') {
+            gifs.push(this.gifs[key] = await new GifCanvas(path.join(imgPath, name), this))
+            await this.gifs[key].toBlobUrl()
+          }
+          return this.gifs[key]
+        }))
+        let len = 0
+        await Promise.all(gifs.map(gif => {
+          gif.loadImage((type, url, index, gif) => {
+            if (index === gif.imageUrls.length - 1) {
+              typeof stateChange === 'function' && stateChange(type, url, len++, gif, gifs.length + gif.imageUrls.length - 1)
+            }
+          })
+        }))
+        this.gifs['default'] = this.gif
+      }
       if (!this.img) {
-        this.img = (await this.gif.loadImage(stateChange))[0]
+        this.img = (await this.gif.loadImage((type, url, index, gif) => {
+          typeof stateChange === 'function' && stateChange(type, url, gifs.length + index, gif, gifs.length + gif.imageUrls.length - 1)
+        }))[0]
       }
       await this.setHitArea()
       Object.assign(this.options, {
         gif: this.gif,
-        img: this.img
+        img: this.img,
+        gifs: this.gifs,
+        medias: this.medias
       })
     }
   }
@@ -174,7 +229,9 @@ export default class Model {
   public run() {
     this.x += this.moveSpeedX
   }
-  public destory() {}
+  public destory() {
+    this.die = true
+  }
   public async setHitArea(refresh: boolean = false) {
     if ((!this.hitArea.length || refresh) && this.gif) {
       let img = this.img || (await this.gif.imgElems)[0]
@@ -216,6 +273,9 @@ export default class Model {
     if (this.type === 'plant') {
       this.attackArea = [l + (pos[0] * colScale - .75) * width, t  + pos[1] * rowScale * height, akX * width, akY * height - 2]
       this.attackArea2 = [l + (pos[0] * colScale - .75) * width, t  + pos[1] * rowScale * height, width, height - 2]
+    } else if (this.type === 'bullet') {
+      this.attackArea = [0, t  + pos[1] * rowScale * height, this.width, this.height]
+      this.attackArea2 = [0, t  + pos[1] * rowScale * height, this.width, this.height]
     } else {
       this.attackArea = [l + pos[0] * width, t  + pos[1] * height, akX * width, akY * height - 2]
       this.attackArea2 = [0, t + pos[1] * height, width, height - 2]
@@ -230,4 +290,11 @@ export default class Model {
     }
   }
   public trigger(type: string, event?: Event) {}
+  public setAttackResult(com: Model){
+    const num = this.ak * this.akEffect - com.dfe * com.dfeEffect
+    com.hp -= num >= 0 ? num : 0
+    if (com.hp <= 0) {
+      com.destory()
+    }
+  }
 }

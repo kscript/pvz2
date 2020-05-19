@@ -21,10 +21,16 @@ const list: string[] = [
 ]
 const options: anyObject = mergeOptions(path, name, list, {
   Zombie: {
-    level: 1
+    level: 1,
+    medias: {
+      attack: '${name}/${name}Attack.gif'
+    }
   },
   ConeheadZombie: {
-    level: 1
+    level: 1,
+    medias: {
+      attack: '${name}/${name}Attack.gif'
+    }
   }
 })
 
@@ -32,11 +38,17 @@ for(let key in options) {
   if (options.hasOwnProperty(key)) {
     options[key] = Object.assign({
       moveSpeedX: -.5,
-      attack(com: Model) {
+      async attack(com: Model) {
         // @ts-ignore
-        this.pending = true
-        this.moveSpeedX = 0
-        console.log(this, com)
+        const self: Model = this
+        // self.pending = true
+        self.moveSpeedX = 0
+        if (self.gifs.attack) {
+          self.gif = self.gifs.attack
+          self.setAttackResult(com)
+          // let img = await self.gifs.attack.currentImg()
+          // img && self.scene.context.drawImage(img, self.x, self.y, self.width, self.height)
+        }
       }
     }, options[key])
   }
