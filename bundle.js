@@ -24046,6 +24046,7 @@ var Model = /** @class */ (function () {
         this.coms = [];
         this.options = {};
         this.bullets = [];
+        this.target = null;
         this.bulletName = '';
     }
     Model.prototype.init = function (stateChange) {
@@ -24240,6 +24241,9 @@ var Model = /** @class */ (function () {
     Model.prototype.stop = function () { };
     Model.prototype.run = function () {
         this.x += this.moveSpeedX;
+    };
+    Model.prototype.restore = function () {
+        this.pending = false;
     };
     Model.prototype.destory = function () {
         this.die = true;
@@ -24635,7 +24639,7 @@ var Scene = /** @class */ (function () {
                         this.setValidArea();
                         imageData = offlineCanvas.getImageData(com.img, com.width, this.config.height);
                         this.context.putImageData(imageData, 0, 0);
-                        return [4 /*yield*/, this.mountGameZombie()];
+                        return [4 /*yield*/, this.mountGameZombies()];
                     case 2:
                         useComs = (_a.sent()).map(function (com) {
                             return {
@@ -24723,39 +24727,50 @@ var Scene = /** @class */ (function () {
         return 2;
         // return ~~(Math.random() * 5)
     };
-    Scene.prototype.mountGameZombie = function () {
+    Scene.prototype.mountGameZombies = function (random) {
+        if (random === void 0) { random = 0; }
         return __awaiter(this, void 0, void 0, function () {
-            var _a, l, t, w, h, width, height, Zombie, useComs, coms;
+            var useComs, _a;
             var _this = this;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        random = ~~random;
+                        useComs = this.coms.filter(function (com) {
+                            return com.type === 'zombie' && com.level <= _this.user.level;
+                        });
+                        _a = this.mountCom;
+                        return [4 /*yield*/, Promise.all(random > 0
+                                ? Array(random).fill('').map(function () {
+                                    var index = ~~(Math.random() * useComs.length);
+                                    return _this.mountGameZombie(useComs[index]);
+                                })
+                                : useComs.map(this.mountGameZombie.bind(this)))];
+                    case 1: return [2 /*return*/, _a.apply(this, [_b.sent()])];
+                }
+            });
+        });
+    };
+    Scene.prototype.mountGameZombie = function (item) {
+        return __awaiter(this, void 0, void 0, function () {
+            var _a, l, t, w, h, width, height, Zombie, zombie;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
                         _a = this.validArea, l = _a[0], t = _a[1], w = _a[2], h = _a[3], width = _a[4], height = _a[5];
                         Zombie = Ctors.Zombie;
-                        useComs = this.coms.filter(function (com) {
-                            return com.type === 'zombie' && com.level <= _this.user.level;
-                        });
-                        coms = this.mountCom(Array(10).fill(1).map(function () {
-                            var zi = Math.floor(Math.random() * useComs.length);
-                            var zombie = new Zombie(useComs[zi].name, useComs[zi].options);
-                            zombie.x = _this.config.width * .9;
-                            // y固定, x是后期动态设置的
-                            zombie.pos = [10, _this.rowFunc()];
-                            zombie.y = t + (zombie.pos[1] + 1) * height - useComs[zi].height;
-                            return zombie;
-                        }));
-                        return [4 /*yield*/, Promise.all(coms.map(function (com) { return __awaiter(_this, void 0, void 0, function () {
-                                return __generator(this, function (_a) {
-                                    switch (_a.label) {
-                                        case 0: return [4 /*yield*/, com.init()];
-                                        case 1:
-                                            _a.sent();
-                                            com.draw();
-                                            return [2 /*return*/, com];
-                                    }
-                                });
-                            }); }))];
-                    case 1: return [2 /*return*/, _b.sent()];
+                        zombie = new Zombie(item.name, item.options);
+                        zombie.x = this.config.width * .9;
+                        // y固定, x是后期动态设置的
+                        zombie.pos = [10, this.rowFunc()];
+                        zombie.y = t + (zombie.pos[1] + 1) * height - item.height;
+                        return [4 /*yield*/, zombie.init()];
+                    case 1:
+                        _b.sent();
+                        return [4 /*yield*/, zombie.draw()];
+                    case 2:
+                        _b.sent();
+                        return [2 /*return*/, zombie];
                 }
             });
         });
@@ -25198,8 +25213,8 @@ var Scene = /** @class */ (function () {
     };
     Scene.prototype.attackTest = function () {
         var _this = this;
-        plants.concat(bullets).slice(0).forEach(function (com1, i1) {
-            zombies.slice(0).forEach(function (com2, i2) {
+        zombies.slice(0).forEach(function (com2, i2) {
+            plants.concat(bullets).slice(0).forEach(function (com1, i1) {
                 if (com1.id !== com2.id && com2.type === 'zombie') {
                     // 移动 攻击/被攻击 边界, 只改变x
                     com2.attackArea[0] = com2.x;
@@ -25214,14 +25229,15 @@ var Scene = /** @class */ (function () {
                     if (com1.type !== 'bullet' && !com2.pending && com2.attackAble && hitTest2(com2.attackArea, com1.attackArea2)) {
                         com2.attack(com1);
                     }
-                    if (com1.die) {
-                        _this.dumpCom(com1, false);
-                    }
                     if (com2.die) {
                         _this.dumpCom(com2, false);
                     }
+                    if (com1.die) {
+                        _this.dumpCom(com1, false);
+                    }
                 }
             });
+            com2.restore();
         });
         this.findAttackCom();
     };
@@ -26007,8 +26023,8 @@ var options$1 = mergeOptions(path$1, name$1, list$1, {
             this.pending = true;
             this.die = true;
             this.setAttackResult(com);
-            console.log(com);
-        }
+        },
+        restore: function () { }
     }
 });
 var bullet = {
@@ -26107,7 +26123,7 @@ for (var key in options$2) {
                             case 0:
                                 self = this;
                                 now = +new Date;
-                                if (!(now - self.akSpeed > self.attackTime)) return [3 /*break*/, 3];
+                                if (!(!self.attackTime || now - self.akSpeed > self.attackTime)) return [3 /*break*/, 3];
                                 self.attackTime = now;
                                 if (!self.bulletName) return [3 /*break*/, 2];
                                 bullet = self.scene.comMap[self.bulletName];
@@ -26176,18 +26192,34 @@ for (var key$1 in options$3) {
     if (options$3.hasOwnProperty(key$1)) {
         options$3[key$1] = Object.assign({
             moveSpeedX: -.5,
+            akSpeed: 3e3,
+            restore: function () {
+                // @ts-ignore
+                var self = this;
+                if (self.target && self.target.hp <= 0) {
+                    self.pending = false;
+                    self.moveSpeedX = -.5;
+                    self.gif = self.gifs.default;
+                    self.target = null;
+                }
+            },
             attack: function (com) {
                 return __awaiter(this, void 0, void 0, function () {
-                    var self;
+                    var self, now;
                     return __generator(this, function (_a) {
                         self = this;
                         // self.pending = true
                         self.moveSpeedX = 0;
                         if (self.gifs.attack) {
+                            self.target = com;
                             self.gif = self.gifs.attack;
-                            self.setAttackResult(com);
                             // let img = await self.gifs.attack.currentImg()
                             // img && self.scene.context.drawImage(img, self.x, self.y, self.width, self.height)
+                        }
+                        now = +new Date;
+                        if (!self.attackTime || now - self.akSpeed > self.attackTime) {
+                            self.attackTime = now;
+                            self.setAttackResult(com);
                         }
                         return [2 /*return*/];
                     });
