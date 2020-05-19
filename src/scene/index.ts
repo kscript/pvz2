@@ -104,7 +104,7 @@ export default class Scene {
     this.setValidArea()
     const imageData = offlineCanvas.getImageData(com.img, com.width, this.config.height)
     this.context.putImageData(imageData, 0, 0)
-    const useComs = (await this.mountGameZombie()).map(com => {
+    const useComs = (await this.mountGameZombies()).map(com => {
       return {
         com,
         x: com.x
@@ -157,26 +157,33 @@ export default class Scene {
     return 2
     // return ~~(Math.random() * 5)
   }
-  async mountGameZombie() {
-    const [l, t, w, h, width, height] = this.validArea
-    const Zombie = Com.Zombie
+  async mountGameZombies(random: number = 0) {
+    random = ~~random
     const useComs = this.coms.filter(com => {
       return com.type === 'zombie' && com.level <= this.user.level
     })
-    const coms = this.mountCom(Array(10).fill(1).map(() => {
-      let zi = Math.floor(Math.random() * useComs.length)
-      const zombie = new Zombie(useComs[zi].name, useComs[zi].options)
-      zombie.x = this.config.width * .9
-      // y固定, x是后期动态设置的
-      zombie.pos = [10, this.rowFunc()]
-      zombie.y = t + (zombie.pos[1] + 1) * height - useComs[zi].height
-      return zombie
-    }))
-    return await Promise.all(coms.map(async com => {
-      await com.init()
-      com.draw()
-      return com
-    }))
+    return this.mountCom(
+      await Promise.all(
+        random > 0 
+        ? Array(random).fill('').map(() => {
+            let index = ~~(Math.random() * useComs.length)
+            return this.mountGameZombie(useComs[index])
+          })
+        : useComs.map(this.mountGameZombie.bind(this))
+      )
+    )
+  }
+  async mountGameZombie(item: Model) {
+    const [l, t, w, h, width, height] = this.validArea
+    const Zombie = Com.Zombie
+    const zombie = new Zombie(item.name, item.options)
+    zombie.x = this.config.width * .9
+    // y固定, x是后期动态设置的
+    zombie.pos = [10, this.rowFunc()]
+    zombie.y = t + (zombie.pos[1] + 1) * height - item.height
+    await zombie.init()
+    await zombie.draw()
+    return zombie
   }
   async selectGameCard() {
     this.cardBar && this.cardBar.drawGroup()
@@ -454,8 +461,8 @@ export default class Scene {
     })
   }
   attackTest() {
-    plants.concat(bullets).slice(0).forEach((com1, i1) => {
-      zombies.slice(0).forEach((com2, i2) => {
+    zombies.slice(0).forEach((com2, i2) => {
+      plants.concat(bullets).slice(0).forEach((com1, i1) => {
         if (com1.id !== com2.id && com2.type === 'zombie') {
           // 移动 攻击/被攻击 边界, 只改变x
           com2.attackArea[0] = com2.x
@@ -470,14 +477,15 @@ export default class Scene {
           if(com1.type !== 'bullet' && !com2.pending && com2.attackAble && hitTest2(com2.attackArea, com1.attackArea2)) {
             com2.attack(com1)
           }
-          if (com1.die) {
-            this.dumpCom(com1, false)
-          }
           if (com2.die) {
             this.dumpCom(com2, false)
           }
+          if (com1.die) {
+            this.dumpCom(com1, false)
+          }
         }
       })
+      com2.restore()
     })
     this.findAttackCom()
   }

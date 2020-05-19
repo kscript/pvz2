@@ -92,7 +92,7 @@ for(let key in options) {
         const self: Model = this
         // const attack = self.gifs.attack
         const now = +new Date
-        if (now - self.akSpeed > self.attackTime) {
+        if (!self.attackTime || now - self.akSpeed > self.attackTime) {
           self.attackTime = now
           if (self.bulletName) {
             const bullet = self.scene.comMap[self.bulletName]

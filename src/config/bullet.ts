@@ -26,8 +26,8 @@ const options: anyObject = mergeOptions(path, name, list, {
       this.pending = true
       this.die = true
       this.setAttackResult(com)
-      console.log(com)
-    }
+    },
+    restore() {}
   }
 })
 const bullet = {

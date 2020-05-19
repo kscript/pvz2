@@ -133,6 +133,7 @@ export default class Model {
   public coms: Model[] = []
   public options: anyObject = {}
   public bullets: Model[] = []
+  public target: Model | null = null
   public bulletName = ''
   constructor() {}
   public async init(stateChange?: (type: string, url: string, index: number, gif: GifCanvas, total?: number) => void) {
@@ -228,6 +229,9 @@ export default class Model {
   public stop() {}
   public run() {
     this.x += this.moveSpeedX
+  }
+  public restore(){
+    this.pending = false
   }
   public destory() {
     this.die = true
