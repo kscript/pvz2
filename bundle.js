@@ -23736,6 +23736,8 @@ var GifCanvas = /** @class */ (function () {
         this.index = 0;
         this.time = +new Date();
         this.type = 'gif';
+        this.width = 0;
+        this.height = 0;
         this.url = url;
         var x = parent.x, y = parent.y, fps = parent.fps;
         this.options = Object.assign({
@@ -23744,6 +23746,8 @@ var GifCanvas = /** @class */ (function () {
             y: 0
         }, { x: x, y: y, fps: fps });
         var type = path$5.extname(url).slice(1);
+        this.width = this.options.width || this.width;
+        this.height = this.options.height || this.height;
         this.type = type;
         this.imageDatas = this.parseGif(url);
     }
@@ -23790,6 +23794,8 @@ var GifCanvas = /** @class */ (function () {
                 return [2 /*return*/, this.imgElems = new Promise(function (resolve, reject) {
                         _this.imageUrls.map(function (url, index) {
                             return loadImg(url).then(function (img) {
+                                _this.width = _this.width || img.width;
+                                _this.height = _this.height || img.height;
                                 current++;
                                 imgs[index] = img;
                                 stateChange('success', url, index, _this);
@@ -23922,6 +23928,14 @@ var drawHitArea = function (color, cxt, area) {
     }
 };
 
+var isEmpty = function (obj) {
+    for (var k in obj) {
+        if (obj.hasOwnProperty(k)) {
+            return false;
+        }
+    }
+    return true;
+};
 var Model = /** @class */ (function () {
     function Model() {
         // 坐标
@@ -23943,11 +23957,13 @@ var Model = /** @class */ (function () {
         // 等级
         this.level = 1;
         // 生命值
-        this.hp = 100;
+        this.hp = 50;
         // 攻击力
         this.ak = 20;
         // 防御力
-        this.dfe = 0;
+        this.dfe = 10;
+        this.akEffect = 1;
+        this.dfeEffect = 1;
         // 装载速度
         this.loadSpeed = 1e4;
         // 攻击速度
@@ -23956,6 +23972,11 @@ var Model = /** @class */ (function () {
         // 触发攻击的范围
         this.akX = 1;
         this.akY = 1;
+        this.attackTime = +new Date;
+        this.attackMoveX = 1;
+        this.attackMoveY = 0;
+        this.attackX = 0;
+        this.attackY = 0;
         // 所处的层级
         this.index = 1;
         // 帧频
@@ -23966,7 +23987,7 @@ var Model = /** @class */ (function () {
         // 名称
         this.name = '';
         // 创建时间
-        this.time = +new Date;
+        this.time = 0;
         // 方向: 'left,right'
         this.direction = '';
         this.static = false;
@@ -23977,6 +23998,12 @@ var Model = /** @class */ (function () {
         // 水生类型
         this.aquatic = false;
         this.gif = void 0;
+        // 额外的一些资源
+        this.medias = {};
+        // 额外资源解析结果
+        this.gifs = {};
+        // 所有资源总计帧数
+        this.total = 0;
         this.img = void 0;
         this.image = {};
         this.hitArea = [];
@@ -23991,6 +24018,7 @@ var Model = /** @class */ (function () {
         this.hitState = {};
         // 默认是否要进行碰撞检测
         this.hitAble = false;
+        this.attackAble = false;
         this.state = 0;
         this.col = 0;
         this.row = 0;
@@ -24017,10 +24045,13 @@ var Model = /** @class */ (function () {
         this.offlineCanvas = offlineCanvas;
         this.coms = [];
         this.options = {};
+        this.bullets = [];
+        this.bulletName = '';
     }
     Model.prototype.init = function (stateChange) {
         return __awaiter(this, void 0, void 0, function () {
-            var _a, _b;
+            var _a, gifs_1, len_1, _b;
+            var _this = this;
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
@@ -24029,7 +24060,7 @@ var Model = /** @class */ (function () {
                         }
                         this.state = 1;
                         this.initProp();
-                        if (!this.initBefore()) return [3 /*break*/, 7];
+                        if (!this.initBefore()) return [3 /*break*/, 10];
                         if (!!this.gif) return [3 /*break*/, 3];
                         _a = this;
                         return [4 /*yield*/, this.initGif()];
@@ -24040,21 +24071,68 @@ var Model = /** @class */ (function () {
                         _c.sent();
                         _c.label = 3;
                     case 3:
-                        if (!!this.img) return [3 /*break*/, 5];
-                        _b = this;
-                        return [4 /*yield*/, this.gif.loadImage(stateChange)];
+                        gifs_1 = [];
+                        if (!(!isEmpty(this.medias) && isEmpty(this.gifs))) return [3 /*break*/, 6];
+                        return [4 /*yield*/, Promise.all(Object.keys(this.medias).map(function (key) { return __awaiter(_this, void 0, void 0, function () {
+                                var name, imgPath, _a, _b, _c, _d;
+                                return __generator(this, function (_e) {
+                                    switch (_e.label) {
+                                        case 0:
+                                            name = this.medias[key];
+                                            imgPath = this.image.path;
+                                            if (this.medias[key] instanceof Object) {
+                                                name = this.medias[key].name;
+                                                imgPath = this.medias[key].path || imgPath;
+                                            }
+                                            if (!(name && typeof name === 'string')) return [3 /*break*/, 3];
+                                            _b = (_a = gifs_1).push;
+                                            _c = this.gifs;
+                                            _d = key;
+                                            return [4 /*yield*/, new GifCanvas(path$5.join(imgPath, name), this)];
+                                        case 1:
+                                            _b.apply(_a, [_c[_d] = _e.sent()]);
+                                            return [4 /*yield*/, this.gifs[key].toBlobUrl()];
+                                        case 2:
+                                            _e.sent();
+                                            _e.label = 3;
+                                        case 3: return [2 /*return*/, this.gifs[key]];
+                                    }
+                                });
+                            }); }))];
                     case 4:
-                        _b.img = (_c.sent())[0];
-                        _c.label = 5;
-                    case 5: return [4 /*yield*/, this.setHitArea()];
+                        _c.sent();
+                        len_1 = 0;
+                        return [4 /*yield*/, Promise.all(gifs_1.map(function (gif) {
+                                gif.loadImage(function (type, url, index, gif) {
+                                    if (index === gif.imageUrls.length - 1) {
+                                        typeof stateChange === 'function' && stateChange(type, url, len_1++, gif, gifs_1.length + gif.imageUrls.length - 1);
+                                    }
+                                });
+                            }))];
+                    case 5:
+                        _c.sent();
+                        this.gifs['default'] = this.gif;
+                        _c.label = 6;
                     case 6:
+                        if (!!this.img) return [3 /*break*/, 8];
+                        _b = this;
+                        return [4 /*yield*/, this.gif.loadImage(function (type, url, index, gif) {
+                                typeof stateChange === 'function' && stateChange(type, url, gifs_1.length + index, gif, gifs_1.length + gif.imageUrls.length - 1);
+                            })];
+                    case 7:
+                        _b.img = (_c.sent())[0];
+                        _c.label = 8;
+                    case 8: return [4 /*yield*/, this.setHitArea()];
+                    case 9:
                         _c.sent();
                         Object.assign(this.options, {
                             gif: this.gif,
-                            img: this.img
+                            img: this.img,
+                            gifs: this.gifs,
+                            medias: this.medias
                         });
-                        _c.label = 7;
-                    case 7: return [2 /*return*/];
+                        _c.label = 10;
+                    case 10: return [2 /*return*/];
                 }
             });
         });
@@ -24163,7 +24241,9 @@ var Model = /** @class */ (function () {
     Model.prototype.run = function () {
         this.x += this.moveSpeedX;
     };
-    Model.prototype.destory = function () { };
+    Model.prototype.destory = function () {
+        this.die = true;
+    };
     Model.prototype.setHitArea = function (refresh) {
         if (refresh === void 0) { refresh = false; }
         return __awaiter(this, void 0, void 0, function () {
@@ -24225,6 +24305,10 @@ var Model = /** @class */ (function () {
             this.attackArea = [l + (pos[0] * colScale - .75) * width, t + pos[1] * rowScale * height, akX * width, akY * height - 2];
             this.attackArea2 = [l + (pos[0] * colScale - .75) * width, t + pos[1] * rowScale * height, width, height - 2];
         }
+        else if (this.type === 'bullet') {
+            this.attackArea = [0, t + pos[1] * rowScale * height, this.width, this.height];
+            this.attackArea2 = [0, t + pos[1] * rowScale * height, this.width, this.height];
+        }
         else {
             this.attackArea = [l + pos[0] * width, t + pos[1] * height, akX * width, akY * height - 2];
             this.attackArea2 = [0, t + pos[1] * height, width, height - 2];
@@ -24243,6 +24327,13 @@ var Model = /** @class */ (function () {
         }
     };
     Model.prototype.trigger = function (type, event) { };
+    Model.prototype.setAttackResult = function (com) {
+        var num = this.ak * this.akEffect - com.dfe * com.dfeEffect;
+        com.hp -= num >= 0 ? num : 0;
+        if (com.hp <= 0) {
+            com.destory();
+        }
+    };
     return Model;
 }());
 
@@ -24267,12 +24358,15 @@ var Bullet = /** @class */ (function (_super) {
         if (options === void 0) { options = {}; }
         var _this = _super.call(this) || this;
         _this.options = {};
+        _this.source = null;
         _this.name = name;
-        _this.type = 'menu';
+        _this.type = 'bullet';
         _this.options = options;
         Object.assign(_this, {
+            attackAble: true,
             hitAble: true
         }, options);
+        _this.source = _this.options.source || null;
         return _this;
     }
     return Bullet;
@@ -24308,6 +24402,7 @@ var Zombie = /** @class */ (function (_super) {
         _this.type = 'zombie';
         _this.options = options;
         Object.assign(_this, {
+            attackAble: true,
             hitAble: true
         }, options);
         return _this;
@@ -24390,7 +24485,15 @@ var defaultConfig = {
 };
 var others = [];
 var plants = [];
+var bullets = [];
 var zombies = [];
+var coms = {
+    plants: plants,
+    zombies: zombies,
+    bullets: bullets,
+    others: others
+};
+console.log(coms);
 var Scene = /** @class */ (function () {
     function Scene(container, config) {
         if (config === void 0) { config = {}; }
@@ -24914,9 +25017,11 @@ var Scene = /** @class */ (function () {
         SodRollCap.draw(~~rate, LoadBar);
         console.log('已加载:' + rate.toFixed(2) + '%');
     };
-    Scene.prototype.stateChange = function (type, url, index, gif) {
+    Scene.prototype.stateChange = function (type, url, index, gif, total) {
+        if (total === void 0) { total = 0; }
         var count = this.coms.length;
-        if (index === gif.imageUrls.length - 1) {
+        var loadComplete = total ? index === total : index === gif.imageUrls.length - 1;
+        if (loadComplete) {
             this.loadCount++;
             var rate = this.loadCount / count * 100;
             this.loadAnimate(rate);
@@ -25056,7 +25161,7 @@ var Scene = /** @class */ (function () {
                         this.clearCanvas();
                         this.context.putImageData(this.imageDatas.bg, 0, 0);
                         queue_1 = Promise.resolve();
-                        others.concat(plants, zombies).forEach(function (com) { return __awaiter(_this, void 0, void 0, function () {
+                        others.concat(plants, bullets, zombies).forEach(function (com) { return __awaiter(_this, void 0, void 0, function () {
                             var _this = this;
                             return __generator(this, function (_a) {
                                 queue_1 = queue_1.then(function () { return __awaiter(_this, void 0, void 0, function () {
@@ -25092,39 +25197,42 @@ var Scene = /** @class */ (function () {
         }); });
     };
     Scene.prototype.attackTest = function () {
-        plants.forEach(function (com1) {
-            zombies.forEach(function (com2) {
+        var _this = this;
+        plants.concat(bullets).slice(0).forEach(function (com1, i1) {
+            zombies.slice(0).forEach(function (com2, i2) {
                 if (com1.id !== com2.id && com2.type === 'zombie') {
                     // 移动 攻击/被攻击 边界, 只改变x
                     com2.attackArea[0] = com2.x;
                     com2.attackArea2[0] = com2.x;
-                    if (!com1.pending && hitTest2(com1.attackArea, com2.attackArea2)) {
+                    if (com1.type === 'bullet') {
+                        com1.attackArea[0] = com1.x - com1.width * 2;
+                        com1.attackArea2[0] = com1.x;
+                    }
+                    if (!com1.pending && com1.attackAble && hitTest2(com1.attackArea, com2.attackArea2)) {
                         com1.attack(com2);
                     }
-                    if (!com2.pending && hitTest2(com2.attackArea, com1.attackArea2)) {
-                        console.log(com2.attackArea.slice(0));
-                        console.log(com2.attackArea2.slice(0));
+                    if (com1.type !== 'bullet' && !com2.pending && com2.attackAble && hitTest2(com2.attackArea, com1.attackArea2)) {
                         com2.attack(com1);
+                    }
+                    if (com1.die) {
+                        _this.dumpCom(com1, false);
+                    }
+                    if (com2.die) {
+                        _this.dumpCom(com2, false);
                     }
                 }
             });
         });
+        this.findAttackCom();
     };
     // 工具方法
     Scene.prototype.findAttackCom = function () {
         plants.splice(0);
         zombies.splice(0);
         others.splice(0);
+        bullets.splice(0);
         this.comsMounted.forEach(function (com) {
-            if (com.type === 'plant') {
-                plants.push(com);
-            }
-            else if (com.type === 'zombie') {
-                zombies.push(com);
-            }
-            else {
-                others.push(com);
-            }
+            (coms[com.type + 's'] || others).push(com);
         });
     };
     // 晃动镜头
@@ -25181,15 +25289,16 @@ var Scene = /** @class */ (function () {
         this.findAttackCom();
         return coms;
     };
-    Scene.prototype.dumpCom = function (com) {
+    Scene.prototype.dumpCom = function (com, autoFind) {
         var _this = this;
+        if (autoFind === void 0) { autoFind = true; }
         delete this.comsMountedMap[com.id];
         this.comsMounted.slice(0).forEach(function (item, index) {
             if (item.id === com.id) {
                 _this.comsMounted.splice(index, 1);
             }
         });
-        if (com.type === 'plant' || com.type === 'zombie') {
+        if (autoFind && (com.type === 'plant' || com.type === 'zombie' || com.type === 'bullet')) {
             this.findAttackCom();
         }
     };
@@ -25389,6 +25498,19 @@ var mergeOptions = function (path, name, list, options, data) {
             path: path,
             name: replaceTpl(name, __assign({ name: item }, data))
         }, options[item].image instanceof Object ? options[item].image : {});
+        var medias = options[item].medias;
+        if (medias instanceof Object) {
+            for (var k in medias) {
+                if (medias[k] instanceof Object) {
+                    medias[k] = Object.assign(medias[k], typeof medias[k].name === 'string' ? {
+                        name: replaceTpl(medias[k].name, __assign({ name: item }, data))
+                    } : {});
+                }
+                else if (typeof medias[k] === 'string') {
+                    medias[k] = replaceTpl(medias[k], __assign({ name: item }, data));
+                }
+            }
+        }
     });
     return options;
 };
@@ -25857,8 +25979,39 @@ var list$1 = [
     'PB10',
     'PB-10'
 ];
-var options$1 = mergeOptions(path$1, name$1, list$1, {});
-var zombie = {
+var options$1 = mergeOptions(path$1, name$1, list$1, {
+    PB01: {
+        draw: function () {
+            return __awaiter(this, void 0, void 0, function () {
+                var img;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            if (!this.gif) return [3 /*break*/, 2];
+                            if (this.pending) ;
+                            else {
+                                this.x += this.attackMoveX;
+                                this.y += this.attackMoveY;
+                            }
+                            return [4 /*yield*/, this.gif.currentImg()];
+                        case 1:
+                            img = _a.sent();
+                            img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height);
+                            _a.label = 2;
+                        case 2: return [2 /*return*/];
+                    }
+                });
+            });
+        },
+        attack: function (com) {
+            this.pending = true;
+            this.die = true;
+            this.setAttackResult(com);
+            console.log(com);
+        }
+    }
+});
+var bullet = {
     path: path$1,
     name: name$1,
     list: list$1,
@@ -25929,7 +26082,12 @@ var cradDrag = function (com, event, oldEvent) {
         com.y = dragCom.source.y + event.offsetY - oldEvent.offsetY;
     }
 };
-var options$2 = mergeOptions(path$2, name$2, list$2, {});
+var options$2 = mergeOptions(path$2, name$2, list$2, {
+    Peashooter: {
+        attackAble: true,
+        bulletName: 'PB01',
+    }
+});
 for (var key in options$2) {
     if (options$2.hasOwnProperty(key)) {
         options$2[key] = Object.assign({
@@ -25942,9 +26100,35 @@ for (var key in options$2) {
                 cradDrag(this, event, oldEvent);
             },
             attack: function (com) {
-                // @ts-ignore
-                this.pending = true;
-                console.log(this, com);
+                return __awaiter(this, void 0, void 0, function () {
+                    var self, now, bullet, Bullet, x, y, width, pos, attackMoveX, attackMoveY, bulletCopy;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                self = this;
+                                now = +new Date;
+                                if (!(now - self.akSpeed > self.attackTime)) return [3 /*break*/, 3];
+                                self.attackTime = now;
+                                if (!self.bulletName) return [3 /*break*/, 2];
+                                bullet = self.scene.comMap[self.bulletName];
+                                Bullet = bullet.__proto__.constructor;
+                                x = self.x, y = self.y, width = self.width, pos = self.pos, attackMoveX = self.attackMoveX, attackMoveY = self.attackMoveY;
+                                bulletCopy = new Bullet(bullet.name, Object.assign({}, bullet.options, {
+                                    x: x + width, y: y, pos: pos, attackMoveX: attackMoveX, attackMoveY: attackMoveY, source: self
+                                }));
+                                return [4 /*yield*/, bulletCopy.init()];
+                            case 1:
+                                _a.sent();
+                                self.scene.mountCom(bulletCopy);
+                                self.bullets.push(bulletCopy);
+                                return [3 /*break*/, 3];
+                            case 2:
+                                self.setAttackResult(com);
+                                _a.label = 3;
+                            case 3: return [2 /*return*/];
+                        }
+                    });
+                });
             }
         }, options$2[key]);
     }
@@ -25976,10 +26160,16 @@ var list$3 = [
 ];
 var options$3 = mergeOptions(path$3, name$3, list$3, {
     Zombie: {
-        level: 1
+        level: 1,
+        medias: {
+            attack: '${name}/${name}Attack.gif'
+        }
     },
     ConeheadZombie: {
-        level: 1
+        level: 1,
+        medias: {
+            attack: '${name}/${name}Attack.gif'
+        }
     }
 });
 for (var key$1 in options$3) {
@@ -25987,15 +26177,26 @@ for (var key$1 in options$3) {
         options$3[key$1] = Object.assign({
             moveSpeedX: -.5,
             attack: function (com) {
-                // @ts-ignore
-                this.pending = true;
-                this.moveSpeedX = 0;
-                console.log(this, com);
+                return __awaiter(this, void 0, void 0, function () {
+                    var self;
+                    return __generator(this, function (_a) {
+                        self = this;
+                        // self.pending = true
+                        self.moveSpeedX = 0;
+                        if (self.gifs.attack) {
+                            self.gif = self.gifs.attack;
+                            self.setAttackResult(com);
+                            // let img = await self.gifs.attack.currentImg()
+                            // img && self.scene.context.drawImage(img, self.x, self.y, self.width, self.height)
+                        }
+                        return [2 /*return*/];
+                    });
+                });
             }
         }, options$3[key$1]);
     }
 }
-var zombie$1 = {
+var zombie = {
     path: path$3,
     name: name$3,
     list: list$3,
@@ -26055,9 +26256,9 @@ var config = {
     // height: 700,
     coms: {
         Menu: menu,
-        Bullet: zombie,
+        Bullet: bullet,
         Plant: plant,
-        Zombie: zombie$1,
+        Zombie: zombie,
         Group: group
     }
 };
