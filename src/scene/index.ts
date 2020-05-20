@@ -1,10 +1,12 @@
 import Com from '@/com'
 import Model from '@/com/model'
 import user from '@/user'
-import { isEmpty } from '@/utils'
+import { isEmpty, rand } from '@/utils'
 import { Task } from '@/utils/task'
 import { hitTest, hitTest2, isCollide, drawHitArea } from '@/utils/hit'
 import { GifCanvas, offlineCanvas, OfflineCanvas } from '@/utils/canvas'
+import Flow from './flow'
+import { sendMessage } from '@/utils/message'
 const defaultConfig = {
   width: 1200,
   height: 700
@@ -13,14 +15,15 @@ const others: Model[] = []
 const plants: Model[] = []
 const bullets: Model[] = []
 const zombies: Model[] = []
+const cards: Model[] = []
 
 const coms: anyObject<Model[]> = {
   plants,
   zombies,
   bullets,
+  cards,
   others
 }
-console.log(coms)
 export default class Scene {
   [prop: string]: any
   public config: anyObject
@@ -32,6 +35,7 @@ export default class Scene {
   public comsMounted: Model[] = []
   public comsMountedMap: anyObject<Model> = {}
   public comMap: anyObject<Model> = {}
+  public comGroup: anyObject<Model[]> = coms
   public loadCount = 0
   public hitCom: anyObject<Model[]> = {}
   public mod: number = 0
@@ -53,6 +57,7 @@ export default class Scene {
     event: null
   }
   public validArea: number[] = []
+  public flow: Flow | null = null
   constructor(container: HTMLCanvasElement, config: anyObject = {}) {
     this.container = container
     config = this.config = Object.assign({}, defaultConfig, config)
@@ -98,7 +103,33 @@ export default class Scene {
     this.clearCanvas()
     this.clearMounted()
   }
+  getFlowStep() {
+    return [
+      [5 * 1e3, '开始'],
+      [20 * 1e3, 1, 3],
+      [35 * 1e3, 2, 3],
+      [50 * 1e3, 2, 4],
+      [60 * 1e3, 2, 5],
+
+      [70 * 1e3, '一大波僵尸正在靠近'],
+      
+      [85 * 1e3, 3, 5],
+      [100 * 1e3, 3, 5],
+      [115 * 1e3, 3, 5],
+      
+      [125 * 1e3, 1, 3],
+      [135 * 1e3, 1, 3],
+
+      [150* 1e3, '一大波僵尸正在靠近'],
+      [155* 1e3, '最后一波'],
+
+      [165 * 1e3, 3, 6],
+      [175 * 1e3, 3, 6],
+      [190 * 1e3, 3, 6]
+    ]
+  }
   async play() {
+    this.flow = new Flow(this, this.getFlowStep(), {})
     const com = await this.getCom('background1.jpg')
     com.init()
     this.setValidArea()
@@ -115,7 +146,7 @@ export default class Scene {
       left: .1,
       right: .15,
       change: .002,
-      time: 30
+      time: 25
     }, ({
       start
     }: anyObject) => {
@@ -123,7 +154,7 @@ export default class Scene {
       this.context.putImageData(imageData, 0 - start * this.config.width, 0)
       this.imageDatas.bg = this.context.getImageData(0, 0, this.config.width, this.config.width)
       useComs.forEach(({ com, x }) => {
-        com.x = x - start * this.config.width
+        com.x = x - (start + .1) * this.config.width
         com.draw()
       })
     })
@@ -139,6 +170,7 @@ export default class Scene {
     await this.mountGameCard()
   }
   async startGame() {
+    this.flow?.init()
     this.refresh()
     return new Promise(resolve => resolve)
   }
@@ -154,7 +186,7 @@ export default class Scene {
     return this.cardBar = header
   }
   rowFunc(min: number = 0, max: number = 4) {
-    return ~~(Math.random() * max) + ~~min
+    return rand(min, max)
   }
   async mountGameZombies(random: number = 0, useComs: Model[] = []) {
     random = ~~random
@@ -176,12 +208,11 @@ export default class Scene {
     const [l, t, w, h, width, height] = this.validArea
     const Zombie = Com.Zombie
     const zombie = new Zombie(item.name, item.options)
-    zombie.x = this.config.width * .9
+    zombie.x = this.config.width * .95
     // y固定, x是后期动态设置的
     zombie.pos = [10, this.rowFunc()]
     zombie.y = t + (zombie.pos[1] + 1) * height - item.height
     await zombie.init()
-    await zombie.draw()
     return zombie
   }
   async selectGameCard() {
@@ -243,7 +274,7 @@ export default class Scene {
   async dragStart(com: Model, event: MouseEvent) {
     const Plant = Com.Plant
     const comCopy = new Plant(com.name, Object.assign({}, com.options, {
-      type: 'plant',
+      type: 'card',
       x: com.x,
       y: com.y,
       static: true
@@ -269,8 +300,10 @@ export default class Scene {
       com.y = t + height * this.rowScale * pos[1] + height / 2
       com.hitAble = false
       com.static = false
+      com.type = 'plant'
       com.pos.splice(0, 2, ...pos)
       com.setAttackArea()
+      this.findAttackCom()
     }
     Object.assign(this.dragCom, {
       com: null,
@@ -346,7 +379,10 @@ export default class Scene {
     const LoadBar = this.getCom('LoadBar.png')
     LoadBar.draw(~~rate)
     SodRollCap.draw(~~rate, LoadBar)
-    console.log('已加载:' + rate.toFixed(2) + '%')
+    sendMessage('已加载:' + rate.toFixed(2) + '%', {
+      type: 'Scene::loadAnimate',
+      source: this
+    })
   }
   stateChange(type: string, url: string, index: number, gif: GifCanvas, total: number = 0) {
     const count = this.coms.length
@@ -441,13 +477,21 @@ export default class Scene {
     })
     this.toggleMusic('./sound/hugewave.mp3').loop = false
   }
+  gameover(win: boolean = true) {
+    this.stop = true
+    sendMessage('成功通过关卡!', {
+      type: 'Scene::gameover',
+      source: this
+    })
+  }
   refresh() {
     requestAnimationFrame(async () => {
       if (!this.stop) {
         this.clearCanvas()
+        this.flow?.refresh()
         this.context.putImageData(this.imageDatas.bg, 0, 0)
         let queue = Promise.resolve()
-        plants.concat(bullets, zombies, others).forEach(async com => {
+        plants.concat(bullets, zombies, others, cards).forEach(async com => {
           queue = queue.then(async () => {
             com.run()
             return com.group.length ? await com.drawGroup() : com.draw()
@@ -461,34 +505,38 @@ export default class Scene {
   }
   attackTest() {
     zombies.slice(0).forEach((com2, i2) => {
-      plants.concat(bullets).slice(0).forEach((com1, i1) => {
-        if (com1.id !== com2.id && com2.type === 'zombie') {
-          // 移动 攻击/被攻击 边界, 只改变x
-          com2.attackArea[0] = com2.x
-          com2.attackArea2[0] = com2.x
-          if (com1.type === 'bullet') {
-            com1.attackArea[0] = com1.x - com1.width * 2
-            com1.attackArea2[0] = com1.x
-          }
-          if(!com1.pending && com1.attackAble && !com2.dying) {
-            if (hitTest2(com1.attackArea, com2.attackArea2)) {
-              com1.attack(com2)
+      if (com2.x <= this.config.width) {
+        plants.concat(bullets).slice(0).forEach((com1, i1) => {
+          if (com1.pos[1] === com2.pos[1]) {
+            if (com1.id !== com2.id && com2.type === 'zombie') {
+              // 移动 攻击/被攻击 边界, 只改变x
+              com2.attackArea[0] = com2.x
+              com2.attackArea2[0] = com2.x
+              if (com1.type === 'bullet') {
+                com1.attackArea[0] = com1.x - com1.width * 2
+                com1.attackArea2[0] = com1.x
+              }
+              if(!com1.pending && com1.attackAble && !com2.dying) {
+                if (hitTest2(com1.attackArea, com2.attackArea2)) {
+                  com1.attack(com2)
+                }
+              }
+              if(com1.type !== 'bullet' && !com2.pending && com2.attackAble && !com1.dying) {
+                if(hitTest2(com2.attackArea, com1.attackArea2)) {
+                  com2.attack(com1)
+                }
+              }
+              if (com2.die) {
+                this.dumpCom(com2, false)
+              }
+              if (com1.die) {
+                this.dumpCom(com1, false)
+              }
             }
           }
-          if(com1.type !== 'bullet' && !com2.pending && com2.attackAble && !com1.dying) {
-            if(hitTest2(com2.attackArea, com1.attackArea2)) {
-              com2.attack(com1)
-            }
-          }
-          if (com2.die) {
-            this.dumpCom(com2, false)
-          }
-          if (com1.die) {
-            this.dumpCom(com1, false)
-          }
-        }
-      })
-      com2.restore()
+        })
+        com2.restore()
+      }
     })
     this.findAttackCom()
   }
@@ -499,12 +547,13 @@ export default class Scene {
     zombies.splice(0)
     others.splice(0)
     bullets.splice(0)
+    cards.splice(0)
     
     this.comsMounted.forEach(com => {
       (coms[com.type + 's'] || others).push(com)
     })
     zombies.sort((a, b) => {
-      return b.pos[1] - a.pos[1]
+      return a.pos[1] - b.pos[1]
     })
   }
   // 晃动镜头
@@ -657,7 +706,6 @@ export default class Scene {
   }
   recordPath() {
     const pointers: number[] = []
-    console.log(pointers)
     this.container.addEventListener('click', (event: Event) => {
       // @ts-ignore
       pointers.push(event.offsetX)

@@ -68,6 +68,7 @@ const cradDrag = (com: Model, event: MouseEvent, oldEvent: MouseEvent) => {
 }
 const options: anyObject = mergeOptions(path, name, list, {
   Peashooter: {
+    attackSpeed: 3e3,
     attackAble: true,
     bulletName: 'PB01',
     // medias: {
@@ -76,43 +77,41 @@ const options: anyObject = mergeOptions(path, name, list, {
   }
 })
 
+const baseOption: anyObject = {
+  trigger(type: string, event: MouseEvent) {
+    cardSelect(this as Model, type, event)
+  },
+  drag(event: MouseEvent, oldEvent: MouseEvent) {
+    cradDrag(this as Model, event, oldEvent)
+  },
+  async attack(com: Model) {
+    const now = +new Date
+    if (!this.attackTime || now - this.attackSpeed > this.attackTime) {
+      this.target = com
+      this.attackTime = now
+      if (this.bulletName) {
+        const bullet = this.scene.comMap[this.bulletName]
+        // @ts-ignore
+        const Bullet = bullet.__proto__.constructor
+        const {
+          x, y, width, pos, attackMoveX, attackMoveY
+        } = this
+        const bulletCopy = new Bullet(bullet.name, Object.assign({}, bullet.options, {
+          target: com,
+          x: x + width, y, pos, attackMoveX, attackMoveY, source: this
+        }))
+        await bulletCopy.init()
+        this.scene.mountCom(bulletCopy)
+        this.bullets.push(bulletCopy)
+      } else {
+        this.setAttackResult(com)
+      }
+    }
+  }
+}
 for(let key in options) {
   if (options.hasOwnProperty(key)) {
-    options[key] = Object.assign({
-      trigger(type: string, event: MouseEvent) {
-        // @ts-ignore
-        cardSelect(this, type, event)
-      },
-      drag(event: MouseEvent, oldEvent: MouseEvent) {
-        // @ts-ignore
-        cradDrag(this, event, oldEvent)
-      },
-      async attack(com: Model) {
-        // @ts-ignore
-        const self: Model = this
-        // const attack = self.gifs.attack
-        const now = +new Date
-        if (!self.attackTime || now - self.akSpeed > self.attackTime) {
-          self.attackTime = now
-          if (self.bulletName) {
-            const bullet = self.scene.comMap[self.bulletName]
-            // @ts-ignore
-            const Bullet = bullet.__proto__.constructor
-            const {
-              x, y, width, pos, attackMoveX, attackMoveY
-            } = self
-            const bulletCopy = new Bullet(bullet.name, Object.assign({}, bullet.options, {
-              x: x + width, y, pos, attackMoveX, attackMoveY, source: self
-            }))
-            await bulletCopy.init()
-            self.scene.mountCom(bulletCopy)
-            self.bullets.push(bulletCopy)
-          } else {
-            self.setAttackResult(com)
-          }
-        }
-      }
-    }, options[key])
+    options[key] = Object.assign({}, baseOption, options[key])
   }
 }
 const plant = {

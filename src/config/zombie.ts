@@ -21,6 +21,8 @@ const list: string[] = [
 ]
 const options: anyObject = mergeOptions(path, name, list, {
   Zombie: {
+    hp: 150,
+    dfe: 11,
     level: 1,
     medias: {
       die: '${name}/${name}Die.gif',
@@ -41,47 +43,47 @@ const options: anyObject = mergeOptions(path, name, list, {
       attack: '${name}/${name}Attack.gif'
     },
     personal: {
-      moveSpeedX: -3,
+      moveSpeedX: -5,
       die: {
         state: 0
       }
     },
     async beforeDie() {
-      // @ts-ignore
-      const self: Model = this
-      const die = self.personal.die
+      const die = this.personal.die
       if (die.state === 0) {
-        let lostHead = await self.gifs.lostHead.currentImg()
-        lostHead && self.scene.context.drawImage(lostHead, self.x, self.y, lostHead.width, lostHead.height)
-        let head = await self.gifs.head.currentImg()
-        head && self.scene.context.drawImage(head, self.x + head.width / 2, self.y, head.width, head.height)
-        if (self.gifs.lostHead.length === self.gifs.lostHead.index + 1) {
+        let lostHead = await this.gifs.lostHead.currentImg()
+        lostHead && this.scene.context.drawImage(lostHead, this.x, this.y, lostHead.width, lostHead.height)
+        let head = await this.gifs.head.currentImg()
+        head && this.scene.context.drawImage(head, this.x + head.width / 2, this.y, head.width, head.height)
+        if (this.gifs.lostHead.length === this.gifs.lostHead.index + 1) {
           die.state += 1
         }
       } else if(die.state === 1) {
-        if (self.target) {
-          let img = await self.gifs.lostHeadAttack.currentImg()
-          img && self.scene.context.drawImage(img, self.x, self.y, img.width, img.height)
-          if (self.gifs.lostHeadAttack.length === self.gifs.lostHeadAttack.index + 1) {
+        if (this.target) {
+          let img = await this.gifs.lostHeadAttack.currentImg()
+          img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height)
+          if (this.gifs.lostHeadAttack.length === this.gifs.lostHeadAttack.index + 1) {
             die.state += 1
           }
         } else{
           die.state += 1
         }
       } else if (die.state === 2){
-        let img = await self.gifs.die.currentImg()
-        img && self.scene.context.drawImage(img, self.x, self.y, img.width, img.height)
-        if (self.gifs.die.length === self.gifs.die.index + 1) {
+        let img = await this.gifs.die.currentImg()
+        img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height)
+        if (this.gifs.die.length === this.gifs.die.index + 1) {
           die.state += 1
-          self.die = true
+          this.die = true
         }
       }
     }
   },
   ConeheadZombie: {
     level: 1,
+    hp: 200,
+    dfe: 12,
     personal: {
-      moveSpeedX: -5
+      moveSpeedX: -7
     },
     medias: {
       attack: '${name}/${name}Attack.gif'
@@ -89,60 +91,57 @@ const options: anyObject = mergeOptions(path, name, list, {
   }
 })
 
-for(let key in options) {
-  if (options.hasOwnProperty(key)) {
-    options[key] = Object.assign({
-      akSpeed: 3e3,
-      restore() {
-        // @ts-ignore
-        const self: Model = this
-        if (!self.die && !self.dying && self.target && self.target.hp <= 0) {
-          self.pending = false
-          self.moveSpeedX = (self.personal || self).moveSpeedX
-          self.gif = self.gifs.default
-          self.target = null
-        }
-      },
-      async draw(...rest: any[]) {
-        // @ts-ignore
-        const self: Model = this
-        if (!self.dying && self.gif) {
-          let img = await self.gif.currentImg(self.static)
-          img && self.scene.context.drawImage(img, self.x, self.y, self.width, self.height)
-        } else {
-          !self.die && self.beforeDie()
-        }
-      },
-      async destory() {
-        // @ts-ignore
-        const self: Model = this
-        self.attackAble = false
-        self.dying = true
-        self.gif = null
-      },
-      async attack(com: Model) {
-        // @ts-ignore
-        const self: Model = this
-        // self.pending = true
-        if (self.dying) {
-          return
-        }
-        self.moveSpeedX = 0
-        if (self.gifs.attack) {
-          self.target = com
-          self.gif = self.gifs.attack
-          // let img = await self.gifs.attack.currentImg()
-          // img && self.scene.context.drawImage(img, self.x, self.y, self.width, self.height)
-        }
-        const now = +new Date
-        if (!self.attackTime || now - self.akSpeed > self.attackTime) {
-          self.attackTime = now
-          self.setAttackResult(com)
-        }
-      }
-    }, options[key])
+const baseOption: anyObject = {
+  attackSpeed: 3e3,
+  restore() {
+    if (!this.die && !this.dying && this.target && this.target.hp <= 0) {
+      this.pending = false
+      this.moveSpeedX = (this.personal || this).moveSpeedX
+      this.gif = this.gifs.default
+      this.target = null
+    }
+  },
+  async beforeDie() {
+    this.die = true
+  },
+  async draw(...rest: any[]) {
+    if (!this.dying && this.gif) {
+      let img = await this.gif.currentImg(this.static)
+      img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
+    } else {
+      this.beforeDie()
+    }
+  },
+  async destory() {
+    this.attackAble = false
+    this.dying = true
+    this.gif = null
+  },
+  async attack(com: Model) {
+    if (this.dying) {
+      return
+    }
+    this.moveSpeedX = 0
+    if (this.gifs.attack) {
+      this.target = com
+      this.gif = this.gifs.attack
+      // let img = await this.gifs.attack.currentImg()
+      // img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
+    }
+    const now = +new Date
+    if (!this.attackTime || now - this.attackSpeed > this.attackTime) {
+      this.attackTime = now
+      this.setAttackResult(com)
+    }
   }
 }
+
+for(let key in options) {
+  if (options.hasOwnProperty(key)) {
+    options[key] = Object.assign({}, baseOption, options[key])
+  }
+}
+console.log(options)
 const zombie = {
   path,
   name,

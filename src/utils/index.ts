@@ -12,7 +12,11 @@ export const isEmpty = (obj: anyObject) => {
   }
   return true
 }
+export const rand = (min: number = 0, max: number = 4) => {
+  return ~~(Math.random() * (max + 1)) + ~~min
+}
 export default {
+  rand,
   execHook,
   isEmpty
 }

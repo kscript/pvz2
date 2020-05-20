@@ -3,11 +3,22 @@ import Scene from '@/scene'
 import { GifCanvas, offlineCanvas, OfflineCanvas } from '@/utils/canvas'
 import { drawHitArea } from '@/utils/hit'
 import { isEmpty } from '@/utils'
+import { sendMessage } from '@/utils/message'
 
 const info: anyObject = {
   plant: '植物',
   bullet: '子弹',
-  zombie: '僵尸'
+  zombie: '僵尸',
+  card: '卡片',
+  menu: '菜单/背景',
+  group: '群组'
+}
+const messageText: anyObject = {
+  initProp: {
+    plant: '已安放',
+    bullet: '装填完毕',
+    zombie: '正在靠近'
+  }
 }
 export default class Model {
   // 坐标
@@ -32,9 +43,9 @@ export default class Model {
   // 等级
   public level: number = 1
   // 生命值
-  public hp: number = 50
+  public hp: number = 100
   // 攻击力
-  public ak: number = 20
+  public ak: number = 25
   // 防御力
   public dfe: number = 10
   public akEffect: number = 1
@@ -42,14 +53,14 @@ export default class Model {
   
   // 装载速度
   public loadSpeed: number = 1e4
-  // 攻击速度
-  public akSpeed: number = 3e3
   public moveSpeedX: number = 0
   
   // 触发攻击的范围
   public akX: number = 1
   public akY: number = 1
   
+  // 攻击速度
+  public attackSpeed: number = 3e3
   public attackTime: number = +new Date
   public attackMoveX: number = 1.5
   public attackMoveY: number = 0
@@ -177,8 +188,15 @@ export default class Model {
         this.gifs['default'] = this.gif
       }
       if (!this.img) {
+        let total = gifs.length + this.gif.imageUrls.length - 1
         this.img = (await this.gif.loadImage((type, url, index, gif) => {
-          typeof stateChange === 'function' && stateChange(type, url, gifs.length + index, gif, gifs.length + gif.imageUrls.length - 1)
+          typeof stateChange === 'function' && stateChange(type, url, gifs.length + index, gif, total)
+          if (gifs.length + index === total) {
+            sendMessage(info[this.type] + this.id + '加载完成!', {
+              type: 'Model::init',
+              source: this
+            })
+          }
         }))[0]
       }
       await this.setHitArea()
@@ -198,6 +216,10 @@ export default class Model {
       this.time = +new Date
       this.id = [this.type, this.name, Math.floor(Math.random() * 1e8).toString(36)].join('/')
       this.moveSpeedX = (this.personal || this).moveSpeedX || 0
+      sendMessage(info[this.type] + ':' + this.id + (this.scene.state === 'init' ? '准备加载' : messageText.initProp[this.type] || '创建成功!'), {
+        type: 'Model::initProp',
+        source: this
+      })
     }
   }
   public async initGif(src?: string) {
@@ -292,8 +314,8 @@ export default class Model {
       this.attackArea = [l + (pos[0] * colScale - .75) * width, t  + pos[1] * rowScale * height, akX * width, akY * height - 2]
       this.attackArea2 = [l + (pos[0] * colScale - .75) * width, t  + pos[1] * rowScale * height, width, height - 2]
     } else if (this.type === 'bullet') {
-      this.attackArea = [0, t  + pos[1] * rowScale * height, this.width, this.height]
-      this.attackArea2 = [0, t  + pos[1] * rowScale * height, this.width, this.height]
+      this.attackArea = [0, t  + pos[1] * height, this.width, this.height]
+      this.attackArea2 = [0, t  + pos[1] * height, this.width, this.height]
     } else {
       this.attackArea = [l + pos[0] * width, t  + pos[1] * height, akX * width, akY * height - 2]
       this.attackArea2 = [0, t + pos[1] * height, width, height - 2]
@@ -311,7 +333,11 @@ export default class Model {
   public setAttackResult(com: Model){
     const num = this.ak * this.akEffect - com.dfe * com.dfeEffect
     com.hp -= num >= 0 ? num : 0
-    console.log(info[this.type], this.id, '击中', info[com.type], com.id, '造成了' + num + '伤害', [this, com], '剩余' + com.hp)
+    sendMessage([info[this.type], this.id, '击中', info[com.type], com.id, '造成了' + num + '伤害', '剩余' + com.hp].join(''), {
+      type: 'Model::setAttackResult',
+      source: this,
+      target:com,
+    })
     if (com.hp <= 0) {
       com.destory()
     }

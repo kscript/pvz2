@@ -10,6 +10,7 @@ const list: string[] = [
 ]
 const options: anyObject = mergeOptions(path, name, list, {
   PB01: {
+    attackMoveX: 50,
     async draw() {
       if (this.gif) {
         if (this.pending) {
@@ -20,6 +21,9 @@ const options: anyObject = mergeOptions(path, name, list, {
         }
         let img = await this.gif.currentImg()
         img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
+      }
+      if (this.die || this.x > this.scene.config.width) {
+        this.source.dumpBullet(this)
       }
     },
     attack(com: Model) {

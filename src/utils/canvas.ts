@@ -88,6 +88,7 @@ export class GifCanvas {
     public length: number = 0
     public width: number = 0
     public height: number = 0
+    public parent: Model
     constructor(url: string, parent: Model, options: anyObject = {}) {
         this.url = url
         const { x, y, fps } = parent
@@ -100,6 +101,7 @@ export class GifCanvas {
         this.width =  this.options.width || this.width
         this.height =  this.options.height || this.height
         this.type = type
+        this.parent = parent
         this.imageDatas = this.parseGif(url)
     }
     public async parseGif(url: string) {

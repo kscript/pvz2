@@ -9,7 +9,15 @@ export default class Plant extends Model {
     this.options = options
     Object.assign(this, {
       hitAble: true,
-      akX: 9
+      akX: 15
     }, options)
+  }
+  public dumpBullet(bullet: Model) {
+    this.bullets.slice(0).some((item, index) => {
+      if (bullet.id === item.id) {
+        this.bullets.splice(index, 1)
+        return true
+      }
+    })
   }
 }
