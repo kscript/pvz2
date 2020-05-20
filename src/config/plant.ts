@@ -68,7 +68,7 @@ const cradDrag = (com: Model, event: MouseEvent, oldEvent: MouseEvent) => {
 }
 const options: anyObject = mergeOptions(path, name, list, {
   Peashooter: {
-    attackSpeed: 3e3,
+    attackSpeed: 5e3,
     attackAble: true,
     bulletName: 'PB01',
     // medias: {

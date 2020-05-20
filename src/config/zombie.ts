@@ -75,6 +75,8 @@ const options: anyObject = mergeOptions(path, name, list, {
           die.state += 1
           this.die = true
         }
+      } else {
+        this.die = true
       }
     }
   },
@@ -105,9 +107,11 @@ const baseOption: anyObject = {
     this.die = true
   },
   async draw(...rest: any[]) {
-    if (!this.dying && this.gif) {
-      let img = await this.gif.currentImg(this.static)
-      img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
+    if (!this.dying) {
+      if (this.gif) {
+        let img = await this.gif.currentImg(this.static)
+        img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
+      }
     } else {
       this.beforeDie()
     }
