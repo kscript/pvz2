@@ -4,7 +4,7 @@
   "description": "",
   "main": "main.ts",
   "scripts": {
-    "browserify": "browserify public/bundle.js -o public/bundle.js",
+    "browserify": "browserify -g uglifyify public/bundle.js -o public/bundle.js",
     "start": "rollup -c -i src/main.ts -o public/bundle.js && npm run browserify",
     "server": "npm run start && rollup -c -i server/main.ts -o server/main.js && node server/main.js"
   },
@@ -36,12 +36,12 @@
     "rollup-plugin-node-resolve": "^5.0.0",
     "rollup-plugin-replace": "^2.2.0",
     "rollup-plugin-typescript": "^1.0.1",
-    "rollup-plugin-uglify": "^6.0.2",
     "tslib": "*",
     "typedoc": "^0.14.2",
     "typedoc-plugin-as-member-of": "^1.0.2",
     "typedoc-twilio-theme": "^1.0.0",
     "typescript": "^3.4.5",
+    "uglifyify": "^5.0.2",
     "watchify": "^3.11.1"
   },
   "keywords": [],
