@@ -85,16 +85,17 @@ export class GifCanvas {
     public index: number = 0
     public time: number = +new Date()
     public type: string = 'gif'
+    public length: number = 0
     public width: number = 0
     public height: number = 0
-    constructor(url: string, parent: Model) {
+    constructor(url: string, parent: Model, options: anyObject = {}) {
         this.url = url
         const { x, y, fps } = parent
         this.options = Object.assign({
-            fps: 20,
+            fps: 6,
             x: 0,
             y: 0
-        }, { x, y, fps })
+        }, { x, y, fps }, options)
         const type = path.extname(url).slice(1)
         this.width =  this.options.width || this.width
         this.height =  this.options.height || this.height
@@ -120,7 +121,7 @@ export class GifCanvas {
     }
     public async loadImage(stateChange: (type: string, url: string, index: number, gif: GifCanvas) => void = () => {}): Promise<HTMLImageElement[]> {
         let imgs: HTMLImageElement[] = []
-        let len = this.imageUrls.length
+        let len = this.length = this.imageUrls.length
         let current = 0
         return this.imgElems = new Promise((resolve, reject) => {
             this.imageUrls.map((url, index) => {
@@ -146,15 +147,26 @@ export class GifCanvas {
     }
     public async currentImg(first: boolean = false) {
         let elms = await this.imgElems
-        if (this.type !== 'gif' || first) {
-            return elms[0]
+        let vIndex = this.index || 0
+        if (this.options.once && this.length === this.index + 1) {
+            return 
         }
-        let time = new Date().getTime() - this.time
-        let len = this.imageUrls.length
-        let vlen = len * (this.options.alternate ? 2 : 1)
-        let index = (~~(time / 1000 * this.options.fps)) % vlen
-        let vIndex = index < len ? index : vlen - index - 1
+        if (this.type !== 'gif' || first) {
+            vIndex = 0
+        } else {
+            let now = +new Date
+            let time = now - this.time
+            if (time >= 1000 / this.options.fps) {
+                this.time = now
+                let len = this.imageUrls.length
+                vIndex = this.index = (this.index + 1) % len
+            }
+        }
+        if (this.index === 0) {
+            this.start()
+        }
         return elms[vIndex]
     }
+    start() {}
 }
 export default GifCanvas

@@ -153,13 +153,12 @@ export default class Scene {
     this.mountCom(header, true)
     return this.cardBar = header
   }
-  rowFunc() {
-    return 2
-    // return ~~(Math.random() * 5)
+  rowFunc(min: number = 0, max: number = 4) {
+    return ~~(Math.random() * max) + ~~min
   }
-  async mountGameZombies(random: number = 0) {
+  async mountGameZombies(random: number = 0, useComs: Model[] = []) {
     random = ~~random
-    const useComs = this.coms.filter(com => {
+    useComs = useComs.length ? useComs : this.coms.filter(com => {
       return com.type === 'zombie' && com.level <= this.user.level
     })
     return this.mountCom(
@@ -448,7 +447,7 @@ export default class Scene {
         this.clearCanvas()
         this.context.putImageData(this.imageDatas.bg, 0, 0)
         let queue = Promise.resolve()
-        others.concat(plants, bullets, zombies).forEach(async com => {
+        plants.concat(bullets, zombies, others).forEach(async com => {
           queue = queue.then(async () => {
             com.run()
             return com.group.length ? await com.drawGroup() : com.draw()
@@ -471,11 +470,15 @@ export default class Scene {
             com1.attackArea[0] = com1.x - com1.width * 2
             com1.attackArea2[0] = com1.x
           }
-          if(!com1.pending && com1.attackAble && hitTest2(com1.attackArea, com2.attackArea2)) {
-            com1.attack(com2)
+          if(!com1.pending && com1.attackAble && !com2.dying) {
+            if (hitTest2(com1.attackArea, com2.attackArea2)) {
+              com1.attack(com2)
+            }
           }
-          if(com1.type !== 'bullet' && !com2.pending && com2.attackAble && hitTest2(com2.attackArea, com1.attackArea2)) {
-            com2.attack(com1)
+          if(com1.type !== 'bullet' && !com2.pending && com2.attackAble && !com1.dying) {
+            if(hitTest2(com2.attackArea, com1.attackArea2)) {
+              com2.attack(com1)
+            }
           }
           if (com2.die) {
             this.dumpCom(com2, false)
@@ -499,6 +502,9 @@ export default class Scene {
     
     this.comsMounted.forEach(com => {
       (coms[com.type + 's'] || others).push(com)
+    })
+    zombies.sort((a, b) => {
+      return b.pos[1] - a.pos[1]
     })
   }
   // 晃动镜头
@@ -552,6 +558,7 @@ export default class Scene {
     return coms
   }
   dumpCom(com: Model, autoFind: boolean = true) {
+    if (!this.comsMountedMap[com.id]) return 
     delete this.comsMountedMap[com.id]
     this.comsMounted.slice(0).forEach((item, index) => {
       if (item.id === com.id) {

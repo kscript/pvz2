@@ -10,7 +10,7 @@ export default class Bullet extends Model {
     this.options = options
     Object.assign(this, {
       attackAble: true,
-      hitAble: true
+      hitAble: false
     }, options)
     this.source = this.options.source || null
   }

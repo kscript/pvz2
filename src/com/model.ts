@@ -10,6 +10,11 @@ const isEmpty = (obj: anyObject) => {
   }
   return true
 }
+const info: anyObject = {
+  plant: '植物',
+  bullet: '子弹',
+  zombie: '僵尸'
+}
 export default class Model {
   // 坐标
   public x: number = 0
@@ -44,7 +49,7 @@ export default class Model {
   // 装载速度
   public loadSpeed: number = 1e4
   // 攻击速度
-  public akSpeed: number = 5e3
+  public akSpeed: number = 3e3
   public moveSpeedX: number = 0
   
   // 触发攻击的范围
@@ -52,7 +57,7 @@ export default class Model {
   public akY: number = 1
   
   public attackTime: number = +new Date
-  public attackMoveX: number = 1
+  public attackMoveX: number = 1.5
   public attackMoveY: number = 0
   public attackX: number = 0
   public attackY: number = 0
@@ -61,7 +66,7 @@ export default class Model {
   public index: number = 1
   
   // 帧频
-  public fps: number = 12
+  public fps: number = 6
   
   public id: string = ''
   // 类型
@@ -76,11 +81,12 @@ export default class Model {
   public static: boolean = false
   // 死亡
   public die: boolean = false
+  public dying: boolean = false
   // 暂停
   public paused: boolean = false
   // 水生类型
   public aquatic: boolean = false
-  public gif: GifCanvas | void = void 0
+  public gif: GifCanvas | null = null
   // 额外的一些资源
   public medias: anyObject<string> | anyObject = {}
   // 额外资源解析结果
@@ -146,17 +152,22 @@ export default class Model {
         this.gif = await this.initGif()
         await this.gif.toBlobUrl()
       }
+      this.gif.start = () => {
+        this.gifStart()
+      }
       const gifs: GifCanvas[] = []
       if (!isEmpty(this.medias) && isEmpty(this.gifs)) {
         await Promise.all(Object.keys(this.medias).map(async (key: string) => {
           let name = this.medias[key]
           let imgPath = this.image.path
+          let options = {}
           if (this.medias[key] instanceof Object) {
             name =  this.medias[key].name
             imgPath = this.medias[key].path || imgPath
+            options = this.medias[key].options instanceof Object ? this.medias[key].options : {}
           }
           if (name && typeof name === 'string') {
-            gifs.push(this.gifs[key] = await new GifCanvas(path.join(imgPath, name), this))
+            gifs.push(this.gifs[key] = await new GifCanvas(path.join(imgPath, name), this, options))
             await this.gifs[key].toBlobUrl()
           }
           return this.gifs[key]
@@ -192,6 +203,7 @@ export default class Model {
     if (!this.id) {
       this.time = +new Date
       this.id = [this.type, this.name, Math.floor(Math.random() * 1e8).toString(36)].join('/')
+      this.moveSpeedX = (this.personal || this).moveSpeedX || 0
     }
   }
   public async initGif(src?: string) {
@@ -228,7 +240,15 @@ export default class Model {
   public attack(...rest: any[]) {}
   public stop() {}
   public run() {
-    this.x += this.moveSpeedX
+    if (this.gif) {
+      this.x += this.moveSpeedX / this.gif.length
+    }
+  }
+  public gifStart() {
+    // this.x += this.moveSpeedX
+  }
+  public beforeDie() {
+    this.die = true
   }
   public restore(){
     this.pending = false
@@ -297,6 +317,7 @@ export default class Model {
   public setAttackResult(com: Model){
     const num = this.ak * this.akEffect - com.dfe * com.dfeEffect
     com.hp -= num >= 0 ? num : 0
+    console.log(info[this.type], this.id, '击中', info[com.type], com.id, '造成了' + num + '伤害', [this, com], '剩余' + com.hp)
     if (com.hp <= 0) {
       com.destory()
     }
