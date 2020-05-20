@@ -23751,6 +23751,7 @@ var GifCanvas = /** @class */ (function () {
         this.width = this.options.width || this.width;
         this.height = this.options.height || this.height;
         this.type = type;
+        this.parent = parent;
         this.imageDatas = this.parseGif(url);
     }
     GifCanvas.prototype.parseGif = function (url) {
@@ -23970,11 +23971,30 @@ var isEmpty = function (obj) {
     }
     return true;
 };
+var rand = function (min, max) {
+    if (min === void 0) { min = 0; }
+    if (max === void 0) { max = 4; }
+    return ~~(Math.random() * (max + 1)) + ~~min;
+};
+
+var sendMessage = function (text, data) {
+    console.log(text);
+};
 
 var info = {
     plant: '植物',
     bullet: '子弹',
-    zombie: '僵尸'
+    zombie: '僵尸',
+    card: '卡片',
+    menu: '菜单/背景',
+    group: '群组'
+};
+var messageText = {
+    initProp: {
+        plant: '已安放',
+        bullet: '装填完毕',
+        zombie: '正在靠近'
+    }
 };
 var Model = /** @class */ (function () {
     function Model() {
@@ -23997,21 +24017,21 @@ var Model = /** @class */ (function () {
         // 等级
         this.level = 1;
         // 生命值
-        this.hp = 50;
+        this.hp = 100;
         // 攻击力
-        this.ak = 20;
+        this.ak = 25;
         // 防御力
         this.dfe = 10;
         this.akEffect = 1;
         this.dfeEffect = 1;
         // 装载速度
         this.loadSpeed = 1e4;
-        // 攻击速度
-        this.akSpeed = 3e3;
         this.moveSpeedX = 0;
         // 触发攻击的范围
         this.akX = 1;
         this.akY = 1;
+        // 攻击速度
+        this.attackSpeed = 3e3;
         this.attackTime = +new Date;
         this.attackMoveX = 1.5;
         this.attackMoveY = 0;
@@ -24092,7 +24112,7 @@ var Model = /** @class */ (function () {
     }
     Model.prototype.init = function (stateChange) {
         return __awaiter(this, void 0, void 0, function () {
-            var _a, gifs_1, len_1, _b;
+            var _a, gifs_1, len_1, total_1, _b;
             var _this = this;
             return __generator(this, function (_c) {
                 switch (_c.label) {
@@ -24162,9 +24182,13 @@ var Model = /** @class */ (function () {
                         _c.label = 6;
                     case 6:
                         if (!!this.img) return [3 /*break*/, 8];
+                        total_1 = gifs_1.length + this.gif.imageUrls.length - 1;
                         _b = this;
                         return [4 /*yield*/, this.gif.loadImage(function (type, url, index, gif) {
-                                typeof stateChange === 'function' && stateChange(type, url, gifs_1.length + index, gif, gifs_1.length + gif.imageUrls.length - 1);
+                                typeof stateChange === 'function' && stateChange(type, url, gifs_1.length + index, gif, total_1);
+                                if (gifs_1.length + index === total_1) {
+                                    sendMessage(info[_this.type] + _this.id + '加载完成!');
+                                }
                             })];
                     case 7:
                         _b.img = (_c.sent())[0];
@@ -24192,6 +24216,7 @@ var Model = /** @class */ (function () {
             this.time = +new Date;
             this.id = [this.type, this.name, Math.floor(Math.random() * 1e8).toString(36)].join('/');
             this.moveSpeedX = (this.personal || this).moveSpeedX || 0;
+            sendMessage(info[this.type] + ':' + this.id + (this.scene.state === 'init' ? '准备加载' : messageText.initProp[this.type] || '创建成功!'));
         }
     };
     Model.prototype.initGif = function (src) {
@@ -24365,8 +24390,8 @@ var Model = /** @class */ (function () {
             this.attackArea2 = [l + (pos[0] * colScale - .75) * width, t + pos[1] * rowScale * height, width, height - 2];
         }
         else if (this.type === 'bullet') {
-            this.attackArea = [0, t + pos[1] * rowScale * height, this.width, this.height];
-            this.attackArea2 = [0, t + pos[1] * rowScale * height, this.width, this.height];
+            this.attackArea = [0, t + pos[1] * height, this.width, this.height];
+            this.attackArea2 = [0, t + pos[1] * height, this.width, this.height];
         }
         else {
             this.attackArea = [l + pos[0] * width, t + pos[1] * height, akX * width, akY * height - 2];
@@ -24389,7 +24414,7 @@ var Model = /** @class */ (function () {
     Model.prototype.setAttackResult = function (com) {
         var num = this.ak * this.akEffect - com.dfe * com.dfeEffect;
         com.hp -= num >= 0 ? num : 0;
-        console.log(info[this.type], this.id, '击中', info[com.type], com.id, '造成了' + num + '伤害', [this, com], '剩余' + com.hp);
+        sendMessage([info[this.type], this.id, '击中', info[com.type], com.id, '造成了' + num + '伤害', '剩余' + com.hp].join(''));
         if (com.hp <= 0) {
             com.destory();
         }
@@ -24444,10 +24469,19 @@ var Plant = /** @class */ (function (_super) {
         _this.options = options;
         Object.assign(_this, {
             hitAble: true,
-            akX: 9
+            akX: 15
         }, options);
         return _this;
     }
+    Plant.prototype.dumpBullet = function (bullet) {
+        var _this = this;
+        this.bullets.slice(0).some(function (item, index) {
+            if (bullet.id === item.id) {
+                _this.bullets.splice(index, 1);
+                return true;
+            }
+        });
+    };
     return Plant;
 }(Model));
 
@@ -24539,6 +24573,42 @@ var Task = /** @class */ (function () {
     return Task;
 }());
 
+var Flow = /** @class */ (function () {
+    function Flow(scene, step, options) {
+        this.time = +new Date;
+        this.step = [];
+        this.index = 0;
+        this.scene = scene;
+        this.step = step;
+    }
+    Flow.prototype.init = function () {
+        var _this = this;
+        this.scene.comGroup.zombies.splice(0).map(function (com) {
+            _this.scene.dumpCom(com);
+        });
+    };
+    Flow.prototype.refresh = function () {
+        var _a;
+        var now = +new Date;
+        var curr = this.step[this.index];
+        if (curr && curr.length) {
+            if (now - this.time > curr[0]) {
+                if (typeof curr[1] === 'string') {
+                    sendMessage(curr[1]);
+                }
+                else {
+                    (_a = this.scene).mountGameZombies.apply(_a, curr.slice(1));
+                }
+                this.index++;
+            }
+        }
+        else if (this.index > 0 && this.scene.comGroup.zombies.length === 0) {
+            this.scene.gameover(true);
+        }
+    };
+    return Flow;
+}());
+
 var defaultConfig = {
     width: 1200,
     height: 700
@@ -24547,13 +24617,14 @@ var others = [];
 var plants = [];
 var bullets = [];
 var zombies = [];
+var cards = [];
 var coms = {
     plants: plants,
     zombies: zombies,
     bullets: bullets,
+    cards: cards,
     others: others
 };
-console.log(coms);
 var Scene = /** @class */ (function () {
     function Scene(container, config) {
         if (config === void 0) { config = {}; }
@@ -24563,6 +24634,7 @@ var Scene = /** @class */ (function () {
         this.comsMounted = [];
         this.comsMountedMap = {};
         this.comMap = {};
+        this.comGroup = coms;
         this.loadCount = 0;
         this.hitCom = {};
         this.mod = 0;
@@ -24583,6 +24655,7 @@ var Scene = /** @class */ (function () {
             event: null
         };
         this.validArea = [];
+        this.flow = null;
         this.container = container;
         config = this.config = Object.assign({}, defaultConfig, config);
         if (config.size === 'fullScreen') {
@@ -24677,13 +24750,35 @@ var Scene = /** @class */ (function () {
             });
         });
     };
+    Scene.prototype.getFlowStep = function () {
+        return [
+            [5 * 1e3, '开始'],
+            [20 * 1e3, 1, 3],
+            [35 * 1e3, 2, 3],
+            [50 * 1e3, 2, 4],
+            [60 * 1e3, 2, 5],
+            [70 * 1e3, '一大波僵尸正在靠近'],
+            [85 * 1e3, 3, 5],
+            [100 * 1e3, 3, 5],
+            [115 * 1e3, 3, 5],
+            [125 * 1e3, 1, 3],
+            [135 * 1e3, 1, 3],
+            [150 * 1e3, '一大波僵尸正在靠近'],
+            [155 * 1e3, '最后一波'],
+            [165 * 1e3, 3, 6],
+            [175 * 1e3, 3, 6],
+            [190 * 1e3, 3, 6]
+        ];
+    };
     Scene.prototype.play = function () {
         return __awaiter(this, void 0, void 0, function () {
             var com, imageData, useComs;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.getCom('background1.jpg')];
+                    case 0:
+                        this.flow = new Flow(this, this.getFlowStep(), {});
+                        return [4 /*yield*/, this.getCom('background1.jpg')];
                     case 1:
                         com = _a.sent();
                         com.init();
@@ -24703,7 +24798,7 @@ var Scene = /** @class */ (function () {
                                 left: .1,
                                 right: .15,
                                 change: .002,
-                                time: 30
+                                time: 25
                             }, function (_a) {
                                 var start = _a.start;
                                 _this.clearCanvas();
@@ -24711,7 +24806,7 @@ var Scene = /** @class */ (function () {
                                 _this.imageDatas.bg = _this.context.getImageData(0, 0, _this.config.width, _this.config.width);
                                 useComs.forEach(function (_a) {
                                     var com = _a.com, x = _a.x;
-                                    com.x = x - start * _this.config.width;
+                                    com.x = x - (start + .1) * _this.config.width;
                                     com.draw();
                                 });
                             })
@@ -24747,8 +24842,10 @@ var Scene = /** @class */ (function () {
         });
     };
     Scene.prototype.startGame = function () {
+        var _a;
         return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
+            return __generator(this, function (_b) {
+                (_a = this.flow) === null || _a === void 0 ? void 0 : _a.init();
                 this.refresh();
                 return [2 /*return*/, new Promise(function (resolve) { return resolve; })];
             });
@@ -24777,7 +24874,7 @@ var Scene = /** @class */ (function () {
     Scene.prototype.rowFunc = function (min, max) {
         if (min === void 0) { min = 0; }
         if (max === void 0) { max = 4; }
-        return ~~(Math.random() * max) + ~~min;
+        return rand(min, max);
     };
     Scene.prototype.mountGameZombies = function (random, useComs) {
         if (random === void 0) { random = 0; }
@@ -24813,15 +24910,12 @@ var Scene = /** @class */ (function () {
                         _a = this.validArea, l = _a[0], t = _a[1], w = _a[2], h = _a[3], width = _a[4], height = _a[5];
                         Zombie = Ctors.Zombie;
                         zombie = new Zombie(item.name, item.options);
-                        zombie.x = this.config.width * .9;
+                        zombie.x = this.config.width * .95;
                         // y固定, x是后期动态设置的
                         zombie.pos = [10, this.rowFunc()];
                         zombie.y = t + (zombie.pos[1] + 1) * height - item.height;
                         return [4 /*yield*/, zombie.init()];
                     case 1:
-                        _b.sent();
-                        return [4 /*yield*/, zombie.draw()];
-                    case 2:
                         _b.sent();
                         return [2 /*return*/, zombie];
                 }
@@ -24915,7 +25009,7 @@ var Scene = /** @class */ (function () {
                     case 0:
                         Plant = Ctors.Plant;
                         comCopy = new Plant(com.name, Object.assign({}, com.options, {
-                            type: 'plant',
+                            type: 'card',
                             x: com.x,
                             y: com.y,
                             static: true
@@ -24952,8 +25046,10 @@ var Scene = /** @class */ (function () {
                     com.y = t + height * this.rowScale * pos[1] + height / 2;
                     com.hitAble = false;
                     com.static = false;
+                    com.type = 'plant';
                     (_b = com.pos).splice.apply(_b, __spreadArrays([0, 2], pos));
                     com.setAttackArea();
+                    this.findAttackCom();
                 }
                 Object.assign(this.dragCom, {
                     com: null,
@@ -25083,7 +25179,7 @@ var Scene = /** @class */ (function () {
         var LoadBar = this.getCom('LoadBar.png');
         LoadBar.draw(~~rate);
         SodRollCap.draw(~~rate, LoadBar);
-        console.log('已加载:' + rate.toFixed(2) + '%');
+        sendMessage('已加载:' + rate.toFixed(2) + '%');
     };
     Scene.prototype.stateChange = function (type, url, index, gif, total) {
         if (total === void 0) { total = 0; }
@@ -25217,19 +25313,25 @@ var Scene = /** @class */ (function () {
             });
         });
     };
+    Scene.prototype.gameover = function (win) {
+        this.stop = true;
+        sendMessage('成功通过关卡!');
+    };
     Scene.prototype.refresh = function () {
         var _this = this;
         requestAnimationFrame(function () { return __awaiter(_this, void 0, void 0, function () {
             var queue_1;
             var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
                         if (!!this.stop) return [3 /*break*/, 2];
                         this.clearCanvas();
+                        (_a = this.flow) === null || _a === void 0 ? void 0 : _a.refresh();
                         this.context.putImageData(this.imageDatas.bg, 0, 0);
                         queue_1 = Promise.resolve();
-                        plants.concat(bullets, zombies, others).forEach(function (com) { return __awaiter(_this, void 0, void 0, function () {
+                        plants.concat(bullets, zombies, others, cards).forEach(function (com) { return __awaiter(_this, void 0, void 0, function () {
                             var _this = this;
                             return __generator(this, function (_a) {
                                 queue_1 = queue_1.then(function () { return __awaiter(_this, void 0, void 0, function () {
@@ -25255,10 +25357,10 @@ var Scene = /** @class */ (function () {
                         }); });
                         return [4 /*yield*/, queue_1];
                     case 1:
-                        _a.sent();
+                        _b.sent();
                         this.attackTest();
                         this.refresh();
-                        _a.label = 2;
+                        _b.label = 2;
                     case 2: return [2 /*return*/];
                 }
             });
@@ -25267,34 +25369,38 @@ var Scene = /** @class */ (function () {
     Scene.prototype.attackTest = function () {
         var _this = this;
         zombies.slice(0).forEach(function (com2, i2) {
-            plants.concat(bullets).slice(0).forEach(function (com1, i1) {
-                if (com1.id !== com2.id && com2.type === 'zombie') {
-                    // 移动 攻击/被攻击 边界, 只改变x
-                    com2.attackArea[0] = com2.x;
-                    com2.attackArea2[0] = com2.x;
-                    if (com1.type === 'bullet') {
-                        com1.attackArea[0] = com1.x - com1.width * 2;
-                        com1.attackArea2[0] = com1.x;
-                    }
-                    if (!com1.pending && com1.attackAble && !com2.dying) {
-                        if (hitTest2(com1.attackArea, com2.attackArea2)) {
-                            com1.attack(com2);
+            if (com2.x <= _this.config.width) {
+                plants.concat(bullets).slice(0).forEach(function (com1, i1) {
+                    if (com1.pos[1] === com2.pos[1]) {
+                        if (com1.id !== com2.id && com2.type === 'zombie') {
+                            // 移动 攻击/被攻击 边界, 只改变x
+                            com2.attackArea[0] = com2.x;
+                            com2.attackArea2[0] = com2.x;
+                            if (com1.type === 'bullet') {
+                                com1.attackArea[0] = com1.x - com1.width * 2;
+                                com1.attackArea2[0] = com1.x;
+                            }
+                            if (!com1.pending && com1.attackAble && !com2.dying) {
+                                if (hitTest2(com1.attackArea, com2.attackArea2)) {
+                                    com1.attack(com2);
+                                }
+                            }
+                            if (com1.type !== 'bullet' && !com2.pending && com2.attackAble && !com1.dying) {
+                                if (hitTest2(com2.attackArea, com1.attackArea2)) {
+                                    com2.attack(com1);
+                                }
+                            }
+                            if (com2.die) {
+                                _this.dumpCom(com2, false);
+                            }
+                            if (com1.die) {
+                                _this.dumpCom(com1, false);
+                            }
                         }
                     }
-                    if (com1.type !== 'bullet' && !com2.pending && com2.attackAble && !com1.dying) {
-                        if (hitTest2(com2.attackArea, com1.attackArea2)) {
-                            com2.attack(com1);
-                        }
-                    }
-                    if (com2.die) {
-                        _this.dumpCom(com2, false);
-                    }
-                    if (com1.die) {
-                        _this.dumpCom(com1, false);
-                    }
-                }
-            });
-            com2.restore();
+                });
+                com2.restore();
+            }
         });
         this.findAttackCom();
     };
@@ -25304,11 +25410,12 @@ var Scene = /** @class */ (function () {
         zombies.splice(0);
         others.splice(0);
         bullets.splice(0);
+        cards.splice(0);
         this.comsMounted.forEach(function (com) {
             (coms[com.type + 's'] || others).push(com);
         });
         zombies.sort(function (a, b) {
-            return b.pos[1] - a.pos[1];
+            return a.pos[1] - b.pos[1];
         });
     };
     // 晃动镜头
@@ -25499,7 +25606,6 @@ var Scene = /** @class */ (function () {
     };
     Scene.prototype.recordPath = function () {
         var pointers = [];
-        console.log(pointers);
         this.container.addEventListener('click', function (event) {
             // @ts-ignore
             pointers.push(event.offsetX);
@@ -26082,6 +26188,7 @@ var list$1 = [
 ];
 var options$1 = mergeOptions(path$1, name$1, list$1, {
     PB01: {
+        attackMoveX: 50,
         draw: function () {
             return __awaiter(this, void 0, void 0, function () {
                 var img;
@@ -26099,7 +26206,11 @@ var options$1 = mergeOptions(path$1, name$1, list$1, {
                             img = _a.sent();
                             img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height);
                             _a.label = 2;
-                        case 2: return [2 /*return*/];
+                        case 2:
+                            if (this.die || this.x > this.scene.config.width) {
+                                this.source.dumpBullet(this);
+                            }
+                            return [2 /*return*/];
                     }
                 });
             });
@@ -26178,53 +26289,54 @@ var cradDrag = function (com, event, oldEvent) {
 };
 var options$2 = mergeOptions(path$2, name$2, list$2, {
     Peashooter: {
+        attackSpeed: 3e3,
         attackAble: true,
         bulletName: 'PB01',
     }
 });
+var baseOption = {
+    trigger: function (type, event) {
+        cardSelect(this, type, event);
+    },
+    drag: function (event, oldEvent) {
+        cradDrag(this, event, oldEvent);
+    },
+    attack: function (com) {
+        return __awaiter(this, void 0, void 0, function () {
+            var now, bullet, Bullet, _a, x, y, width, pos, attackMoveX, attackMoveY, bulletCopy;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        now = +new Date;
+                        if (!(!this.attackTime || now - this.attackSpeed > this.attackTime)) return [3 /*break*/, 3];
+                        this.target = com;
+                        this.attackTime = now;
+                        if (!this.bulletName) return [3 /*break*/, 2];
+                        bullet = this.scene.comMap[this.bulletName];
+                        Bullet = bullet.__proto__.constructor;
+                        _a = this, x = _a.x, y = _a.y, width = _a.width, pos = _a.pos, attackMoveX = _a.attackMoveX, attackMoveY = _a.attackMoveY;
+                        bulletCopy = new Bullet(bullet.name, Object.assign({}, bullet.options, {
+                            target: com,
+                            x: x + width, y: y, pos: pos, attackMoveX: attackMoveX, attackMoveY: attackMoveY, source: this
+                        }));
+                        return [4 /*yield*/, bulletCopy.init()];
+                    case 1:
+                        _b.sent();
+                        this.scene.mountCom(bulletCopy);
+                        this.bullets.push(bulletCopy);
+                        return [3 /*break*/, 3];
+                    case 2:
+                        this.setAttackResult(com);
+                        _b.label = 3;
+                    case 3: return [2 /*return*/];
+                }
+            });
+        });
+    }
+};
 for (var key in options$2) {
     if (options$2.hasOwnProperty(key)) {
-        options$2[key] = Object.assign({
-            trigger: function (type, event) {
-                // @ts-ignore
-                cardSelect(this, type, event);
-            },
-            drag: function (event, oldEvent) {
-                // @ts-ignore
-                cradDrag(this, event, oldEvent);
-            },
-            attack: function (com) {
-                return __awaiter(this, void 0, void 0, function () {
-                    var self, now, bullet, Bullet, x, y, width, pos, attackMoveX, attackMoveY, bulletCopy;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                self = this;
-                                now = +new Date;
-                                if (!(!self.attackTime || now - self.akSpeed > self.attackTime)) return [3 /*break*/, 3];
-                                self.attackTime = now;
-                                if (!self.bulletName) return [3 /*break*/, 2];
-                                bullet = self.scene.comMap[self.bulletName];
-                                Bullet = bullet.__proto__.constructor;
-                                x = self.x, y = self.y, width = self.width, pos = self.pos, attackMoveX = self.attackMoveX, attackMoveY = self.attackMoveY;
-                                bulletCopy = new Bullet(bullet.name, Object.assign({}, bullet.options, {
-                                    x: x + width, y: y, pos: pos, attackMoveX: attackMoveX, attackMoveY: attackMoveY, source: self
-                                }));
-                                return [4 /*yield*/, bulletCopy.init()];
-                            case 1:
-                                _a.sent();
-                                self.scene.mountCom(bulletCopy);
-                                self.bullets.push(bulletCopy);
-                                return [3 /*break*/, 3];
-                            case 2:
-                                self.setAttackResult(com);
-                                _a.label = 3;
-                            case 3: return [2 /*return*/];
-                        }
-                    });
-                });
-            }
-        }, options$2[key]);
+        options$2[key] = Object.assign({}, baseOption, options$2[key]);
     }
 }
 var plant = {
@@ -26253,6 +26365,8 @@ var list$3 = [
 ];
 var options$3 = mergeOptions(path$3, name$3, list$3, {
     Zombie: {
+        hp: 150,
+        dfe: 11,
         level: 1,
         medias: {
             die: '${name}/${name}Die.gif',
@@ -26273,40 +26387,39 @@ var options$3 = mergeOptions(path$3, name$3, list$3, {
             attack: '${name}/${name}Attack.gif'
         },
         personal: {
-            moveSpeedX: -3,
+            moveSpeedX: -5,
             die: {
                 state: 0
             }
         },
         beforeDie: function () {
             return __awaiter(this, void 0, void 0, function () {
-                var self, die, lostHead, head, img, img;
+                var die, lostHead, head, img, img;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
-                            self = this;
-                            die = self.personal.die;
+                            die = this.personal.die;
                             if (!(die.state === 0)) return [3 /*break*/, 3];
-                            return [4 /*yield*/, self.gifs.lostHead.currentImg()];
+                            return [4 /*yield*/, this.gifs.lostHead.currentImg()];
                         case 1:
                             lostHead = _a.sent();
-                            lostHead && self.scene.context.drawImage(lostHead, self.x, self.y, lostHead.width, lostHead.height);
-                            return [4 /*yield*/, self.gifs.head.currentImg()];
+                            lostHead && this.scene.context.drawImage(lostHead, this.x, this.y, lostHead.width, lostHead.height);
+                            return [4 /*yield*/, this.gifs.head.currentImg()];
                         case 2:
                             head = _a.sent();
-                            head && self.scene.context.drawImage(head, self.x + head.width / 2, self.y, head.width, head.height);
-                            if (self.gifs.lostHead.length === self.gifs.lostHead.index + 1) {
+                            head && this.scene.context.drawImage(head, this.x + head.width / 2, this.y, head.width, head.height);
+                            if (this.gifs.lostHead.length === this.gifs.lostHead.index + 1) {
                                 die.state += 1;
                             }
                             return [3 /*break*/, 9];
                         case 3:
                             if (!(die.state === 1)) return [3 /*break*/, 7];
-                            if (!self.target) return [3 /*break*/, 5];
-                            return [4 /*yield*/, self.gifs.lostHeadAttack.currentImg()];
+                            if (!this.target) return [3 /*break*/, 5];
+                            return [4 /*yield*/, this.gifs.lostHeadAttack.currentImg()];
                         case 4:
                             img = _a.sent();
-                            img && self.scene.context.drawImage(img, self.x, self.y, img.width, img.height);
-                            if (self.gifs.lostHeadAttack.length === self.gifs.lostHeadAttack.index + 1) {
+                            img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height);
+                            if (this.gifs.lostHeadAttack.length === this.gifs.lostHeadAttack.index + 1) {
                                 die.state += 1;
                             }
                             return [3 /*break*/, 6];
@@ -26316,13 +26429,13 @@ var options$3 = mergeOptions(path$3, name$3, list$3, {
                         case 6: return [3 /*break*/, 9];
                         case 7:
                             if (!(die.state === 2)) return [3 /*break*/, 9];
-                            return [4 /*yield*/, self.gifs.die.currentImg()];
+                            return [4 /*yield*/, this.gifs.die.currentImg()];
                         case 8:
                             img = _a.sent();
-                            img && self.scene.context.drawImage(img, self.x, self.y, img.width, img.height);
-                            if (self.gifs.die.length === self.gifs.die.index + 1) {
+                            img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height);
+                            if (this.gifs.die.length === this.gifs.die.index + 1) {
                                 die.state += 1;
-                                self.die = true;
+                                this.die = true;
                             }
                             _a.label = 9;
                         case 9: return [2 /*return*/];
@@ -26333,93 +26446,98 @@ var options$3 = mergeOptions(path$3, name$3, list$3, {
     },
     ConeheadZombie: {
         level: 1,
+        hp: 200,
+        dfe: 12,
         personal: {
-            moveSpeedX: -5
+            moveSpeedX: -7
         },
         medias: {
             attack: '${name}/${name}Attack.gif'
         }
     }
 });
+var baseOption$1 = {
+    attackSpeed: 3e3,
+    restore: function () {
+        if (!this.die && !this.dying && this.target && this.target.hp <= 0) {
+            this.pending = false;
+            this.moveSpeedX = (this.personal || this).moveSpeedX;
+            this.gif = this.gifs.default;
+            this.target = null;
+        }
+    },
+    beforeDie: function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                this.die = true;
+                return [2 /*return*/];
+            });
+        });
+    },
+    draw: function () {
+        var rest = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            rest[_i] = arguments[_i];
+        }
+        return __awaiter(this, void 0, void 0, function () {
+            var img;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!(!this.dying && this.gif)) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.gif.currentImg(this.static)];
+                    case 1:
+                        img = _a.sent();
+                        img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height);
+                        return [3 /*break*/, 3];
+                    case 2:
+                        this.beforeDie();
+                        _a.label = 3;
+                    case 3: return [2 /*return*/];
+                }
+            });
+        });
+    },
+    destory: function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                this.attackAble = false;
+                this.dying = true;
+                this.gif = null;
+                return [2 /*return*/];
+            });
+        });
+    },
+    attack: function (com) {
+        return __awaiter(this, void 0, void 0, function () {
+            var now;
+            return __generator(this, function (_a) {
+                if (this.dying) {
+                    return [2 /*return*/];
+                }
+                this.moveSpeedX = 0;
+                if (this.gifs.attack) {
+                    this.target = com;
+                    this.gif = this.gifs.attack;
+                    // let img = await this.gifs.attack.currentImg()
+                    // img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
+                }
+                now = +new Date;
+                if (!this.attackTime || now - this.attackSpeed > this.attackTime) {
+                    this.attackTime = now;
+                    this.setAttackResult(com);
+                }
+                return [2 /*return*/];
+            });
+        });
+    }
+};
 for (var key$1 in options$3) {
     if (options$3.hasOwnProperty(key$1)) {
-        options$3[key$1] = Object.assign({
-            akSpeed: 3e3,
-            restore: function () {
-                // @ts-ignore
-                var self = this;
-                if (!self.die && !self.dying && self.target && self.target.hp <= 0) {
-                    self.pending = false;
-                    self.moveSpeedX = (self.personal || self).moveSpeedX;
-                    self.gif = self.gifs.default;
-                    self.target = null;
-                }
-            },
-            draw: function () {
-                var rest = [];
-                for (var _i = 0; _i < arguments.length; _i++) {
-                    rest[_i] = arguments[_i];
-                }
-                return __awaiter(this, void 0, void 0, function () {
-                    var self, img;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                self = this;
-                                if (!(!self.dying && self.gif)) return [3 /*break*/, 2];
-                                return [4 /*yield*/, self.gif.currentImg(self.static)];
-                            case 1:
-                                img = _a.sent();
-                                img && self.scene.context.drawImage(img, self.x, self.y, self.width, self.height);
-                                return [3 /*break*/, 3];
-                            case 2:
-                                !self.die && self.beforeDie();
-                                _a.label = 3;
-                            case 3: return [2 /*return*/];
-                        }
-                    });
-                });
-            },
-            destory: function () {
-                return __awaiter(this, void 0, void 0, function () {
-                    var self;
-                    return __generator(this, function (_a) {
-                        self = this;
-                        self.attackAble = false;
-                        self.dying = true;
-                        self.gif = null;
-                        return [2 /*return*/];
-                    });
-                });
-            },
-            attack: function (com) {
-                return __awaiter(this, void 0, void 0, function () {
-                    var self, now;
-                    return __generator(this, function (_a) {
-                        self = this;
-                        // self.pending = true
-                        if (self.dying) {
-                            return [2 /*return*/];
-                        }
-                        self.moveSpeedX = 0;
-                        if (self.gifs.attack) {
-                            self.target = com;
-                            self.gif = self.gifs.attack;
-                            // let img = await self.gifs.attack.currentImg()
-                            // img && self.scene.context.drawImage(img, self.x, self.y, self.width, self.height)
-                        }
-                        now = +new Date;
-                        if (!self.attackTime || now - self.akSpeed > self.attackTime) {
-                            self.attackTime = now;
-                            self.setAttackResult(com);
-                        }
-                        return [2 /*return*/];
-                    });
-                });
-            }
-        }, options$3[key$1]);
+        options$3[key$1] = Object.assign({}, baseOption$1, options$3[key$1]);
     }
 }
+console.log(options$3);
 var zombie = {
     path: path$3,
     name: name$3,
