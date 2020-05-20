@@ -61,4 +61,5 @@ typings/
 .next
 
 dist/
+server/main.js
 bundle.js

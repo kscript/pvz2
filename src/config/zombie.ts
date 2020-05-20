@@ -1,5 +1,6 @@
 import { mergeOptions } from '@/utils/model'
 import Model from '@/com/model'
+import GifCanvas from '@/utils/canvas'
 
 const path = './images/Zombies/'
 const name = '${name}/${name}.gif'
@@ -44,6 +45,7 @@ const options: anyObject = mergeOptions(path, name, list, {
     },
     personal: {
       moveSpeedX: -5,
+      img: null,
       die: {
         state: 0
       }
@@ -73,10 +75,11 @@ const options: anyObject = mergeOptions(path, name, list, {
         img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height)
         if (this.gifs.die.length === this.gifs.die.index + 1) {
           die.state += 1
-          this.die = true
+          this.personal.img = img
+          this.hide(void 0, img)
         }
       } else {
-        this.die = true
+        this.hide(void 0, this.personal.img)
       }
     }
   },
@@ -95,6 +98,9 @@ const options: anyObject = mergeOptions(path, name, list, {
 
 const baseOption: anyObject = {
   attackSpeed: 3e3,
+  personal: {
+    opacity: 1
+  },
   restore() {
     if (!this.die && !this.dying && this.target && this.target.hp <= 0) {
       this.pending = false
@@ -103,8 +109,21 @@ const baseOption: anyObject = {
       this.target = null
     }
   },
+  async hide(gif?: GifCanvas, img?: HTMLImageElement) {
+    this.personal.opacity -= .025
+    if (this.personal.opacity >= 0) {
+      img = img || await (gif || this.gifs.default).currentImg(this.static)
+      if (img) {
+        this.scene.context.globalAlpha = this.personal.opacity
+        this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
+        this.scene.context.globalAlpha = 1
+      }
+    } else {
+      this.die = true
+    }
+  },
   async beforeDie() {
-    this.die = true
+    this.hide()
   },
   async draw(...rest: any[]) {
     if (!this.dying) {
@@ -142,7 +161,10 @@ const baseOption: anyObject = {
 
 for(let key in options) {
   if (options.hasOwnProperty(key)) {
-    options[key] = Object.assign({}, baseOption, options[key])
+    const personal = Object.assign({}, baseOption.personal || {}, options[key].personal || {})
+    options[key] = Object.assign({}, baseOption, options[key], {
+      personal
+    })
   }
 }
 console.log(options)
