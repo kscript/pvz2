@@ -4,7 +4,7 @@ import babel from "rollup-plugin-babel"
 
 // import { uglify } from 'rollup-plugin-uglify'
 
-const env = process.env.NODE_ENV;
+const env = process.env.NODE_ENV
 const config = {
     input: 'src/main.jsx',
     output: {
@@ -14,7 +14,7 @@ const config = {
     plugins: [
         typescript({
             "target": "es5",
-            "sourceMap": true
+            "sourceMap": false
         }),
         babel(),
         replace({
@@ -24,8 +24,8 @@ const config = {
         // process.env.NODE_ENV !== 'production' 
         // ? [] 
         // : 
-        uglify()
+        // uglify()
     )
-};
+}
 
-export default config;
+export default config
