@@ -26388,6 +26388,7 @@ var options$3 = mergeOptions(path$3, name$3, list$3, {
         },
         personal: {
             moveSpeedX: -5,
+            img: null,
             die: {
                 state: 0
             }
@@ -26435,11 +26436,12 @@ var options$3 = mergeOptions(path$3, name$3, list$3, {
                             img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height);
                             if (this.gifs.die.length === this.gifs.die.index + 1) {
                                 die.state += 1;
-                                this.die = true;
+                                this.personal.img = img;
+                                this.hide(void 0, img);
                             }
                             return [3 /*break*/, 10];
                         case 9:
-                            this.die = true;
+                            this.hide(void 0, this.personal.img);
                             _a.label = 10;
                         case 10: return [2 /*return*/];
                     }
@@ -26461,6 +26463,9 @@ var options$3 = mergeOptions(path$3, name$3, list$3, {
 });
 var baseOption$1 = {
     attackSpeed: 3e3,
+    personal: {
+        opacity: 1
+    },
     restore: function () {
         if (!this.die && !this.dying && this.target && this.target.hp <= 0) {
             this.pending = false;
@@ -26469,10 +26474,40 @@ var baseOption$1 = {
             this.target = null;
         }
     },
+    hide: function (gif, img) {
+        return __awaiter(this, void 0, void 0, function () {
+            var _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        this.personal.opacity -= .025;
+                        if (!(this.personal.opacity >= 0)) return [3 /*break*/, 3];
+                        _a = img;
+                        if (_a) return [3 /*break*/, 2];
+                        return [4 /*yield*/, (gif || this.gifs.default).currentImg(this.static)];
+                    case 1:
+                        _a = (_b.sent());
+                        _b.label = 2;
+                    case 2:
+                        img = _a;
+                        if (img) {
+                            this.scene.context.globalAlpha = this.personal.opacity;
+                            this.scene.context.drawImage(img, this.x, this.y, this.width, this.height);
+                            this.scene.context.globalAlpha = 1;
+                        }
+                        return [3 /*break*/, 4];
+                    case 3:
+                        this.die = true;
+                        _b.label = 4;
+                    case 4: return [2 /*return*/];
+                }
+            });
+        });
+    },
     beforeDie: function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                this.die = true;
+                this.hide();
                 return [2 /*return*/];
             });
         });
@@ -26539,7 +26574,10 @@ var baseOption$1 = {
 };
 for (var key$1 in options$3) {
     if (options$3.hasOwnProperty(key$1)) {
-        options$3[key$1] = Object.assign({}, baseOption$1, options$3[key$1]);
+        var personal = Object.assign({}, baseOption$1.personal || {}, options$3[key$1].personal || {});
+        options$3[key$1] = Object.assign({}, baseOption$1, options$3[key$1], {
+            personal: personal
+        });
     }
 }
 console.log(options$3);
