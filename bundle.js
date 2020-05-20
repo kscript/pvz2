@@ -26289,7 +26289,7 @@ var cradDrag = function (com, event, oldEvent) {
 };
 var options$2 = mergeOptions(path$2, name$2, list$2, {
     Peashooter: {
-        attackSpeed: 3e3,
+        attackSpeed: 5e3,
         attackAble: true,
         bulletName: 'PB01',
     }
@@ -26411,7 +26411,7 @@ var options$3 = mergeOptions(path$3, name$3, list$3, {
                             if (this.gifs.lostHead.length === this.gifs.lostHead.index + 1) {
                                 die.state += 1;
                             }
-                            return [3 /*break*/, 9];
+                            return [3 /*break*/, 10];
                         case 3:
                             if (!(die.state === 1)) return [3 /*break*/, 7];
                             if (!this.target) return [3 /*break*/, 5];
@@ -26426,7 +26426,7 @@ var options$3 = mergeOptions(path$3, name$3, list$3, {
                         case 5:
                             die.state += 1;
                             _a.label = 6;
-                        case 6: return [3 /*break*/, 9];
+                        case 6: return [3 /*break*/, 10];
                         case 7:
                             if (!(die.state === 2)) return [3 /*break*/, 9];
                             return [4 /*yield*/, this.gifs.die.currentImg()];
@@ -26437,8 +26437,11 @@ var options$3 = mergeOptions(path$3, name$3, list$3, {
                                 die.state += 1;
                                 this.die = true;
                             }
-                            _a.label = 9;
-                        case 9: return [2 /*return*/];
+                            return [3 /*break*/, 10];
+                        case 9:
+                            this.die = true;
+                            _a.label = 10;
+                        case 10: return [2 /*return*/];
                     }
                 });
             });
@@ -26484,16 +26487,18 @@ var baseOption$1 = {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        if (!(!this.dying && this.gif)) return [3 /*break*/, 2];
+                        if (!!this.dying) return [3 /*break*/, 3];
+                        if (!this.gif) return [3 /*break*/, 2];
                         return [4 /*yield*/, this.gif.currentImg(this.static)];
                     case 1:
                         img = _a.sent();
                         img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height);
-                        return [3 /*break*/, 3];
-                    case 2:
+                        _a.label = 2;
+                    case 2: return [3 /*break*/, 4];
+                    case 3:
                         this.beforeDie();
-                        _a.label = 3;
-                    case 3: return [2 /*return*/];
+                        _a.label = 4;
+                    case 4: return [2 /*return*/];
                 }
             });
         });
