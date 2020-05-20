@@ -4,20 +4,20 @@ import Model from '@/com/model'
 const path = './images/Zombies/'
 const name = '${name}/${name}.gif'
 const list: string[] = [
-  'BackupDancer',
-  'BucketheadZombie',
+  // 'BackupDancer',
+  // 'BucketheadZombie',
   'ConeheadZombie',
-  'DancingZombie',
-  'FlagZombie',
-  'FootballZombie',
-  'Imp',
-  'JackinTheBoxZombie',
-  'NewspaperZombie',
-  'PoleVaultingZombie',
-  'ScreenDoorZombie',
-  'SnorkelZombie',
+  // 'DancingZombie',
+  // 'FlagZombie',
+  // 'FootballZombie',
+  // 'Imp',
+  // 'JackinTheBoxZombie',
+  // 'NewspaperZombie',
+  // 'PoleVaultingZombie',
+  // 'ScreenDoorZombie',
+  // 'SnorkelZombie',
   'Zombie',
-  'Zomboni'
+  // 'Zomboni'
 ]
 const options: anyObject = mergeOptions(path, name, list, {
   Zombie: {

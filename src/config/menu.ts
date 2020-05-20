@@ -6,14 +6,14 @@ const name = '${name}'
 const list: string[] = [
   // 游戏场景
   'background1.jpg',
-  'background1unsodded.jpg',
-  'background1unsodded_1.jpg',
-  'background1unsodded2.jpg',
-  'background2.jpg',
-  'background3.jpg',
-  'background4.jpg',
-  'background5.jpg',
-  'background6boss.jpg',
+  // 'background1unsodded.jpg',
+  // 'background1unsodded_1.jpg',
+  // 'background1unsodded2.jpg',
+  // 'background2.jpg',
+  // 'background3.jpg',
+  // 'background4.jpg',
+  // 'background5.jpg',
+  // 'background6boss.jpg',
   // 戴夫
   'Dave.gif',
   'Dave2.gif',
@@ -196,6 +196,9 @@ const options: anyObject = mergeOptions(path, name, list, {
   // 商店
   'SelectorScreen_Store.png': {
     hitAble: true,
+    hitState: {
+      mount: true
+    },
     col: 0,
     row: 0,
     ctype: 'function',
@@ -220,6 +223,9 @@ const options: anyObject = mergeOptions(path, name, list, {
   // 花园
   'SelectorScreen_ZenGarden.png': {
     hitAble: true,
+    hitState: {
+      mount: true
+    },
     col: 1,
     row: 0,
     ctype: 'function',
@@ -244,6 +250,9 @@ const options: anyObject = mergeOptions(path, name, list, {
   // 图鉴
   'SelectorScreen_Almanac.png': {
     hitAble: true,
+    hitState: {
+      mount: true
+    },
     col: 2,
     row: 0,
     ctype: 'function',
@@ -268,6 +277,9 @@ const options: anyObject = mergeOptions(path, name, list, {
   // 冒险
   'SelectorScreenAdventure.png': {
     hitAble: true,
+    hitState: {
+      mount: true
+    },
     col: 0,
     row: 0,
     scaleX: 1.2,
@@ -299,6 +311,9 @@ const options: anyObject = mergeOptions(path, name, list, {
   // 解密
   'SelectorScreenChallenges.png': {
     hitAble: true,
+    hitState: {
+      mount: true
+    },
     col: 0,
     row: 1,
     scaleX: 1.3,
@@ -330,6 +345,9 @@ const options: anyObject = mergeOptions(path, name, list, {
   // 小游戏
   'SelectorScreenSurvival.png': {
     hitAble: true,
+    hitState: {
+      mount: true
+    },
     col: 0,
     row: 2,
     scaleX: 1.2,
@@ -361,6 +379,9 @@ const options: anyObject = mergeOptions(path, name, list, {
   // 开始游戏
   'SelectorScreenStartAdventur.png': {
     hitAble: true,
+    hitState: {
+      mount: true
+    },
     col: 0,
     row: 3,
     // 缩放
@@ -419,8 +440,8 @@ const options: anyObject = mergeOptions(path, name, list, {
     draw() {
       let { x, y, w, h, scene } = getProps(this)
       let { scaleX, scaleY, startX, startY, width, height } = this    
-      this.x = x - w * .2
-      this.y = y - h * .3
+      this.x = x - w * 0
+      this.y = y - h * .25
       startX = this.personal.currX % this.personal.lenX
       startY = this.personal.currY % this.personal.lenY
       width = width / this.personal.lenX

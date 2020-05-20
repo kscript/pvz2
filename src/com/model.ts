@@ -2,14 +2,8 @@ import * as path from 'path'
 import Scene from '@/scene'
 import { GifCanvas, offlineCanvas, OfflineCanvas } from '@/utils/canvas'
 import { drawHitArea } from '@/utils/hit'
-const isEmpty = (obj: anyObject) => {
-  for(let k in obj) {
-    if (obj.hasOwnProperty(k)) {
-      return false
-    }
-  }
-  return true
-}
+import { isEmpty } from '@/utils'
+
 const info: anyObject = {
   plant: '植物',
   bullet: '子弹',

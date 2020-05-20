@@ -1,8 +1,9 @@
 import Com from '@/com'
 import Model from '@/com/model'
+import user from '@/user'
+import { isEmpty } from '@/utils'
 import { Task } from '@/utils/task'
 import { hitTest, hitTest2, isCollide, drawHitArea } from '@/utils/hit'
-import user from '@/user'
 import { GifCanvas, offlineCanvas, OfflineCanvas } from '@/utils/canvas'
 const defaultConfig = {
   width: 1200,
@@ -94,7 +95,6 @@ export default class Scene {
     await this.task.resolve('mount')
   }
   async beforePlay() {
-    await this.selectAfter()
     this.clearCanvas()
     this.clearMounted()
   }
@@ -598,9 +598,10 @@ export default class Scene {
     const hit: Model[] = []
     this.comsMounted.map(com => {
       const hitArea = (com.hitArea || []).slice(0)
-      // 如果没有指定当前环节要碰撞检测, 且默认不检测, 则跳过
-      if (!com.hitState.hasOwnProperty(this.state) && !com.hitAble) {
+      if (!com.hitAble){
         return
+      } else if (!isEmpty(com.hitState) && !com.hitState.hasOwnProperty(this.state)){
+        return 
       }
       if (hitArea.length) {
         hitArea[0] = com.x
