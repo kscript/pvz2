@@ -110,8 +110,8 @@ const baseOption: anyObject = {
     }
   },
   async hide(gif?: GifCanvas, img?: HTMLImageElement) {
-    this.personal.opacity -= .025
     if (this.personal.opacity >= 0) {
+      this.personal.opacity -= .025
       img = img || await (gif || this.gifs.default).currentImg(this.static)
       if (img) {
         this.scene.context.globalAlpha = this.personal.opacity
