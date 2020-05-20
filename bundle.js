@@ -23942,6 +23942,26 @@ var drawHitArea = function (color, cxt, area) {
     }
 };
 
+var execHook = function (source, hook) {
+    var rest = [];
+    for (var _i = 2; _i < arguments.length; _i++) {
+        rest[_i - 2] = arguments[_i];
+    }
+    return __awaiter(void 0, void 0, void 0, function () {
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    source.state = hook;
+                    if (!(typeof source[hook] === 'function')) return [3 /*break*/, 2];
+                    return [4 /*yield*/, source[hook].apply(source, rest)];
+                case 1:
+                    _a.sent();
+                    _a.label = 2;
+                case 2: return [2 /*return*/];
+            }
+        });
+    });
+};
 var isEmpty = function (obj) {
     for (var k in obj) {
         if (obj.hasOwnProperty(k)) {
@@ -23950,6 +23970,7 @@ var isEmpty = function (obj) {
     }
     return true;
 };
+
 var info = {
     plant: '植物',
     bullet: '子弹',
@@ -24472,6 +24493,18 @@ var Ctors = {
     Group: Group
 };
 
+localStorage.setItem('username', 'test');
+localStorage.setItem('userdata', '{"test": {"level": 1, "current": 1, "money": "1000", "time": 1588664255188, "card": [], "prop": []}}');
+var user = {
+    active: '',
+    data: {}
+};
+try {
+    user.active = localStorage.getItem('username') || '';
+    user.data = JSON.parse(localStorage.getItem('userdata') || '') || user.data;
+}
+catch (e) { }
+
 var Task = /** @class */ (function () {
     function Task() {
         this.state = 'resolved';
@@ -24505,18 +24538,6 @@ var Task = /** @class */ (function () {
     };
     return Task;
 }());
-
-localStorage.setItem('username', 'test');
-localStorage.setItem('userdata', '{"test": {"level": 1, "current": 1, "money": "1000", "time": 1588664255188, "card": [], "prop": []}}');
-var user = {
-    active: '',
-    data: {}
-};
-try {
-    user.active = localStorage.getItem('username') || '';
-    user.data = JSON.parse(localStorage.getItem('userdata') || '') || user.data;
-}
-catch (e) { }
 
 var defaultConfig = {
     width: 1200,
@@ -24650,14 +24671,9 @@ var Scene = /** @class */ (function () {
     Scene.prototype.beforePlay = function () {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.selectAfter()];
-                    case 1:
-                        _a.sent();
-                        this.clearCanvas();
-                        this.clearMounted();
-                        return [2 /*return*/];
-                }
+                this.clearCanvas();
+                this.clearMounted();
+                return [2 /*return*/];
             });
         });
     };
@@ -25397,8 +25413,10 @@ var Scene = /** @class */ (function () {
         var hit = [];
         this.comsMounted.map(function (com) {
             var hitArea = (com.hitArea || []).slice(0);
-            // 如果没有指定当前环节要碰撞检测, 且默认不检测, 则跳过
-            if (!com.hitState.hasOwnProperty(_this.state) && !com.hitAble) {
+            if (!com.hitAble) {
+                return;
+            }
+            else if (!isEmpty(com.hitState) && !com.hitState.hasOwnProperty(_this.state)) {
                 return;
             }
             if (hitArea.length) {
@@ -25588,14 +25606,14 @@ var name = '${name}';
 var list = [
     // 游戏场景
     'background1.jpg',
-    'background1unsodded.jpg',
-    'background1unsodded_1.jpg',
-    'background1unsodded2.jpg',
-    'background2.jpg',
-    'background3.jpg',
-    'background4.jpg',
-    'background5.jpg',
-    'background6boss.jpg',
+    // 'background1unsodded.jpg',
+    // 'background1unsodded_1.jpg',
+    // 'background1unsodded2.jpg',
+    // 'background2.jpg',
+    // 'background3.jpg',
+    // 'background4.jpg',
+    // 'background5.jpg',
+    // 'background6boss.jpg',
     // 戴夫
     'Dave.gif',
     'Dave2.gif',
@@ -25784,6 +25802,9 @@ var options = mergeOptions(path, name, list, {
     // 商店
     'SelectorScreen_Store.png': {
         hitAble: true,
+        hitState: {
+            mount: true
+        },
         col: 0,
         row: 0,
         ctype: 'function',
@@ -25809,6 +25830,9 @@ var options = mergeOptions(path, name, list, {
     // 花园
     'SelectorScreen_ZenGarden.png': {
         hitAble: true,
+        hitState: {
+            mount: true
+        },
         col: 1,
         row: 0,
         ctype: 'function',
@@ -25834,6 +25858,9 @@ var options = mergeOptions(path, name, list, {
     // 图鉴
     'SelectorScreen_Almanac.png': {
         hitAble: true,
+        hitState: {
+            mount: true
+        },
         col: 2,
         row: 0,
         ctype: 'function',
@@ -25859,6 +25886,9 @@ var options = mergeOptions(path, name, list, {
     // 冒险
     'SelectorScreenAdventure.png': {
         hitAble: true,
+        hitState: {
+            mount: true
+        },
         col: 0,
         row: 0,
         scaleX: 1.2,
@@ -25890,6 +25920,9 @@ var options = mergeOptions(path, name, list, {
     // 解密
     'SelectorScreenChallenges.png': {
         hitAble: true,
+        hitState: {
+            mount: true
+        },
         col: 0,
         row: 1,
         scaleX: 1.3,
@@ -25921,6 +25954,9 @@ var options = mergeOptions(path, name, list, {
     // 小游戏
     'SelectorScreenSurvival.png': {
         hitAble: true,
+        hitState: {
+            mount: true
+        },
         col: 0,
         row: 2,
         scaleX: 1.2,
@@ -25952,6 +25988,9 @@ var options = mergeOptions(path, name, list, {
     // 开始游戏
     'SelectorScreenStartAdventur.png': {
         hitAble: true,
+        hitState: {
+            mount: true
+        },
         col: 0,
         row: 3,
         // 缩放
@@ -26016,8 +26055,8 @@ var options = mergeOptions(path, name, list, {
         draw: function () {
             var _a = getProps(this), x = _a.x, y = _a.y, w = _a.w, h = _a.h;
             var _b = this, scaleX = _b.scaleX, scaleY = _b.scaleY, startX = _b.startX, startY = _b.startY, width = _b.width, height = _b.height;
-            this.x = x - w * .2;
-            this.y = y - h * .3;
+            this.x = x - w * 0;
+            this.y = y - h * .25;
             startX = this.personal.currX % this.personal.lenX;
             startY = this.personal.currY % this.personal.lenY;
             width = width / this.personal.lenX;
@@ -26083,44 +26122,37 @@ var bullet = {
 var path$2 = './images/Plants/';
 var name$2 = '${name}/${name}.gif';
 var list$2 = [
-    'Blover',
-    'Cactus',
-    'CherryBomb',
-    'Chomper',
-    'CoffeeBean',
-    'DoomShroom',
-    'FlowerPot',
-    'FumeShroom',
-    'Garlic',
-    'GatlingPea',
-    'GloomShroom',
-    'GraveBuster',
-    'HypnoShroom',
-    'IceShroom',
-    'Jalapeno',
-    'LilyPad',
+    // 'Blover',
+    // 'Cactus',
+    // 'CherryBomb',
+    // 'Chomper',
+    // 'CoffeeBean',
+    // 'DoomShroom',
+    // 'FlowerPot',
+    // 'FumeShroom',
+    // 'Garlic',
+    // 'GatlingPea',
+    // 'GloomShroom',
+    // 'GraveBuster',
+    // 'HypnoShroom',
+    // 'IceShroom',
+    // 'Jalapeno',
+    // 'LilyPad',
     'Peashooter',
-    'Plantern',
-    'PotatoMine',
-    'PuffShroom',
-    'PumpkinHead',
-    'Repeater',
-    'ScaredyShroom',
-    'SeaShroom',
-    'SnowPea',
-    'Spikerock',
-    'Spikeweed',
-    'SplitPea',
-    'Squash',
-    'Starfruit',
+    // 'Plantern',
+    // 'PotatoMine',
+    // 'PuffShroom',
+    // 'PumpkinHead',
+    // 'Repeater',
+    // 'ScaredyShroom',
+    // 'SeaShroom',
+    // 'SnowPea',
+    // 'Spikerock',
+    // 'Spikeweed',
+    // 'SplitPea',
+    // 'Squash',
+    // 'Starfruit',
     'SunFlower',
-    'SunShroom',
-    'TallNut',
-    'TangleKlep',
-    'Threepeater',
-    'Torchwood',
-    'TwinSunflower',
-    'WallNut'
 ];
 var cardSelect = function (com, type, event) {
     var state = com.scene.state;
@@ -26205,20 +26237,19 @@ var plant = {
 var path$3 = './images/Zombies/';
 var name$3 = '${name}/${name}.gif';
 var list$3 = [
-    'BackupDancer',
-    'BucketheadZombie',
+    // 'BackupDancer',
+    // 'BucketheadZombie',
     'ConeheadZombie',
-    'DancingZombie',
-    'FlagZombie',
-    'FootballZombie',
-    'Imp',
-    'JackinTheBoxZombie',
-    'NewspaperZombie',
-    'PoleVaultingZombie',
-    'ScreenDoorZombie',
-    'SnorkelZombie',
+    // 'DancingZombie',
+    // 'FlagZombie',
+    // 'FootballZombie',
+    // 'Imp',
+    // 'JackinTheBoxZombie',
+    // 'NewspaperZombie',
+    // 'PoleVaultingZombie',
+    // 'ScreenDoorZombie',
+    // 'SnorkelZombie',
     'Zombie',
-    'Zomboni'
 ];
 var options$3 = mergeOptions(path$3, name$3, list$3, {
     Zombie: {
@@ -26456,27 +26487,6 @@ var config = {
     }
 };
 
-var execHook = function (source, hook) {
-    var rest = [];
-    for (var _i = 2; _i < arguments.length; _i++) {
-        rest[_i - 2] = arguments[_i];
-    }
-    return __awaiter(void 0, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    source.state = hook;
-                    if (!(typeof source[hook] === 'function')) return [3 /*break*/, 2];
-                    return [4 /*yield*/, source[hook].apply(source, rest)];
-                case 1:
-                    _a.sent();
-                    _a.label = 2;
-                case 2: return [2 /*return*/];
-            }
-        });
-    });
-};
-
 var Core = function (container) { return __awaiter(void 0, void 0, void 0, function () {
     var scene;
     return __generator(this, function (_a) {
@@ -26494,23 +26504,26 @@ var Core = function (container) { return __awaiter(void 0, void 0, void 0, funct
                 return [4 /*yield*/, execHook(scene, 'mount')];
             case 3:
                 _a.sent();
-                return [4 /*yield*/, execHook(scene, 'beforePlay')];
+                return [4 /*yield*/, execHook(scene, 'selectAfter')];
             case 4:
                 _a.sent();
-                return [4 /*yield*/, execHook(scene, 'play')];
+                return [4 /*yield*/, execHook(scene, 'beforePlay')];
             case 5:
                 _a.sent();
-                return [4 /*yield*/, execHook(scene, 'beforeGame')];
+                return [4 /*yield*/, execHook(scene, 'play')];
             case 6:
                 _a.sent();
-                return [4 /*yield*/, execHook(scene, 'startGame')];
+                return [4 /*yield*/, execHook(scene, 'beforeGame')];
             case 7:
                 _a.sent();
-                return [4 /*yield*/, execHook(scene, 'afterGame')];
+                return [4 /*yield*/, execHook(scene, 'startGame')];
             case 8:
                 _a.sent();
-                return [4 /*yield*/, execHook(scene, 'afterPlay')];
+                return [4 /*yield*/, execHook(scene, 'afterGame')];
             case 9:
+                _a.sent();
+                return [4 /*yield*/, execHook(scene, 'afterPlay')];
+            case 10:
                 _a.sent();
                 return [2 /*return*/, scene];
         }
