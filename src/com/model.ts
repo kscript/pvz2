@@ -146,6 +146,7 @@ export default class Model {
   public bullets: Model[] = []
   public target: Model | null = null
   public bulletName = ''
+  public opacity: number = 1
   constructor() {}
   public async init(stateChange?: (type: string, url: string, index: number, gif: GifCanvas, total?: number) => void) {
     if (this.state > 0) { return }
@@ -172,7 +173,7 @@ export default class Model {
             options = this.medias[key].options instanceof Object ? this.medias[key].options : {}
           }
           if (name && typeof name === 'string') {
-            gifs.push(this.gifs[key] = await new GifCanvas(path.join(imgPath, name), this, options))
+            gifs.push(this.gifs[key] = await new GifCanvas(path.join(imgPath, name), this, Object.assign({ key }, options)))
             await this.gifs[key].toBlobUrl()
           }
           return this.gifs[key]
@@ -181,6 +182,10 @@ export default class Model {
         await Promise.all(gifs.map(gif => {
           gif.loadImage((type, url, index, gif) => {
             if (index === gif.imageUrls.length - 1) {
+              sendMessage(info[this.type] + this.id + '资源' + gif.options.key +'加载完成!', {
+                type: 'Model::init',
+                source: this
+              })
               typeof stateChange === 'function' && stateChange(type, url, len++, gif, gifs.length + gif.imageUrls.length - 1)
             }
           })
@@ -264,13 +269,30 @@ export default class Model {
     // this.x += this.moveSpeedX
   }
   public beforeDie() {
-    this.die = true
+    this.hide()
   }
   public restore(){
     this.pending = false
   }
   public destory() {
     this.die = true
+  }
+  public async hide(gif?: GifCanvas, img?: HTMLImageElement, num: number = .025) {
+    if (this.opacity >= 0) {
+      this.opacity -= num
+      if (this.opacity <= 0) {
+        this.die = true
+      } else {
+        img = img || await (gif || this.gifs.default).currentImg(this.static)
+        if (img) {
+          this.scene.context.globalAlpha = this.opacity
+          this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
+          this.scene.context.globalAlpha = 1
+        }
+      }
+    } else {
+      this.die = true
+    }
   }
   public async setHitArea(refresh: boolean = false) {
     if ((!this.hitArea.length || refresh) && this.gif) {

@@ -107,26 +107,6 @@ const baseOption: anyObject = {
       this.target = null
     }
   },
-  async hide(gif?: GifCanvas, img?: HTMLImageElement) {
-    if (this.personal.opacity >= 0) {
-      this.personal.opacity -= .025
-      if (this.personal.opacity <= 0) {
-        this.die = true
-      } else {
-        img = img || await (gif || this.gifs.default).currentImg(this.static)
-        if (img) {
-          this.scene.context.globalAlpha = this.personal.opacity
-          this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
-          this.scene.context.globalAlpha = 1
-        }
-      }
-    } else {
-      this.die = true
-    }
-  },
-  async beforeDie() {
-    this.hide()
-  },
   async draw(...rest: any[]) {
     if (!this.dying) {
       if (this.gif) {
