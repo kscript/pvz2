@@ -58,6 +58,11 @@ export default class Scene {
   }
   public validArea: number[] = []
   public flow: Flow | null = null
+  public auxiliary: anyObject = {
+    // hitArea: 'red',
+    // attackArea: 'blue',
+    // attackArea2: 'white'
+  }
   constructor(container: HTMLCanvasElement, config: anyObject = {}) {
     this.container = container
     config = this.config = Object.assign({}, defaultConfig, config)
@@ -494,6 +499,9 @@ export default class Scene {
         plants.concat(bullets, zombies, others, cards).forEach(async com => {
           queue = queue.then(async () => {
             com.run()
+            if (this.auxiliary['hitArae_' + com.type]) {
+              com.drawHitArea(this.auxiliary['hitArae_' + com.type].hitArea)
+            }
             return com.group.length ? await com.drawGroup() : com.draw()
           })
         })
@@ -506,16 +514,29 @@ export default class Scene {
   attackTest() {
     zombies.slice(0).forEach((com2, i2) => {
       if (com2.x <= this.config.width) {
+        // 移动 攻击/被攻击 边界, 只改变x
+        com2.attackArea[0] = com2.x
+        com2.attackArea2[0] = com2.x
+        if (this.auxiliary.attackArea_com2) {
+          com2.drawHitArea(this.auxiliary.attackArea_com2, this.context, com2.attackArea)
+        }
+        if (this.auxiliary.attackArea2_com2) {
+          com2.drawHitArea(this.auxiliary.attackArea2_com2, this.context, com2.attackArea2)
+        }
         plants.concat(bullets).slice(0).forEach((com1, i1) => {
+          
+          if (com1.type === 'bullet') {
+            com1.attackArea[0] = com1.x - com1.width * 2
+            com1.attackArea2[0] = com1.x
+          }
+          if (this.auxiliary.attackArea_com1) {
+            com1.drawHitArea(this.auxiliary.attackArea_com1, this.context, com1.attackArea)
+          }
+          if (this.auxiliary.attackArea2_com1) {
+            com1.drawHitArea(this.auxiliary.attackArea2_com1, this.context, com1.attackArea2)
+          }
           if (com1.pos[1] === com2.pos[1]) {
             if (com1.id !== com2.id && com2.type === 'zombie') {
-              // 移动 攻击/被攻击 边界, 只改变x
-              com2.attackArea[0] = com2.x
-              com2.attackArea2[0] = com2.x
-              if (com1.type === 'bullet') {
-                com1.attackArea[0] = com1.x - com1.width * 2
-                com1.attackArea2[0] = com1.x
-              }
               if(!com1.pending && com1.attackAble && !com2.dying) {
                 if (hitTest2(com1.attackArea, com2.attackArea2)) {
                   com1.attack(com2)

@@ -5,7 +5,9 @@
   "main": "main.ts",
   "scripts": {
     "browserify": "browserify -g uglifyify public/bundle.js -o public/bundle.js",
+    "browserify:dev": "browserify public/bundle.js -o public/bundle.js",
     "start": "rollup -c -i src/main.ts -o public/bundle.js && npm run browserify",
+    "start:dev": "rollup -c -i src/main.ts -o public/bundle.js && npm run browserify:dev",
     "server": "npm run start && rollup -c -i server/main.ts -o server/main.js && node server/main.js"
   },
   "devDependencies": {

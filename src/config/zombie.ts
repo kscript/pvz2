@@ -46,35 +46,33 @@ const options: anyObject = mergeOptions(path, name, list, {
     personal: {
       moveSpeedX: -5,
       img: null,
-      die: {
-        state: 0
-      }
+      dieState:  0
     },
     async beforeDie() {
-      const die = this.personal.die
-      if (die.state === 0) {
+      const personal = this.personal
+      if (personal.dieState === 0) {
         let lostHead = await this.gifs.lostHead.currentImg()
         lostHead && this.scene.context.drawImage(lostHead, this.x, this.y, lostHead.width, lostHead.height)
         let head = await this.gifs.head.currentImg()
         head && this.scene.context.drawImage(head, this.x + head.width / 2, this.y, head.width, head.height)
         if (this.gifs.lostHead.length === this.gifs.lostHead.index + 1) {
-          die.state += 1
+          personal.dieState += 1
         }
-      } else if(die.state === 1) {
+      } else if(personal.dieState === 1) {
         if (this.target) {
           let img = await this.gifs.lostHeadAttack.currentImg()
           img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height)
           if (this.gifs.lostHeadAttack.length === this.gifs.lostHeadAttack.index + 1) {
-            die.state += 1
+            personal.dieState += 1
           }
         } else{
-          die.state += 1
+          personal.dieState += 1
         }
-      } else if (die.state === 2){
+      } else if (personal.dieState === 2){
         let img = await this.gifs.die.currentImg()
         img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height)
         if (this.gifs.die.length === this.gifs.die.index + 1) {
-          die.state += 1
+          personal.dieState += 1
           this.personal.img = img
           this.hide(void 0, img)
         }
