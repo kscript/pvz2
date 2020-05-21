@@ -8,7 +8,7 @@
     "browserify:dev": "browserify public/bundle.js -o public/bundle.js",
     "start": "rollup -c -i src/main.ts -o public/bundle.js && npm run browserify",
     "start:dev": "rollup -c -i src/main.ts -o public/bundle.js && npm run browserify:dev",
-    "server": "npm run start && rollup -c -i server/main.ts -o server/main.js && node server/main.js"
+    "server": "rollup -c -i server/main.ts -o server/main.js && node server/main.js"
   },
   "devDependencies": {
     "@babel/core": "^7.4.3",
