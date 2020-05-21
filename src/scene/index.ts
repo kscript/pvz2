@@ -63,6 +63,7 @@ export default class Scene {
     // attackArea: 'blue',
     // attackArea2: 'white'
   }
+  public pos: string[][] = []
   constructor(container: HTMLCanvasElement, config: anyObject = {}) {
     this.container = container
     config = this.config = Object.assign({}, defaultConfig, config)
@@ -298,9 +299,10 @@ export default class Scene {
   async dragEnd(com: Model, event: MouseEvent) {
     const pos = this.validDrag(com, event)
     const [l, t, w, h, width, height] = this.validArea
-    if (!pos.length) {
+    if (!pos.length || this.hasPos(pos)) {
       this.dumpCom(com)
-    } else {
+    } else{
+      this.setPos(pos, com.id)
       com.x = l + width * this.colScale * pos[0] + width / 2
       com.y = t + height * this.rowScale * pos[1] + height / 2
       com.hitAble = false
@@ -629,6 +631,9 @@ export default class Scene {
   }
   dumpCom(com: Model, autoFind: boolean = true) {
     if (!this.comsMountedMap[com.id]) return 
+    if (com.type === 'plant' && this.pos[com.pos[0]]) {
+      this.pos[com.pos[0]][com.pos[1]] = ''
+    }
     delete this.comsMountedMap[com.id]
     this.comsMounted.slice(0).forEach((item, index) => {
       if (item.id === com.id) {
@@ -638,6 +643,15 @@ export default class Scene {
     if(autoFind && (com.type === 'plant' || com.type === 'zombie' || com.type === 'bullet')) {
       this.findAttackCom()
     }
+  }
+  hasPos([x, y]: number[]) {
+    return this.pos[x] && this.pos[x][y]
+  }
+  setPos([x, y]: number[], val: string) {
+    if (!this.pos[x]) {
+      this.pos[x] = []
+    }
+    this.pos[x][y] = val
   }
   clearCanvas() {
     this.context.clearRect(0, 0, this.config.width, this.config.width)
