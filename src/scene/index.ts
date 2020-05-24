@@ -527,6 +527,7 @@ export default class Scene {
   }
   attackTest() {
     zombies.slice(0).forEach((com2, i2) => {
+      if (com2.dying)return
       if (com2.x <= this.config.width) {
         // 移动 攻击/被攻击 边界, 只改变x
         com2.attackArea[0] = com2.x
@@ -538,16 +539,18 @@ export default class Scene {
           com2.drawHitArea(this.auxiliary.attackArea2_com2, this.context, com2.attackArea2)
         }
         plants.concat(bullets).slice(0).forEach((com1, i1) => {
-          
+          if (com1.dying)return
           if (com1.type === 'bullet') {
             com1.attackArea[0] = com1.x - com1.width * 2
             com1.attackArea2[0] = com1.x
           }
-          if (this.auxiliary.attackArea_com1) {
-            com1.drawHitArea(this.auxiliary.attackArea_com1, this.context, com1.attackArea)
-          }
-          if (this.auxiliary.attackArea2_com1) {
-            com1.drawHitArea(this.auxiliary.attackArea2_com1, this.context, com1.attackArea2)
+          if (i2 < 1) {
+            if (this.auxiliary.attackArea_com1) {
+              com1.drawHitArea(this.auxiliary.attackArea_com1, this.context, com1.attackArea)
+            }
+            if (this.auxiliary.attackArea2_com1) {
+              com1.drawHitArea(this.auxiliary.attackArea2_com1, this.context, com1.attackArea2)
+            }
           }
           if (com1.pos[1] === com2.pos[1]) {
             if (com1.id !== com2.id && com2.type === 'zombie') {

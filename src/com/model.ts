@@ -86,7 +86,7 @@ export default class Model {
   public static: boolean = false
   // 死亡
   public die: boolean = false
-  public dying: boolean = false
+  public dying: boolean | void = false
   // 暂停
   public paused: boolean = false
   // 水生类型
@@ -290,7 +290,7 @@ export default class Model {
   }
   public clear() {
     for(let k in this) {
-      if (this.hasOwnProperty(k)) {
+      if (this.hasOwnProperty(k) && this[k] instanceof Object) {
         delete this[k]
       }
     }
