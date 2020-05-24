@@ -48,7 +48,7 @@ const options: anyObject = mergeOptions(path, name, list, {
       img: null,
       dieState:  0
     },
-    async beforeDie() {
+    async dieEffect() {
       const personal = this.personal
       if (personal.dieState === 0) {
         let lostHead = await this.gifs.lostHead.currentImg()
@@ -74,10 +74,10 @@ const options: anyObject = mergeOptions(path, name, list, {
         if (this.gifs.die.length === this.gifs.die.index + 1) {
           personal.dieState += 1
           this.personal.img = img
-          this.hide(void 0, img)
+          this.fadeOut(void 0, img)
         }
       } else {
-        this.hide(void 0, this.personal.img)
+        this.fadeOut(void 0, this.personal.img)
       }
     }
   },
@@ -108,19 +108,10 @@ const baseOption: anyObject = {
     }
   },
   async draw(...rest: any[]) {
-    if (!this.dying) {
-      if (this.gif) {
-        let img = await this.gif.currentImg(this.static)
-        img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
-      }
-    } else {
-      this.beforeDie()
+    if (this.gif) {
+      let img = await this.gif.currentImg(this.static)
+      img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
     }
-  },
-  async destory() {
-    this.attackAble = false
-    this.dying = true
-    this.gif = null
   },
   async attack(com: Model) {
     if (this.dying) {
@@ -149,7 +140,6 @@ for(let key in options) {
     })
   }
 }
-console.log(options)
 const zombie = {
   path,
   name,

@@ -64,6 +64,8 @@ export default class Scene {
     // attackArea2: 'white'
   }
   public pos: string[][] = []
+  public refreshTime: number = 0
+  public refreshFps: number = 32
   constructor(container: HTMLCanvasElement, config: anyObject = {}) {
     this.container = container
     config = this.config = Object.assign({}, defaultConfig, config)
@@ -237,10 +239,12 @@ export default class Scene {
     const coms = this.mountCom(this.useCard.map((comSource, index) => {
       const com = new Plant(comSource.name, Object.assign({}, comSource.options, {
         type: 'card',
+        reload: true,
         static: true
       }))
-      com.x = cardBar.x + (cardBar.width / 10 * .95 + 1) * index + cardBar.height / 1.5
+      com.x = cardBar.x + (cardBar.width / 11 * .95 + 1) * index - cardBar.height / 1.5
       com.y = cardBar.y + cardBar.height
+      com.padding = Array(4).fill(cardBar.height / 1.5)
       return com
     }))
     return await Promise.all(coms.map(async com => {
@@ -493,6 +497,10 @@ export default class Scene {
   }
   refresh() {
     requestAnimationFrame(async () => {
+      const now = +new Date
+      if (now - this.refreshTime < 1e3 / this.refreshFps) {
+        return this.refresh()
+      }
       if (!this.stop) {
         this.clearCanvas()
         this.flow?.refresh()
@@ -504,7 +512,11 @@ export default class Scene {
             if (this.auxiliary['hitArae_' + com.type]) {
               com.drawHitArea(this.auxiliary['hitArae_' + com.type].hitArea)
             }
-            return com.group.length ? await com.drawGroup() : com.draw()
+            if (!com.dying) {
+              com.group.length ? await com.drawGroup() : await com.draw()
+            } else {
+              com.dyingEffect()
+            }
           })
         })
         await queue
@@ -545,16 +557,12 @@ export default class Scene {
                 }
               }
               if(com1.type !== 'bullet' && !com2.pending && com2.attackAble && !com1.dying) {
-                if(hitTest2(com2.attackArea, com1.attackArea2)) {
+                if (hitTest2(com2.attackArea, com1.attackArea2)) {
                   com2.attack(com1)
                 }
               }
-              if (com2.die) {
-                this.dumpCom(com2, false)
-              }
-              if (com1.die) {
-                this.dumpCom(com1, false)
-              }
+              this.needDump(com2, false)
+              this.needDump(com1, false)
             }
           }
         })
@@ -634,6 +642,7 @@ export default class Scene {
     if (com.type === 'plant' && this.pos[com.pos[0]]) {
       this.pos[com.pos[0]][com.pos[1]] = ''
     }
+    this.comsMountedMap[com.id].destroy()
     delete this.comsMountedMap[com.id]
     this.comsMounted.slice(0).forEach((item, index) => {
       if (item.id === com.id) {
@@ -642,6 +651,11 @@ export default class Scene {
     })
     if(autoFind && (com.type === 'plant' || com.type === 'zombie' || com.type === 'bullet')) {
       this.findAttackCom()
+    }
+  }
+  needDump(com: Model, autoFind: boolean = true) {
+    if (com.die || com.x > this.config.width || com.x + com.width < 0 || com.y > this.config.height || com.y + com.height < 0) {
+      this.dumpCom(com, autoFind)
     }
   }
   hasPos([x, y]: number[]) {
@@ -659,7 +673,7 @@ export default class Scene {
   clearMounted() {
     this.comsMounted.splice(0).forEach(item => {
       delete this.comsMountedMap[item.id]
-      item.destory()
+      item.destroy()
     })
   }
   // 碰撞到组件时执行

@@ -67,6 +67,17 @@ const cradDrag = (com: Model, event: MouseEvent, oldEvent: MouseEvent) => {
   }
 }
 const options: anyObject = mergeOptions(path, name, list, {
+  SunFlower: {
+    async draw () {
+      let img = await this.gif.currentImg()
+      img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height)
+      if (this.reload) {
+        this.scene.context.fillStyle = 'rgba(0, 0, 0, .1)'
+        this.scene.context.fillRect(this.x, this.y, img.width, img.height)
+        this.scene.context.fillStyle = 'rgba(0, 0, 0, 0)'
+      }
+    }
+  },
   Peashooter: {
     attackSpeed: 5e3,
     attackAble: true,

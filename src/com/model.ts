@@ -147,6 +147,8 @@ export default class Model {
   public target: Model | null = null
   public bulletName = ''
   public opacity: number = 1
+  public padding =  []
+  public reload: boolean = false
   constructor() {}
   public async init(stateChange?: (type: string, url: string, index: number, gif: GifCanvas, total?: number) => void) {
     if (this.state > 0) { return }
@@ -268,20 +270,36 @@ export default class Model {
   public gifStart() {
     // this.x += this.moveSpeedX
   }
-  public beforeDie() {
-    this.hide()
+  public async dyingEffect(){
+    await this.dieEffect()
+  }
+  public async dieEffect() {
+    await this.fadeOut()
   }
   public restore(){
     this.pending = false
   }
-  public destory() {
+  public async beforeDestory() {}
+  public async afterDestory() {}
+  // 不建议重写, 如果需要在销毁时做一些事, beforeDestory 和 afterDestory 就足够了
+  public async destroy() {
+    await this.beforeDestory()
     this.die = true
+    this.clear()
+    await this.afterDestory()
   }
-  public async hide(gif?: GifCanvas, img?: HTMLImageElement, num: number = .025) {
+  public clear() {
+    for(let k in this) {
+      if (this.hasOwnProperty(k)) {
+        delete this[k]
+      }
+    }
+  }
+  public async fadeOut(gif?: GifCanvas, img?: HTMLImageElement, num: number = .025) {
     if (this.opacity >= 0) {
       this.opacity -= num
       if (this.opacity <= 0) {
-        this.die = true
+        await this.destroy()
       } else {
         img = img || await (gif || this.gifs.default).currentImg(this.static)
         if (img) {
@@ -291,7 +309,7 @@ export default class Model {
         }
       }
     } else {
-      this.die = true
+      await this.destroy()
     }
   }
   public async setHitArea(refresh: boolean = false) {
@@ -352,7 +370,7 @@ export default class Model {
     }
   }
   public trigger(type: string, event?: Event) {}
-  public setAttackResult(com: Model){
+  public async setAttackResult(com: Model){
     const num = this.ak * this.akEffect - com.dfe * com.dfeEffect
     com.hp -= num >= 0 ? num : 0
     sendMessage([info[this.type], this.id, '击中', info[com.type], com.id, '造成了' + num + '伤害', '剩余' + com.hp].join(''), {
@@ -361,7 +379,7 @@ export default class Model {
       target:com,
     })
     if (com.hp <= 0) {
-      com.destory()
+      this.dying = true
     }
   }
 }
