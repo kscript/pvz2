@@ -13,7 +13,10 @@ export const isEmpty = (obj: anyObject) => {
   return true
 }
 export const rand = (min: number = 0, max: number = 4) => {
-  return ~~(Math.random() * (max + 1)) + ~~min
+  if (max < min) {
+    throw new Error('max应该大于min')
+  }
+  return ~~(Math.random() * (max - min + 1)) + ~~min
 }
 export default {
   rand,

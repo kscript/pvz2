@@ -22,8 +22,8 @@ const list: string[] = [
 ]
 const options: anyObject = mergeOptions(path, name, list, {
   Zombie: {
-    hp: 150,
-    dfe: 11,
+    hp: 125,
+    dfe: 10,
     level: 1,
     medias: {
       die: '${name}/${name}Die.gif',
@@ -83,8 +83,8 @@ const options: anyObject = mergeOptions(path, name, list, {
   },
   ConeheadZombie: {
     level: 1,
-    hp: 200,
-    dfe: 12,
+    hp: 150,
+    dfe: 11,
     personal: {
       moveSpeedX: -7
     },

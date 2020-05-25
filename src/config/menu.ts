@@ -1,5 +1,10 @@
 import { mergeOptions, getSize } from '@/utils/model'
 import Model from '@/com/model'
+// @ts-ignore
+import TWEEN from 'tween.js'
+import { rand } from '@/utils'
+console.log(TWEEN)
+const easings = Object.keys(TWEEN.Easing)
 
 const path = './images/interface/'
 const name = '${name}'
@@ -448,6 +453,72 @@ const options: anyObject = mergeOptions(path, name, list, {
       height = height / this.personal.lenY
       let { vw, vh } = getSize(this, width, height)
       this.context.drawImage(this.img, startX * vw, startY * vh, vw, vh, this.x, this.y, width * scaleX, height * scaleY)
+    }
+  },
+  'Sun.gif': {
+    personal: {
+      coords: null,
+      end: null,
+      easing: ''
+    },
+    trigger(type: string, event: MouseEvent){
+      if (type === 'click') {
+        this.scene.sun += this.sun2
+        this.complete = true
+      }
+    },
+    async draw() {
+      if (this.gif) {
+        let left = 0
+        let top = 0
+        let { x, y, width, height } = this
+        if (this.padding.length === 2) {
+          top = this.padding[0]
+          left = this.padding[1]
+        } else if (this.padding.length === 4) {
+          top = this.padding[0]
+          left = this.padding[3]
+        }
+        let img = await this.gif.currentImg(this.static)
+        if (img) {
+          if (this.type === 'card') {
+            this.scene.context.drawImage(img, x + left, y + top, width, height)
+          } else {
+            if (this.complete) return
+            const easing = this.personal.easing || easings[rand(0, easings.length - 1)]
+            const coords = this.personal.coords = this.personal.coords || {
+              x: rand(0, this.scene.config.width), y: -this.scene.config.height / 2
+            }
+            const end = this.personal.end = this.personal.end || {
+              x: rand(0, this.scene.config.width),
+              y: rand(this.scene.config.height - height * 2, this.scene.config.height)
+            }
+            this.tween = this.tween || new TWEEN.Tween(coords)
+              .to(end, 2e4)
+              // .easing(easing === 'Linear' ? TWEEN.Easing[easing].None : TWEEN.Easing[easing].Out )
+              .easing(TWEEN.Easing.Circular.Out)
+              .onUpdate(() => {
+                this.x = coords.x
+                this.y = coords.y
+                this.scene.context.drawImage(img, coords.x, coords.y, width, height)
+              })
+              .onComplete(() => {
+                this.personal = {
+                  coords: null,
+                  end: null,
+                  easing: ''
+                }
+                this.complete = true
+                this.dying = true
+              })
+              .start(+new Date)
+            this.tween.update(+new Date)
+          }
+        }
+      }
+    },
+    afterDestory() {
+      this.tween = null
     }
   }
 })

@@ -225,12 +225,25 @@ export default class Scene {
     return zombie
   }
   async mountSun() {
+    const Menu = Com.Menu
     const com = this.getCom('Sun.gif')
-    this.mountCom(com)
+    const comCopy = new Menu(com.name, Object.assign({}, com.options, {
+      hitAble: true,
+      sun2: 50,
+      personal: {
+        coords: null,
+        end: null,
+        easing: ''
+      }
+    }))
+    comCopy.init()
+    this.mountCom(comCopy)
+    return comCopy
   }
   async selectGameCard() {
     this.cardBar && this.cardBar.drawGroup()
     this.useCard = [
+      'Sun.gif',
       'SunFlower',
       'Peashooter',
       // 'Blover',

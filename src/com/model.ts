@@ -4,6 +4,8 @@ import { GifCanvas, offlineCanvas, OfflineCanvas } from '@/utils/canvas'
 import { drawHitArea } from '@/utils/hit'
 import { isEmpty } from '@/utils'
 import { sendMessage } from '@/utils/message'
+// @ts-ignore
+import Tween from 'tween.js'
 
 const info: anyObject = {
   plant: '植物',
@@ -152,7 +154,8 @@ export default class Model {
   public reload: boolean = false
   public draging: boolean = false
   public reTime: number = +new Date
-
+  public tween: Tween | null = null
+  public complete: boolean = false
   constructor() {}
   get canUse() {
     if (this.reload) {
@@ -313,11 +316,14 @@ export default class Model {
       if (this.opacity <= 0) {
         await this.destroy()
       } else {
-        img = img || await (gif || this.gifs.default).currentImg(this.static)
-        if (img) {
-          this.scene.context.globalAlpha = this.opacity
-          this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
-          this.scene.context.globalAlpha = 1
+        gif = gif || this.gif || this.gifs.default
+        if (img || gif) {
+          img = img || await gif.currentImg(this.static)
+          if (img) {
+            this.scene.context.globalAlpha = this.opacity
+            this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
+            this.scene.context.globalAlpha = 1
+          }
         }
       }
     } else {
