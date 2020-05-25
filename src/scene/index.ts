@@ -623,9 +623,11 @@ export default class Scene {
     cards.splice(0)
     
     this.comsMounted.forEach(com => {
-      // if (!this.needDump(com, false)) {
+      if (!com.die) {
         (coms[com.type + 's'] || others).push(com)
-      // }
+      } else {
+        this.dumpCom(com, false)
+      }
     })
     zombies.sort((a, b) => {
       return a.pos[1] - b.pos[1]
