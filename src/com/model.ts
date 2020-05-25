@@ -37,7 +37,7 @@ export default class Model {
   public scaleY: number = 1
 
   // 需要阳光值
-  public sun: number = 0
+  public sun: number = 50
   // 产生阳光值
   public sun2: number = 0
   // 等级
@@ -145,11 +145,23 @@ export default class Model {
   public options: anyObject = {}
   public bullets: Model[] = []
   public target: Model | null = null
+  public source: Model | null = null
   public bulletName = ''
   public opacity: number = 1
   public padding =  []
   public reload: boolean = false
+  public draging: boolean = false
+  public reTime: number = +new Date
+
   constructor() {}
+  get canUse() {
+    if (this.reload) {
+      if (this.scene.sun < this.sun || +new Date - this.loadSpeed < this.reTime) {
+        return false
+      }
+    }
+    return true
+  }
   public async init(stateChange?: (type: string, url: string, index: number, gif: GifCanvas, total?: number) => void) {
     if (this.state > 0) { return }
     this.state = 1
@@ -285,7 +297,7 @@ export default class Model {
   public async destroy() {
     await this.beforeDestory()
     this.die = true
-    this.clear()
+    // this.clear()
     await this.afterDestory()
   }
   public clear() {

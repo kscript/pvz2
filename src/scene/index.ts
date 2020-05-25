@@ -40,6 +40,7 @@ export default class Scene {
   public hitCom: anyObject<Model[]> = {}
   public mod: number = 0
   public row: number = 5
+  public sun: number = 50
   // 行高和列宽
   public rowH: number = 0
   public colW: number = 0
@@ -223,11 +224,23 @@ export default class Scene {
     await zombie.init()
     return zombie
   }
+  async mountSun() {
+    const com = this.getCom('Sun.gif')
+    this.mountCom(com)
+  }
   async selectGameCard() {
     this.cardBar && this.cardBar.drawGroup()
     this.useCard = [
       'SunFlower',
-      'Peashooter'
+      'Peashooter',
+      // 'Blover',
+      // 'Cactus',
+      // 'CherryBomb',
+      // 'Chomper',
+      // 'CoffeeBean',
+      // 'DoomShroom',
+      // 'FlowerPot',
+      // 'FumeShroom',
     ].map(name => this.getCom(name))
   }
   async mountGameCard() {
@@ -242,9 +255,9 @@ export default class Scene {
         reload: true,
         static: true
       }))
-      com.x = cardBar.x + (cardBar.width / 11 * .95 + 1) * index - cardBar.height / 1.5
-      com.y = cardBar.y + cardBar.height
-      com.padding = Array(4).fill(cardBar.height / 1.5)
+      com.x = cardBar.x + cardBar.height / 2 + (cardBar.width / 10 + 3 + cardBar.height / 2) * index
+      com.y = cardBar.y + cardBar.height / 2
+      com.padding = Array(4).fill(cardBar.height / 2)
       return com
     }))
     return await Promise.all(coms.map(async com => {
@@ -282,13 +295,17 @@ export default class Scene {
     })
   }
   async dragStart(com: Model, event: MouseEvent) {
+    if (!com.canUse) {return }
     const Plant = Com.Plant
     const comCopy = new Plant(com.name, Object.assign({}, com.options, {
       type: 'card',
       x: com.x,
       y: com.y,
+      reload: false,
       static: true
     }))
+    comCopy.source = com
+    com.draging = true
     await comCopy.init()
     this.mountCom(comCopy)
     Object.assign(this.dragCom, {
@@ -315,6 +332,13 @@ export default class Scene {
       com.pos.splice(0, 2, ...pos)
       com.setAttackArea()
       this.findAttackCom()
+      if (com.source) {
+        com.source.reTime = +new Date
+        this.sun -= com.sun
+      }
+    }
+    if (com.source) {
+      com.source.draging = false
     }
     Object.assign(this.dragCom, {
       com: null,
