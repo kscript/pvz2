@@ -88,7 +88,8 @@ export default class Scene {
 
   }
   async init() {
-    this.toggleMusic()
+    const sound = this.toggleMusic()
+    sound.loop = true
     await this.loadResource()
     await this.addEvents()
     // 需要等待用户点击开始
@@ -321,6 +322,7 @@ export default class Scene {
     com.draging = true
     await comCopy.init()
     this.mountCom(comCopy)
+    this.toggleMusic('./sound/plant1.mp3', false)
     Object.assign(this.dragCom, {
       com: comCopy,
       event,
@@ -353,6 +355,7 @@ export default class Scene {
     if (com.source) {
       com.source.draging = false
     }
+    this.toggleMusic('./sound/plant2.mp3', false)
     Object.assign(this.dragCom, {
       com: null,
       event: null,
@@ -512,7 +515,6 @@ export default class Scene {
     const com = this.getCom('ZombieHand.png')
     this.mountCom(com)
     this.save()
-    sound.loop = false
     await new Promise(async resolve => {
       sound.onended = () => {
         resolve()
@@ -523,7 +525,7 @@ export default class Scene {
         com.draw()
       })
     })
-    this.toggleMusic('./sound/hugewave.mp3').loop = false
+    this.toggleMusic('./sound/readysetplant.mp3')
   }
   gameover(win: boolean = true) {
     this.stop = true
@@ -621,7 +623,9 @@ export default class Scene {
     cards.splice(0)
     
     this.comsMounted.forEach(com => {
-      (coms[com.type + 's'] || others).push(com)
+      // if (!this.needDump(com, false)) {
+        (coms[com.type + 's'] || others).push(com)
+      // }
     })
     zombies.sort((a, b) => {
       return a.pos[1] - b.pos[1]
@@ -694,9 +698,12 @@ export default class Scene {
     }
   }
   needDump(com: Model, autoFind: boolean = true) {
-    if (com.die || com.x > this.config.width || com.x + com.width < 0 || com.y > this.config.height || com.y + com.height < 0) {
+    const invalid = com.x > this.config.width || com.x + com.width < 0 || com.y > this.config.height || com.y + com.height < 0
+    if (com.die || invalid) { // (com.type === 'bullet' || com.type === 'plant' || com.type === 'zombie' && invalid)) {
       this.dumpCom(com, autoFind)
+      return true
     }
+    return false
   }
   hasPos([x, y]: number[]) {
     return this.pos[x] && this.pos[x][y]
@@ -836,7 +843,7 @@ export default class Scene {
     sound.src = src
     sound.muted = true
     sound.autoplay = true
-    sound.loop = true
+    sound.loop = false
     sound.onload = () => {
     }
     sound.oncanplay = () => {

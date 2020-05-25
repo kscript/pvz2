@@ -13,7 +13,7 @@ const options: anyObject = mergeOptions(path, name, list, {
     medias: {
       hit: 'PeaBulletHit.gif'
     },
-    attackMoveX: 50,
+    attackMoveX: 100,
     async draw() {
       if (this.gif) {
         if (this.pending) {
@@ -44,6 +44,7 @@ const options: anyObject = mergeOptions(path, name, list, {
     attack(com: Model) {
       this.pending = true
       this.dying = true
+      this.scene.toggleMusic('./sound/splat1.mp3', false)
       this.setAttackResult(com)
     },
     restore() {}

@@ -98,6 +98,7 @@ const menuTrigger = (com: Model, type: string, event?: Event) => {
     com.scene.container.style.cursor = 'pointer'
     com.startY = 1
     com.draw()
+    com.scene.toggleMusic('./sound/buttonclick.mp3', false)
     if (com.name === 'SelectorScreenStartAdventur.png') {
       let index = menus.index
       menus.index = 0
@@ -120,7 +121,6 @@ const menuTrigger = (com: Model, type: string, event?: Event) => {
     com.startY = 1
     com.scene.stopMuisc('./sound/mouseclick.wav')
     const sound = com.scene.toggleMusic('./sound/mouseclick.wav', false, true)
-    sound.loop = false
   } else if (type === 'leave') {
     com.scene.container.style.cursor = 'auto'
     com.startY = 0

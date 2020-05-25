@@ -127,6 +127,10 @@ const baseOption: anyObject = {
     const now = +new Date
     if (!this.attackTime || now - this.attackSpeed > this.attackTime) {
       this.attackTime = now
+      const sound = this.scene.toggleMusic('./sound/chomp.mp3', false)
+      sound.onended = () => {
+        this.scene.toggleMusic('./sound/chompsoft.mp3', false)
+      }
       this.setAttackResult(com)
     }
   }

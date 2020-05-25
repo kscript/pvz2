@@ -15,7 +15,6 @@ export class Flow {
     constructor(scene: Scene, step: (string | number)[][], options: anyObject) {
         this.scene = scene
         this.step = step
-        this.complete = false
     }
     stop(time: number) {
         this.stopTime = time || +new Date
@@ -35,6 +34,7 @@ export class Flow {
         }, time)
     }
     init() {
+        this.scene.toggleMusic('./sound/Mountains.mp3', false)
         this.scene.comGroup.zombies.splice(0).map(com => {
             this.scene.dumpCom(com)
         })
@@ -45,6 +45,9 @@ export class Flow {
         const curr = this.step[this.index]
         if (curr && curr.length) {
             if (now - this.time - this.stopTimeCount > curr[0]) {
+                if (this.index === 1) {
+                    this.scene.toggleMusic('./sound/awooga.mp3', false)
+                }
                 if(typeof curr[1] === 'string') {
                     sendMessage(curr[1], {
                         type: 'Flow::refresh',
