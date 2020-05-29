@@ -225,7 +225,7 @@ export default class Scene {
     await zombie.init()
     return zombie
   }
-  async mountSun() {
+  async mountSun(options: anyObject = {}) {
     const Menu = Com.Menu
     const com = this.getCom('Sun.gif')
     const comCopy = new Menu(com.name, Object.assign({}, com.options, {
@@ -236,7 +236,7 @@ export default class Scene {
         end: null,
         easing: ''
       }
-    }))
+    }, options))
     comCopy.init()
     this.mountCom(comCopy)
     return comCopy

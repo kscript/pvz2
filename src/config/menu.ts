@@ -465,9 +465,10 @@ const options: anyObject = mergeOptions(path, name, list, {
       if (type === 'click') {
         this.scene.sun += this.sun2
         this.complete = true
+        this.dying = true
       }
     },
-    async draw() {
+    async draw(coords: anyObject, end: anyObject) {
       if (this.gif) {
         let left = 0
         let top = 0
@@ -486,10 +487,10 @@ const options: anyObject = mergeOptions(path, name, list, {
           } else {
             if (this.complete) return
             const easing = this.personal.easing || easings[rand(0, easings.length - 1)]
-            const coords = this.personal.coords = this.personal.coords || {
+            coords = this.personal.coords = coords || this.personal.coords || {
               x: rand(0, this.scene.config.width), y: -this.scene.config.height / 2
             }
-            const end = this.personal.end = this.personal.end || {
+            end = this.personal.end = end || this.personal.end || {
               x: rand(0, this.scene.config.width),
               y: rand(this.scene.config.height - height * 2, this.scene.config.height)
             }

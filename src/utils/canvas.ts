@@ -128,8 +128,8 @@ export class GifCanvas {
         return this.imgElems = new Promise((resolve, reject) => {
             this.imageUrls.map((url, index) => {
                 return loadImg(url).then(img => {
-                    this.width = this.width || img.width
-                    this.height = this.height || img.height
+                    this.width = this.width || img.width * this.parent.scene.config.scaleX
+                    this.height = this.height || img.height * this.parent.scene.config.scaleY
                     current++
                     imgs[index] = img
                     stateChange('success', url, index, this)
@@ -147,21 +147,21 @@ export class GifCanvas {
             })
         })
     }
-    public async currentImg(first: boolean = false) {
+    public async currentImg(first: boolean = false, index?: number) {
         let elms = await this.imgElems
-        let vIndex = this.index || 0
+        let vIndex = typeof index !== 'undefined' ? index : this.index || 0
         if (this.options.once && this.length === this.index + 1) {
             return 
         }
         if (this.type !== 'gif' || first) {
-            vIndex = 0
+            vIndex = typeof index !== 'undefined' ? index : 0
         } else {
             let now = +new Date
             let time = now - this.time
             if (time >= 1000 / this.options.fps) {
                 this.time = now
                 let len = this.imageUrls.length
-                vIndex = this.index = (this.index + 1) % len
+                vIndex = this.index = typeof index !== 'undefined' ? index : (this.index + 1) % len
             }
         }
         if (this.index === 0) {

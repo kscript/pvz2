@@ -18,6 +18,9 @@ export const rand = (min: number = 0, max: number = 4) => {
   }
   return ~~(Math.random() * (max - min + 1)) + ~~min
 }
+export const timeline = (start: number, end: number, change: number, delay: number) => {
+  
+}
 export default {
   rand,
   execHook,

@@ -1,5 +1,7 @@
 import { mergeOptions } from '@/utils/model'
 import Model from '@/com/model'
+import Control  from '@/utils/control'
+import { Clock } from '@/utils/clock'
 
 const path = './images/Plants/'
 const name = '${name}/${name}.gif'
@@ -68,9 +70,80 @@ const cradDrag = (com: Model, event: MouseEvent, oldEvent: MouseEvent) => {
 }
 const options: anyObject = mergeOptions(path, name, list, {
   SunFlower: {
+    sunSpeed: 1.5e4,
+    medias: {
+      head: '${name}/SunFlower1.gif'
+    },
+    initControl() {
+      let opacity = 0
+      let sunEndClock: Clock | null = null
+      
+      const drawControl = this.controls.draw = new Control(this, {
+        once: false,
+        done: () => {
+        },
+        every: () => {
+          this.drawCard()
+          if (this.type !== 'plant') {
+            return false
+          }
+        }
+      })
+      const sunClock = new Clock(+new Date, this.sunSpeed, () => {
+        drawControl.next()
+      })
+      drawControl.add('plant', async () => {
+        console.log('积蓄阳光值中')
+        sunClock.assess()
+      })
+      drawControl.add('beforeSun', async () => {
+        console.log('储满阳光值')
+        opacity += .025
+        opacity = opacity > 1 ? 1 : opacity
+        let img = await this.gifs.head.currentImg(false, this.gif.index)
+        this.scene.context.globalAlpha = opacity
+        this.scene.context.drawImage(img, this.x, this.y, this.gifs.head.width, this.gifs.head.height)
+        this.scene.context.globalAlpha = 1
+        if (this.gifs.head.index === this.gifs.head.length - 1) {
+          drawControl.next()
+        }
+      }, () => {
+        opacity = 0
+      })
+      drawControl.add('mountSun', async () => {
+        if (sunEndClock) {
+          sunEndClock.assess()
+        } else {
+          console.log('产生阳光')
+          const sun = this.scene.mountSun({
+            personal: {
+              coords: {
+                x: this.x,
+                y: this.y
+              },
+              end: {
+                x: this.x + this.width,
+                y: this.y + this.height / 2
+              },
+              easing: ''
+            }
+          })
+          sun.source = this
+          sunEndClock = sunEndClock || new Clock(+new Date, 3e3, () => {
+            sunEndClock = null
+            drawControl.gotoName('plant')
+          })
+          sunEndClock.assess()
+        }
+      })
+    },
+    async draw() {
+      this.controls.draw?.exec()
+    }
   },
   Peashooter: {
-    attackSpeed: 5e3,
+    attackSpeed: 3e3,
+    attackMoveX: 10,
     attackAble: true,
     bulletName: 'PB01',
     // medias: {

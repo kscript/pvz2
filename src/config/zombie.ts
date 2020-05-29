@@ -1,6 +1,6 @@
 import { mergeOptions } from '@/utils/model'
 import Model from '@/com/model'
-import GifCanvas from '@/utils/canvas'
+import Control  from '@/utils/control'
 
 const path = './images/Zombies/'
 const name = '${name}/${name}.gif'
@@ -48,37 +48,50 @@ const options: anyObject = mergeOptions(path, name, list, {
       img: null,
       dieState:  0
     },
-    async dieEffect() {
-      const personal = this.personal
-      if (personal.dieState === 0) {
+    initControl() {
+      const dieControl = this.controls.die = new Control(this, {
+        once: false,
+        done: () => {},
+        every: () => {
+
+        }
+      })
+      dieControl.add('loseHead', async () => {
         let lostHead = await this.gifs.lostHead.currentImg()
         lostHead && this.scene.context.drawImage(lostHead, this.x, this.y, lostHead.width, lostHead.height)
         let head = await this.gifs.head.currentImg()
         head && this.scene.context.drawImage(head, this.x + head.width / 2, this.y, head.width, head.height)
         if (this.gifs.lostHead.length === this.gifs.lostHead.index + 1) {
-          personal.dieState += 1
+          dieControl.next()
         }
-      } else if(personal.dieState === 1) {
+      })
+      dieControl.add('lostHeadAttack', async () => {
         if (this.target) {
           let img = await this.gifs.lostHeadAttack.currentImg()
           img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height)
           if (this.gifs.lostHeadAttack.length === this.gifs.lostHeadAttack.index + 1) {
-            personal.dieState += 1
+            dieControl.next()
           }
         } else{
-          personal.dieState += 1
+          dieControl.next()
         }
-      } else if (personal.dieState === 2){
+      })
+      dieControl.add('die', async () => {
         let img = await this.gifs.die.currentImg()
         img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height)
         if (this.gifs.die.length === this.gifs.die.index + 1) {
-          personal.dieState += 1
           this.personal.img = img
           this.fadeOut(void 0, img)
+          dieControl.next()
         }
-      } else {
-        this.fadeOut(void 0, this.personal.img)
-      }
+      })
+      dieControl.add('hide', async () => {
+        await this.fadeOut(void 0, this.personal.img)
+        dieControl.next()
+      })
+    },
+    async dieEffect() {
+      this.controls.die?.exec()
     }
   },
   ConeheadZombie: {

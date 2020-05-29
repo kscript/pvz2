@@ -6,6 +6,8 @@ import { isEmpty } from '@/utils'
 import { sendMessage } from '@/utils/message'
 // @ts-ignore
 import Tween from 'tween.js'
+import Control from '@/utils/control'
+import { Clock } from '@/utils/clock'
 
 const info: anyObject = {
   plant: '植物',
@@ -156,6 +158,8 @@ export default class Model {
   public reTime: number = +new Date
   public tween: Tween | null = null
   public complete: boolean = false
+  public controls: anyObject<Control> = {}
+  public clocks: anyObject<Clock> = {}
   constructor() {}
   get canUse() {
     if (this.reload) {
@@ -228,11 +232,13 @@ export default class Model {
         gifs: this.gifs,
         medias: this.medias
       })
+      this.initControl()
     }
   }
   public initBefore() {
     return true
   }
+  public initControl() {}
   public initProp() {
     if (!this.id) {
       this.time = +new Date

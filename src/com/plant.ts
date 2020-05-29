@@ -43,9 +43,9 @@ export default class Plant extends Model {
           }
           this.scene.context.fillStyle = 'rgba(0, 0, 0, .1)'
           if (this.scene.sun < this.sun) {
-            this.scene.context.fillRect(this.x, this.y, this.gif.width + left * 2, this.gif.height + top * 2)
+            this.scene.context.fillRect(this.x, this.y, this.width + left * 2, this.height + top * 2)
           }
-          this.scene.context.fillRect(this.x, this.y, this.gif.width + left * 2, (this.gif.height  + top * 2 ) * (1 - rate))
+          this.scene.context.fillRect(this.x, this.y, this.width + left * 2, (this.height  + top * 2 ) * (1 - rate))
           this.scene.context.fillStyle = 'rgba(0, 0, 0, 0)'
         } else {
           if (this.draging) {

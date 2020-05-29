@@ -24,7 +24,7 @@ export class Flow {
         this.stopTimeCount += time - this.stopTime
     }
     refreshSun() {
-        const time = rand(25, 45) * 1e3
+        const time = rand(15, 25) * 1e3
         setTimeout(() =>{
             if (!this.scene.stop && !this.complete) {
                 this.sunRefreshTime = +new Date
@@ -34,7 +34,7 @@ export class Flow {
         }, time)
     }
     init() {
-        this.scene.toggleMusic('./sound/Mountains.mp3', false)
+        this.scene.toggleMusic('./sound/Mountains.mp3', false).loop = true
         this.scene.comGroup.zombies.splice(0).map(com => {
             this.scene.dumpCom(com)
         })
