@@ -8,6 +8,7 @@ export default class Bullet extends Model {
     this.name = name
     this.type = 'bullet'
     this.options = options
+    this.layerIndex = 3
     Object.assign(this, {
       attackAble: true,
       hitAble: false

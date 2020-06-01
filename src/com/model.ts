@@ -160,6 +160,7 @@ export default class Model {
   public complete: boolean = false
   public controls: anyObject<Control> = {}
   public clocks: anyObject<Clock> = {}
+  public layerIndex = 0
   constructor() {}
   get canUse() {
     if (this.reload) {
@@ -264,7 +265,7 @@ export default class Model {
   public async draw(...rest: any[]) {
     if (this.gif) {
       let img = await this.gif.currentImg(this.static)
-      img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
+      img && this.scene.selectContext(this).drawImage(img, this.x, this.y, this.width, this.height)
     }
   }
   public drag(event: Event, oldEvent: Event) {}
@@ -317,6 +318,7 @@ export default class Model {
     }
   }
   public async fadeOut(gif?: GifCanvas, img?: HTMLImageElement, num: number = .025) {
+    const context = this.scene.selectContext(this)
     if (this.opacity >= 0) {
       this.opacity -= num
       if (this.opacity <= 0) {
@@ -326,9 +328,9 @@ export default class Model {
         if (img || gif) {
           img = img || await gif.currentImg(this.static)
           if (img) {
-            this.scene.context.globalAlpha = this.opacity
-            this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
-            this.scene.context.globalAlpha = 1
+            context.globalAlpha = this.opacity
+            context.drawImage(img, this.x, this.y, this.width, this.height)
+            context.globalAlpha = 1
           }
         }
       }
@@ -385,7 +387,7 @@ export default class Model {
       this.attackArea2 = [0, t + pos[1] * height, width, height - 2]
     }
   }
-  public drawHitArea(color = 'red', cxt = this.scene.context, area = this.hitArea) {
+  public drawHitArea(color = 'red', cxt = this.scene.selectContext(this), area = this.hitArea) {
     let len = area.length
     if (len === 4) {
       drawHitArea(color, cxt, [this.x, this.y, area[2], area[3]])

@@ -20,13 +20,14 @@ const list: string[] = [
 ]
 const options: anyObject = mergeOptions(path, name, list, {
   'bgHeader.jpg': {
+    layerIndex: 2,
     personal: {
     },
     draw() {
       let { img, width, height } = this
       let x = this.scene.config.height * .01
       let y = x
-      img && this.scene.context.drawImage(img, x, y, width, height)
+      img && this.scene.selectContext(this).drawImage(img, x, y, width, height)
       return { x, y, width, height }
     }
   },
@@ -37,7 +38,7 @@ const options: anyObject = mergeOptions(path, name, list, {
       let y = header.y + header.height
       let { img, width, height } = this
       this.height = height = width / 10 - 1 - header.height
-      img && this.scene.context.drawImage(img, x, y, width, height)
+      img && this.scene.selectContext(this).drawImage(img, x, y, width, height)
       return { x, y, width, height }
     }
   },
@@ -47,7 +48,7 @@ const options: anyObject = mergeOptions(path, name, list, {
       let x = body.x
       let y = body.y + body.height
       let { img, width, height } = this
-      img && this.scene.context.drawImage(img, x, y, width, height)
+      img && this.scene.selectContext(this).drawImage(img, x, y, width, height)
       return { x, y, width, height }
     }
   },
@@ -94,10 +95,10 @@ const options: anyObject = mergeOptions(path, name, list, {
         if (~~(index / 3) === 1) {
           ih = height * 3
         }
-        this.scene.context.drawImage(img, startX, startY, iw, ih)
+        this.scene.selectContext(this).drawImage(img, startX, startY, iw, ih)
         return gif
       })
-      img && this.scene.context.drawImage(img, x, y, width, height)
+      img && this.scene.selectContext(this).drawImage(img, x, y, width, height)
     }
   }
 })

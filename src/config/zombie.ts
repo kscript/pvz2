@@ -49,14 +49,15 @@ const options: anyObject = mergeOptions(path, name, list, {
       dieState:  0
     },
     initControl() {
+      const context = this.scene.selectContext(this)
       return {
         die: new Control().batch((control) => {
           const lostHeadAttack = async () => {
             if (this.target) {
               let head = await this.gifs.head.currentImg()
-              head && this.scene.context.drawImage(head, this.x + head.width / 2, this.y, head.width, head.height)
+              head && context.drawImage(head, this.x + head.width / 2, this.y, head.width, head.height)
               let img = await this.gifs.lostHeadAttack.currentImg()
-              img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height)
+              img && context.drawImage(img, this.x, this.y, img.width, img.height)
               if (this.gifs.lostHeadAttack.length === this.gifs.lostHeadAttack.index + 1) {
                 control.next()
               }
@@ -66,14 +67,14 @@ const options: anyObject = mergeOptions(path, name, list, {
           }
           const lostHead = async () => {
             let lostHead = await this.gifs.lostHead.currentImg()
-            lostHead && this.scene.context.drawImage(lostHead, this.x, this.y, lostHead.width, lostHead.height)
+            lostHead && context.drawImage(lostHead, this.x, this.y, lostHead.width, lostHead.height)
             if (this.gifs.lostHead.length === this.gifs.lostHead.index + 1) {
               control.next()
             }
           }
           const die = async () => {
             let img = await this.gifs.die.currentImg()
-            img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height)
+            img && context.drawImage(img, this.x, this.y, img.width, img.height)
             if (this.gifs.die.index === this.gifs.die.length - 1) {
               this.personal.img = img
               this.fadeOut(void 0, img)
@@ -121,7 +122,7 @@ const baseOption: anyObject = {
   async draw(...rest: any[]) {
     if (this.gif) {
       let img = await this.gif.currentImg(this.static)
-      img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
+      img && this.scene.selectContext(this).drawImage(img, this.x, this.y, this.width, this.height)
     }
   },
   async attack(com: Model) {
@@ -132,8 +133,6 @@ const baseOption: anyObject = {
     if (this.gifs.attack) {
       this.target = com
       this.gif = this.gifs.attack
-      // let img = await this.gifs.attack.currentImg()
-      // img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
     }
     const now = +new Date
     if (!this.attackTime || now - this.attackSpeed > this.attackTime) {

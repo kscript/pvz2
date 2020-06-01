@@ -23,7 +23,7 @@ const options: anyObject = mergeOptions(path, name, list, {
           this.y += this.attackMoveY
         }
         let img = await this.gif.currentImg()
-        img && this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
+        img && this.scene.selectContext(this).drawImage(img, this.x, this.y, this.width, this.height)
       }
     },
     async dieEffect(){
@@ -32,7 +32,7 @@ const options: anyObject = mergeOptions(path, name, list, {
       } else {
         if (this.gifs.hit.length > this.gifs.hit.index + 1) {
           let img = await this.gifs.hit.currentImg()
-          img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height)
+          img && this.scene.selectContext(this).drawImage(img, this.x, this.y, img.width, img.height)
         } else {
           this.fadeOut()
         }

@@ -53,7 +53,8 @@ const list: string[] = [
   'LoadBar.png',
   
   'ZombieHand.png',
-  'Tombstone_mounds.png'
+  'Tombstone_mounds.png',
+  'LawnCleaner.png'
 ]
 
 const conf: anyObject = {
@@ -151,12 +152,13 @@ const options: anyObject = mergeOptions(path, name, list, {
       let ih = this.height
       let sw = this.scene.config.width
       let sh = this.scene.config.height
+      const context = this.scene.selectContext(this)
       return new Promise(resolve => {
         let opacity = 0
         const animate = () => {
           this.scene.clearCanvas()
-          this.context.globalAlpha = opacity += .01
-          this.context.drawImage(this.img, (sw - iw) / 2, (sh - ih) / 2 , iw, ih)
+          context.globalAlpha = opacity += .01
+          context.drawImage(this.img, (sw - iw) / 2, (sh - ih) / 2 , iw, ih)
           if (opacity < .95) {
             setTimeout(animate, 50)
           } else {
@@ -172,7 +174,7 @@ const options: anyObject = mergeOptions(path, name, list, {
     draw() {
       let w = this.scene.config.width
       let h = this.scene.config.height
-      this.context.drawImage(this.img, 0, 0, w, h)
+      this.scene.selectContext(this).drawImage(this.img, 0, 0, w, h)
     }
   },
   'SodRollCap.png': {
@@ -181,11 +183,12 @@ const options: anyObject = mergeOptions(path, name, list, {
       let x = this.scene.config.width / 2
       let y = this.scene.config.height / 2 + offsetY
       let lw = ~~(LoadBar.width * rate / 100)
-      this.context.save()
-      this.context.translate(x + lw - LoadBar.width / 2 - 10, y - LoadBar.height / 2 + 10)
-      this.context.rotate(rate * 10.8 * Math.PI / 180)
-      this.context.drawImage(this.img, -this.width / this.scene.config.scaleX / 2, -this.height / this.scene.config.scaleY  / 2)
-      this.context.restore()
+      const context = this.scene.selectContext(this)
+      context.save()
+      context.translate(x + lw - LoadBar.width / 2 - 10, y - LoadBar.height / 2 + 10)
+      context.rotate(rate * 10.8 * Math.PI / 180)
+      context.drawImage(this.img, -this.width / this.scene.config.scaleX / 2, -this.height / this.scene.config.scaleY  / 2)
+      context.restore()
     }
   },
   // 加载进度条
@@ -201,10 +204,11 @@ const options: anyObject = mergeOptions(path, name, list, {
       this.y = y - this.height / 2
       let vw = lw / this.scene.config.scaleX
       let vh = this.height / this.scene.config.scaleY
-      this.context.drawImage(this.img, 0, 0, vw, vh, x - this.width / 2, y - this.height / 2, lw, this.height)
-      this.context.globalAlpha = .4
-      this.context.drawImage(this.img, x - this.width / 2, y - this.height / 2, this.width, this.height)
-      this.context.globalAlpha = 1
+      const context = this.scene.selectContext(this)
+      context.drawImage(this.img, 0, 0, vw, vh, x - this.width / 2, y - this.height / 2, lw, this.height)
+      context.globalAlpha = .4
+      context.drawImage(this.img, x - this.width / 2, y - this.height / 2, this.width, this.height)
+      context.globalAlpha = 1
     },
     trigger(type: string, event: Event) {
       if (type === 'click') {
@@ -238,7 +242,7 @@ const options: anyObject = mergeOptions(path, name, list, {
       let { x, y, r, c, scene } = getProps(this)
       this.x = x  + c * this.col
       this.y = y + r * this.row
-      this.context.drawImage(this.img, this.x, this.y, this.width * this.scaleX, this.height * this.scaleY)
+      this.scene.selectContext(this).drawImage(this.img, this.x, this.y, this.width * this.scaleX, this.height * this.scaleY)
     }
   },
   // 花园
@@ -265,7 +269,7 @@ const options: anyObject = mergeOptions(path, name, list, {
       let { x, y, r, c, scene } = getProps(this)
       this.x = x  + c * this.col
       this.y = y + r * this.row
-      this.context.drawImage(this.img, this.x, this.y, this.width, this.height)
+      this.scene.selectContext(this).drawImage(this.img, this.x, this.y, this.width, this.height)
     }
   },
   // 图鉴
@@ -292,7 +296,7 @@ const options: anyObject = mergeOptions(path, name, list, {
       let { x, y, r, c, scene } = getProps(this)
       this.x = x  + c * this.col
       this.y = y + r * this.row
-      this.context.drawImage(this.img, this.x, this.y, this.width, this.height)
+      this.scene.selectContext(this).drawImage(this.img, this.x, this.y, this.width, this.height)
     }
   },
   // 冒险
@@ -326,7 +330,7 @@ const options: anyObject = mergeOptions(path, name, list, {
         this.personal.newHeight = this.height = height = height / 2
       }
       let { vw, vh } = getSize(this, width, height)
-      this.context.drawImage(this.img, startX * vw, startY * vh, vw, vh, this.x, this.y, width * scaleX, height * scaleY)
+      this.scene.selectContext(this).drawImage(this.img, startX * vw, startY * vh, vw, vh, this.x, this.y, width * scaleX, height * scaleY)
     }
   },
   // 解密
@@ -360,7 +364,7 @@ const options: anyObject = mergeOptions(path, name, list, {
         this.personal.newHeight = this.height = height = height / 2
       }
       let { vw, vh } = getSize(this, width, height)
-      this.context.drawImage(this.img, startX * vw, startY * vh, vw, vh, this.x, this.y, width * scaleX, height * scaleY)
+      this.scene.selectContext(this).drawImage(this.img, startX * vw, startY * vh, vw, vh, this.x, this.y, width * scaleX, height * scaleY)
     }
   },
   // 小游戏
@@ -394,7 +398,7 @@ const options: anyObject = mergeOptions(path, name, list, {
         this.personal.newHeight = this.height = height = height / 2
       }
       let { vw, vh } = getSize(this, width, height)
-      this.context.drawImage(this.img, startX * vw, startY * vh, vw, vh, this.x, this.y, width * scaleX, height * scaleY)
+      this.scene.selectContext(this).drawImage(this.img, startX * vw, startY * vh, vw, vh, this.x, this.y, width * scaleX, height * scaleY)
     }
   },
   // 开始游戏
@@ -431,10 +435,11 @@ const options: anyObject = mergeOptions(path, name, list, {
         this.personal.newHeight = this.height = height /= 2
       }
       let { vw, vh } = getSize(this, width, height)
-      this.context.drawImage(this.img, startX * vw, startY * vh, vw, vh, this.x, this.y, width * scaleX, height * scaleY)
+      this.scene.selectContext(this).drawImage(this.img, startX * vw, startY * vh, vw, vh, this.x, this.y, width * scaleX, height * scaleY)
     }
   },
   'ZombieHand.png': {
+    layerIndex: 5,
     ctype: 'function',
     personal: {
       lenX: 7,
@@ -468,10 +473,11 @@ const options: anyObject = mergeOptions(path, name, list, {
       width = width / this.personal.lenX
       height = height / this.personal.lenY
       let { vw, vh } = getSize(this, width, height)
-      this.context.drawImage(this.img, startX * vw, startY * vh, vw, vh, this.x, this.y, width * scaleX, height * scaleY)
+      this.scene.selectContext(this).drawImage(this.img, startX * vw, startY * vh, vw, vh, this.x, this.y, width * scaleX, height * scaleY)
     }
   },
   'Sun.gif': {
+    layerIndex: 5,
     sun2: 25,
     personal: {
       end: null,
@@ -503,7 +509,7 @@ const options: anyObject = mergeOptions(path, name, list, {
                 this.y = coords.y
                 let width = coords.width === void 0 ? this.width : coords.width
                 let height = coords.height === void 0 ? this.height : coords.height
-                this.scene.context.drawImage(img, coords.x, coords.y, width, height)
+                this.scene.selectContext(this).drawImage(img, coords.x, coords.y, width, height)
               }
             })
             .onComplete(() => {
@@ -613,12 +619,21 @@ const options: anyObject = mergeOptions(path, name, list, {
           let { x, y, width, height } = this
           let { left, top } = padding(this.padding)
           let img = await this.gif.currentImg(this.static)
-          img && this.scene.context.drawImage(img, x + left, y + top, width, height)
+          img && this.scene.selectContext(this).drawImage(img, x + left, y + top, width, height)
         } else {
           this.controls.drawControl?.exec()
         }
       }
       this.controls.triggerControl?.exec()
+    }
+  },
+  'LawnCleaner.png': {
+    layerIndex: 1,
+    async draw() {
+      const [l, t, w, h, width, height] = this.scene.validArea
+      const [x, y] = this.pos
+      let img = await this.gif.currentImg()
+      img && this.scene.selectContext(this).drawImage(img, l - width / 2, t + y * height + (height - this.height) / 2, this.width, this.height)
     }
   }
 })

@@ -105,9 +105,10 @@ const options: anyObject = mergeOptions(path, name, list, {
           opacity += .025
           opacity = opacity > 1 ? 1 : opacity
           let img = await this.gifs.head.currentImg(false, this.gif.index)
-          this.scene.context.globalAlpha = opacity
-          this.scene.context.drawImage(img, this.x, this.y, this.gifs.head.width, this.gifs.head.height)
-          this.scene.context.globalAlpha = 1
+          const context = this.scene.selectContext(this)
+          context.globalAlpha = opacity
+          context.drawImage(img, this.x, this.y, this.gifs.head.width, this.gifs.head.height)
+          context.globalAlpha = 1
           if (this.gifs.head.index === this.gifs.head.length - 1) {
             control.next()
           }

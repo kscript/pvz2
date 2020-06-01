@@ -7,6 +7,7 @@ export default class Plant extends Model {
     this.name = name
     this.type = 'plant'
     this.options = options
+    this.layerIndex = 3
     Object.assign(this, {
       hitAble: true,
       akX: 15
@@ -23,6 +24,7 @@ export default class Plant extends Model {
   }
   public async drawCard() {
     if (this.gif) {
+      const context = this.scene.selectContext(this)
       let img = await this.gif.currentImg(this.static)
       if (img) {
         let left = 0
@@ -35,23 +37,23 @@ export default class Plant extends Model {
           left = this.padding[3]
         }
         if (this.type === 'card' && this.reload && !this.draging) {
-          this.scene.context.drawImage(img, this.x + left, this.y + top, this.width, this.height)
+          this.scene.selectContext(this).drawImage(img, this.x + left, this.y + top, this.width, this.height)
           let now = +new Date
           let rate = (now - this.reTime) / this.loadSpeed
           if (rate > 1) {
             rate = 1
           }
-          this.scene.context.fillStyle = 'rgba(0, 0, 0, .1)'
+          context.fillStyle = 'rgba(0, 0, 0, .1)'
           if (this.scene.sun < this.sun) {
-            this.scene.context.fillRect(this.x, this.y, this.width + left * 2 - 6, this.height + top * 2)
+            context.fillRect(this.x, this.y, this.width + left * 2 - 6, this.height + top * 2)
           }
-          this.scene.context.fillRect(this.x, this.y, this.width + left * 2 - 6, (this.height  + top * 2 ) * (1 - rate))
-          this.scene.context.fillStyle = 'rgba(0, 0, 0, 0)'
+          context.fillRect(this.x, this.y, this.width + left * 2 - 6, (this.height  + top * 2 ) * (1 - rate))
+          context.fillStyle = 'rgba(0, 0, 0, 0)'
         } else {
           if (this.draging) {
-            this.scene.context.drawImage(img, this.x + left, this.y + top, this.width, this.height)
+            context.drawImage(img, this.x + left, this.y + top, this.width, this.height)
           } else {
-            this.scene.context.drawImage(img, this.x, this.y, this.width, this.height)
+            context.drawImage(img, this.x, this.y, this.width, this.height)
           }
         }
       }

@@ -71,6 +71,8 @@ export default class Scene {
   public pos: string[][] = []
   public refreshTime: number = 0
   public refreshFps: number = 32
+  public layers: anyObject[] = []
+  public layerIndex = 0
   constructor(container: HTMLCanvasElement, config: anyObject = {}) {
     this.container = container
     config = this.config = Object.assign({}, defaultConfig, config)
@@ -87,6 +89,7 @@ export default class Scene {
     // row 可能是5或者是6
     this.rowH = config.height / (this.row + 1)
     this.formatUser()
+    this.initLayer()
   }
   async beforeInit() {
 
@@ -98,6 +101,34 @@ export default class Scene {
     await this.addEvents()
     // 需要等待用户点击开始
     await this.task.init('init')
+  }
+  initLayer() {
+    const el = this.container
+    const parent = el.parentElement as HTMLElement
+    parent.style.position = 'relative'
+    this.layers.push({
+      selected: false,
+      context: this.context
+    })
+    Array(5).fill('').forEach((item, index) => {
+      const elCopy = el.cloneNode(true) as HTMLCanvasElement
+      elCopy.style.cssText = 'pointer-events: none;position: absolute; top: 0; left: 0;z-index: ' + index * 10000
+      parent.prepend(elCopy)
+      this.layers.push({
+        selected: false,
+        context: <CanvasContextEx>elCopy.getContext('2d')
+      })
+    })
+  }
+  selectContext(com: Model | {
+    layerIndex: number
+  }) {
+    const layer = this.layers[com.layerIndex]
+    if (layer) {
+      layer.selected = true
+      return layer.context
+    }
+    return this.context
   }
   resolveInit() {
     this.task.resolve('init')
@@ -148,7 +179,7 @@ export default class Scene {
     com.init()
     this.setValidArea()
     const imageData = offlineCanvas.getImageData(com.img, com.width, this.config.height)
-    this.context.putImageData(imageData, 0, 0)
+    this.selectContext(this).putImageData(imageData, 0, 0)
     const useComs = (await this.mountGameZombies()).map(com => {
       return {
         com,
@@ -165,8 +196,8 @@ export default class Scene {
       start
     }: anyObject) => {
       this.clearCanvas()
-      this.context.putImageData(imageData, 0 - start * this.config.width, 0)
-      this.imageDatas.bg = this.context.getImageData(0, 0, this.config.width, this.config.width)
+      this.selectContext(this).putImageData(imageData, 0 - start * this.config.width, 0)
+      this.imageDatas.bg = this.selectContext(this).getImageData(0, 0, this.config.width, this.config.width)
       useComs.forEach(({ com, x }) => {
         com.x = x - (start + .1) * this.config.width
         com.draw()
@@ -182,6 +213,21 @@ export default class Scene {
     await this.mountCardBar()
     await this.selectGameCard()
     await this.mountGameCard()
+    const Menu = Com.Menu
+    const car = this.getCom('LawnCleaner.png')
+    // scene应该要有一个开始row的属性, 后期加
+    const start = 0
+    this.mountCom(
+      await Promise.all(
+        Array(this.row).fill('').map(async (item, index) => {
+          const carCopy = new Menu(car.name, Object.assign({}, car.options, {
+            pos: [0, start + index]
+          }))
+          await carCopy.init()
+          return carCopy
+        })
+      )
+    )
   }
   async startGame() {
     this.flow?.init()
@@ -522,7 +568,7 @@ export default class Scene {
         resolve()
       }
       await com.animate(async () => {
-        this.clearCanvas()
+        this.clearCanvas(this.selectContext(com))
         this.restore()
         com.draw()
       })
@@ -544,8 +590,11 @@ export default class Scene {
       }
       if (!this.stop) {
         this.clearCanvas()
+        this.layers.forEach(item => {
+          item.selected = false
+        })
         this.flow?.refresh()
-        this.context.putImageData(this.imageDatas.bg, 0, 0)
+        this.selectContext(this).putImageData(this.imageDatas.bg, 0, 0)
         let queue = Promise.resolve()
         this.order().forEach(async com => {
           queue = queue.then(async () => {
@@ -574,16 +623,17 @@ export default class Scene {
     return plants.concat(bullets, zombies, others, cards, suns)
   }
   attackTest() {
+    const context = this.selectContext(this)
     zombies.slice(0).forEach((com2, i2) => {
       if (com2.x <= this.config.width) {
         // 移动 攻击/被攻击 边界, 只改变x
         com2.attackArea[0] = com2.x
         com2.attackArea2[0] = com2.x
         if (this.auxiliary.attackArea_com2) {
-          com2.drawHitArea(this.auxiliary.attackArea_com2, this.context, com2.attackArea)
+          com2.drawHitArea(this.auxiliary.attackArea_com2, context, com2.attackArea)
         }
         if (this.auxiliary.attackArea2_com2) {
-          com2.drawHitArea(this.auxiliary.attackArea2_com2, this.context, com2.attackArea2)
+          com2.drawHitArea(this.auxiliary.attackArea2_com2, context, com2.attackArea2)
         }
         plants.concat(bullets).slice(0).forEach((com1, i1) => {
           if (com1.type === 'bullet') {
@@ -592,10 +642,10 @@ export default class Scene {
           }
           if (i2 < 1) {
             if (this.auxiliary.attackArea_com1) {
-              com1.drawHitArea(this.auxiliary.attackArea_com1, this.context, com1.attackArea)
+              com1.drawHitArea(this.auxiliary.attackArea_com1, context, com1.attackArea)
             }
             if (this.auxiliary.attackArea2_com1) {
-              com1.drawHitArea(this.auxiliary.attackArea2_com1, this.context, com1.attackArea2)
+              com1.drawHitArea(this.auxiliary.attackArea2_com1, context, com1.attackArea2)
             }
           }
           if (com1.pos[1] === com2.pos[1]) {
@@ -735,8 +785,14 @@ export default class Scene {
     }
     this.pos[x][y] = val
   }
-  clearCanvas() {
-    this.context.clearRect(0, 0, this.config.width, this.config.width)
+  clearCanvas(context?: CanvasContextEx) {
+    if (context) {
+      context.clearRect(0, 0, this.config.width, this.config.width)
+    } else {
+      this.layers.forEach(({ context, selected }) => {
+        selected && context.clearRect(0, 0, this.config.width, this.config.width)
+      })
+    }
   }
   clearMounted() {
     this.comsMounted.splice(0).forEach(item => {
@@ -801,7 +857,7 @@ export default class Scene {
   save(name?: string, ...rest: any) {
     const args = rest.concat(0, 0, this.config.width, this.config.height).filter((item: any) => typeof item === 'number').slice(0, 4)
     // @ts-ignore
-    const imageData = this.context.getImageData(...args)
+    const imageData = this.selectContext(this).getImageData(...args)
     if (name) {
       this.imageDatas['_' + name] = imageData
     } else {
@@ -818,7 +874,7 @@ export default class Scene {
       imageData = this.imageDatas.active
     }
     // @ts-ignore
-    imageData && this.context.putImageData(imageData, x, y, ...rest)
+    imageData && this.selectContext(this).putImageData(imageData, x, y, ...rest)
     return imageData
   }
   recordPath() {
@@ -830,7 +886,7 @@ export default class Scene {
       pointers.push(event.offsetY)
     })
   }
-  public drawHitArea(color: string, cxt: CanvasContextEx = this.context, area: number[] = []) {
+  public drawHitArea(color: string, cxt: CanvasContextEx = this.selectContext(this), area: number[] = []) {
     // @ts-ignore
     drawHitArea(color, cxt, area)
   }

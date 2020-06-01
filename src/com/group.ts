@@ -7,6 +7,7 @@ export default class Group extends Model {
     this.name = name
     this.type = 'group'
     this.options = options
+    this.layerIndex = 2
     Object.assign(this, options)
   }
 }
