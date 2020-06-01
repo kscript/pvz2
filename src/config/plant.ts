@@ -2,6 +2,7 @@ import { mergeOptions } from '@/utils/model'
 import Model from '@/com/model'
 import Control  from '@/utils/control'
 import { Clock } from '@/utils/clock'
+import { rand } from '@/utils'
 
 const path = './images/Plants/'
 const name = '${name}/${name}.gif'
@@ -70,75 +71,87 @@ const cradDrag = (com: Model, event: MouseEvent, oldEvent: MouseEvent) => {
 }
 const options: anyObject = mergeOptions(path, name, list, {
   SunFlower: {
-    sunSpeed: 1.5e4,
+    sunSpeed: 2.5e4,
     medias: {
       head: '${name}/SunFlower1.gif'
     },
     initControl() {
-      let opacity = 0
-      let sunEndClock: Clock | null = null
-      
-      const drawControl = this.controls.draw = new Control(this, {
-        once: false,
-        done: () => {
-        },
-        every: () => {
-          this.drawCard()
-          if (this.type !== 'plant') {
-            return false
+      const newClock = (control: Control, time: number) => {
+        return new Clock(+new Date, time, () => {
+          control.next()
+        })
+      }
+      const drawControl = new Control(() => {
+        this.drawCard()
+        if (this.type !== 'plant') {
+          return false
+        }
+      }).batch(control => {
+        let opacity = 0
+        let sunEndClock: Clock | null
+        let sunClock = newClock(control, this.sunSpeed + rand(0, 5e3) - 2.5e3)
+        const plant = () => {
+          sunClock.assess()
+        }
+        const plantDone = () => {
+          sunClock = newClock(control, this.sunSpeed + rand(0, 5e3) - 2.5e3)
+        }
+        const beforeSun = async () => {
+          // opacity为0时, gif的index应该也是0, 如果不是, 那么跳过
+          if (!opacity && this.gif.index) {
+            return
+          }
+          opacity += .025
+          opacity = opacity > 1 ? 1 : opacity
+          let img = await this.gifs.head.currentImg(false, this.gif.index)
+          this.scene.context.globalAlpha = opacity
+          this.scene.context.drawImage(img, this.x, this.y, this.gifs.head.width, this.gifs.head.height)
+          this.scene.context.globalAlpha = 1
+          if (this.gifs.head.index === this.gifs.head.length - 1) {
+            control.next()
           }
         }
-      })
-      const sunClock = new Clock(+new Date, this.sunSpeed, () => {
-        drawControl.next()
-      })
-      drawControl.add('plant', async () => {
-        console.log('积蓄阳光值中')
-        sunClock.assess()
-      })
-      drawControl.add('beforeSun', async () => {
-        console.log('储满阳光值')
-        opacity += .025
-        opacity = opacity > 1 ? 1 : opacity
-        let img = await this.gifs.head.currentImg(false, this.gif.index)
-        this.scene.context.globalAlpha = opacity
-        this.scene.context.drawImage(img, this.x, this.y, this.gifs.head.width, this.gifs.head.height)
-        this.scene.context.globalAlpha = 1
-        if (this.gifs.head.index === this.gifs.head.length - 1) {
-          drawControl.next()
+        const beforeSunDone = () => {
+          opacity = 0
         }
-      }, () => {
-        opacity = 0
-      })
-      drawControl.add('mountSun', async () => {
-        if (sunEndClock) {
-          sunEndClock.assess()
-        } else {
-          console.log('产生阳光')
-          const sun = this.scene.mountSun({
-            personal: {
-              coords: {
-                x: this.x,
-                y: this.y
-              },
-              end: {
-                x: this.x + this.width,
-                y: this.y + this.height / 2
-              },
-              easing: ''
-            }
-          })
-          sun.source = this
-          sunEndClock = sunEndClock || new Clock(+new Date, 3e3, () => {
-            sunEndClock = null
-            drawControl.gotoName('plant')
-          })
+        const mountSun = async () => {
+          if (!sunEndClock) {
+            const sun = this.scene.mountSun({
+              x: this.x,
+              y: this.y,
+              personal: {
+                coords: {
+                  x: this.x,
+                  y: this.y
+                },
+                end: {
+                  x: this.x + this.width,
+                  y: this.y + this.height / 2
+                },
+                easing: ''
+              }
+            })
+            sun.source = this
+            sunEndClock = sunEndClock || newClock(control, 5e3)
+          }
           sunEndClock.assess()
         }
+        const mountSunDone = () => {
+          sunEndClock = null
+          control.index = -1
+        }
+        return [
+          [plant, plantDone],
+          [beforeSun, beforeSunDone],
+          [mountSun, mountSunDone]
+        ]
       })
+      return {
+        drawControl
+      }
     },
     async draw() {
-      this.controls.draw?.exec()
+      this.controls.drawControl?.exec()
     }
   },
   Peashooter: {

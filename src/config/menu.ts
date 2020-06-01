@@ -3,7 +3,8 @@ import Model from '@/com/model'
 // @ts-ignore
 import TWEEN from 'tween.js'
 import { rand } from '@/utils'
-console.log(TWEEN)
+import Control from '@/utils/control'
+import { Clock } from '@/utils/clock'
 const easings = Object.keys(TWEEN.Easing)
 
 const path = './images/interface/'
@@ -127,6 +128,21 @@ const menuTrigger = (com: Model, type: string, event?: Event) => {
     com.scene.stopMuisc('./sound/mouseclick.wav')
   }
   com.draw()
+}
+
+const padding = (padding: number[]) => {
+  let left = 0
+  let top = 0
+  if (padding.length === 2) {
+    top = padding[0]
+    left = padding[1]
+  } else if (padding.length === 4) {
+    top = padding[0]
+    left = padding[3]
+  }
+  return {
+    left, top
+  }
 }
 const options: anyObject = mergeOptions(path, name, list, {
   'popcap_logo.png': {
@@ -457,69 +473,151 @@ const options: anyObject = mergeOptions(path, name, list, {
   },
   'Sun.gif': {
     personal: {
-      coords: null,
       end: null,
       easing: ''
     },
-    trigger(type: string, event: MouseEvent){
-      if (type === 'click') {
-        this.scene.sun += this.sun2
-        this.complete = true
-        this.dying = true
-      }
-    },
-    async draw(coords: anyObject, end: anyObject) {
-      if (this.gif) {
-        let left = 0
-        let top = 0
-        let { x, y, width, height } = this
-        if (this.padding.length === 2) {
-          top = this.padding[0]
-          left = this.padding[1]
-        } else if (this.padding.length === 4) {
-          top = this.padding[0]
-          left = this.padding[3]
-        }
-        let img = await this.gif.currentImg(this.static)
-        if (img) {
-          if (this.type === 'card') {
-            this.scene.context.drawImage(img, x + left, y + top, width, height)
-          } else {
-            if (this.complete) return
-            const easing = this.personal.easing || easings[rand(0, easings.length - 1)]
-            coords = this.personal.coords = coords || this.personal.coords || {
-              x: rand(0, this.scene.config.width), y: -this.scene.config.height / 2
-            }
-            end = this.personal.end = end || this.personal.end || {
-              x: rand(0, this.scene.config.width),
-              y: rand(this.scene.config.height - height * 2, this.scene.config.height)
-            }
-            this.tween = this.tween || new TWEEN.Tween(coords)
-              .to(end, 2e4)
-              // .easing(easing === 'Linear' ? TWEEN.Easing[easing].None : TWEEN.Easing[easing].Out )
-              .easing(TWEEN.Easing.Circular.Out)
-              .onUpdate(() => {
+    initControl() {
+      let drawFn: Function | void
+      let triggerFn: Function | void
+      let clock: Clock | void
+      const newTweenFn = ({
+        tween,
+        coords,
+        end, 
+        time,
+        easing,
+        update
+      }: anyObject = {}) => {
+        return async (control: Control) => {
+          let img = await this.gif.currentImg(this.static)
+          tween = tween || new TWEEN.Tween(coords)
+            .to(end, time)
+            .easing(easing || TWEEN.Easing.Circular.Out)
+            .onUpdate(() => {
+              if (typeof update === 'function') {
+                update(coords)
+              } else
+              if (coords) {
                 this.x = coords.x
                 this.y = coords.y
+                let width = coords.width === void 0 ? this.width : coords.width
+                let height = coords.height === void 0 ? this.height : coords.height
                 this.scene.context.drawImage(img, coords.x, coords.y, width, height)
-              })
-              .onComplete(() => {
-                this.personal = {
-                  coords: null,
-                  end: null,
-                  easing: ''
-                }
-                this.complete = true
-                this.dying = true
-              })
-              .start(+new Date)
-            this.tween.update(+new Date)
+              }
+            })
+            .onComplete(() => {
+              control.next()
+            })
+            .start(+new Date)
+          tween.update(+new Date)
+          return tween
+        }
+      }
+      const drawControl = new Control(() => {
+        if (this.complete) {
+          return false
+        }
+      })
+      .batch((control) => {
+        const tween = async () => {
+          drawFn = drawFn || newTweenFn({
+            source: 'drawControl',
+            time: 1.5e4,
+            coords: this.personal.coords || {
+              x: rand(0, this.scene.config.width - this.width),
+              y: -this.scene.config.height / 2
+            },
+            end: this.personal.end || {
+              x: rand(0, this.scene.config.width - this.width),
+              y: rand(this.scene.config.height / 3, this.scene.config.height - this.height)
+            }
+          })
+          return await drawFn(control)
+        }
+        const defer = () => {
+          clock = clock || new Clock(+new Date, 5e3, () => {
+            control.next()
+          })
+          clock.assess()
+        }
+        const die = async () => {
+          this.complete = true
+          this.dying = true
+        }
+        return [
+          [tween, () => {
+            drawFn = void 0
+          }],
+          [defer],
+          [die]
+        ]
+      })
+
+      const triggerControl = new Control()
+      .pause()
+      .batch((control) => {
+        const tween = async () => {
+          if (!triggerFn) {
+            let { left, top } = padding(this.scene.mountCard[0].padding)
+            this.static = true
+            triggerFn = newTweenFn({
+              source: 'triggerControl',
+              coords: {
+                x: this.x,
+                y: this.y,
+                width: this.width,
+                height: this.height
+              },
+              end: {
+                x: this.scene.mountCard[0].x + left,
+                y: this.scene.mountCard[0].y + top,
+                width: this.scene.cardBar.width / 10 * .9,
+                height: this.scene.cardBar.width / 10 * .9
+              },
+              time: 1e3
+            })
           }
+          return await triggerFn(control)
+        }
+        const die = async () => {
+          triggerFn = void 0
+          this.complete = true
+          this.dying = true
+          this.die = true
+        }
+        return [
+          [tween, die]
+        ]
+      })
+      return {
+        drawControl,
+        triggerControl
+      }
+    },
+    trigger(type: string, event: MouseEvent){
+      if (type === 'click') {
+        if (this.type ===  'card') {
+        } else {
+          this.controls.drawControl.pause()
+          if (this.controls.triggerControl.paused) {
+            this.scene.sun += this.sun2
+          }
+          this.controls.triggerControl.play()
         }
       }
     },
-    afterDestory() {
-      this.tween = null
+    async draw() {
+      if (this.gif) {
+        if (this.type === 'card') {
+          let { x, y, width, height } = this
+          let { left, top } = padding(this.padding)
+          let img = await this.gif.currentImg(this.static)
+          img && this.scene.context.drawImage(img, x + left, y + top, width, height)
+        } else {
+          this.controls.drawControl?.exec()
+        }
+      }
+      this.controls.triggerControl?.exec()
     }
   }
 })

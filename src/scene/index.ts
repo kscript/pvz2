@@ -16,13 +16,15 @@ const plants: Model[] = []
 const bullets: Model[] = []
 const zombies: Model[] = []
 const cards: Model[] = []
+const suns: Model[] = []
 
 const coms: anyObject<Model[]> = {
   plants,
   zombies,
   bullets,
   cards,
-  others
+  others,
+  suns
 }
 export default class Scene {
   [prop: string]: any
@@ -40,7 +42,7 @@ export default class Scene {
   public hitCom: anyObject<Model[]> = {}
   public mod: number = 0
   public row: number = 5
-  public sun: number = 50
+  public sun: number = 100
   // 行高和列宽
   public rowH: number = 0
   public colW: number = 0
@@ -53,6 +55,7 @@ export default class Scene {
   public offlineCanvas: OfflineCanvas = offlineCanvas
   public cardBar?: Model
   public useCard: Model[] = []
+  public mountCard: Model[] = []
   public dragCom: anyObject = {
     com: null,
     event: null
@@ -259,12 +262,14 @@ export default class Scene {
   }
   async mountGameCard() {
     const Plant = Com.Plant
+    const Menu = Com.Menu
     const cardBar = this.cardBar as Model
     const useComs = this.coms.filter(com => {
       return com.type === 'plant' && com.level <= this.user.level
     })
-    const coms = this.mountCom(this.useCard.map((comSource, index) => {
-      const com = new Plant(comSource.name, Object.assign({}, comSource.options, {
+    return this.mountCard = this.mountCom(await Promise.all(this.useCard.map(async (comSource, index) => {
+      const Card = comSource.type === 'menu' ? Menu : Plant
+      const com = new Card(comSource.name, Object.assign({}, comSource.options, {
         type: 'card',
         reload: true,
         static: true
@@ -272,15 +277,11 @@ export default class Scene {
       com.x = cardBar.x + cardBar.height / 2 + (cardBar.width / 10 + 3 + cardBar.height / 2) * index
       com.y = cardBar.y + cardBar.height / 2
       com.padding = Array(4).fill(cardBar.height / 2)
-      return com
-    }))
-    return await Promise.all(coms.map(async com => {
       await com.init()
       com.width = cardBar.width / 10 * .9
       com.height = cardBar.width / 10 * .9
-      com.draw()
       return com
-    }))
+    })))
   }
   
   setValidArea(row: number = 0, num: number = 0) {
@@ -545,7 +546,7 @@ export default class Scene {
         this.flow?.refresh()
         this.context.putImageData(this.imageDatas.bg, 0, 0)
         let queue = Promise.resolve()
-        plants.concat(bullets, zombies, others, cards).forEach(async com => {
+        this.order().forEach(async com => {
           queue = queue.then(async () => {
             com.run()
             if (this.auxiliary['hitArae_' + com.type]) {
@@ -563,6 +564,9 @@ export default class Scene {
         this.refresh()
       }
     })
+  }
+  order() {
+    return plants.concat(bullets, zombies, others, cards, suns)
   }
   attackTest() {
     zombies.slice(0).forEach((com2, i2) => {
@@ -621,10 +625,14 @@ export default class Scene {
     others.splice(0)
     bullets.splice(0)
     cards.splice(0)
-    
+    suns.splice(0)
     this.comsMounted.forEach(com => {
       if (!com.die) {
-        (coms[com.type + 's'] || others).push(com)
+        if (com.name === "Sun.gif") {
+          suns.push(com)
+        } else {
+          (coms[com.type + 's'] || others).push(com)
+        }
       } else {
         this.dumpCom(com, false)
       }
@@ -672,6 +680,9 @@ export default class Scene {
   }
   mountCom(com: Model | Model[], insert: boolean = false) {
     const coms = (Array.isArray(com) ? com : [com]).map(item => {
+      if (!item.id) {
+        debugger
+      }
       this.comsMountedMap[item.id] = item
       if (insert) {
         this.comsMounted.unshift(item)

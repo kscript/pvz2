@@ -232,7 +232,7 @@ export default class Model {
         gifs: this.gifs,
         medias: this.medias
       })
-      this.initControl()
+      Object.assign(this.controls, this.initControl())
     }
   }
   public initBefore() {
@@ -403,7 +403,7 @@ export default class Model {
       target:com,
     })
     if (com.hp <= 0) {
-      this.dying = true
+      com.dying = true
     }
   }
 }

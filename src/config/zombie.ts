@@ -22,7 +22,7 @@ const list: string[] = [
 ]
 const options: anyObject = mergeOptions(path, name, list, {
   Zombie: {
-    hp: 125,
+    hp: 80,
     dfe: 10,
     level: 1,
     medias: {
@@ -49,46 +49,49 @@ const options: anyObject = mergeOptions(path, name, list, {
       dieState:  0
     },
     initControl() {
-      const dieControl = this.controls.die = new Control(this, {
-        once: false,
-        done: () => {},
-        every: () => {
-
-        }
-      })
-      dieControl.add('loseHead', async () => {
-        let lostHead = await this.gifs.lostHead.currentImg()
-        lostHead && this.scene.context.drawImage(lostHead, this.x, this.y, lostHead.width, lostHead.height)
-        let head = await this.gifs.head.currentImg()
-        head && this.scene.context.drawImage(head, this.x + head.width / 2, this.y, head.width, head.height)
-        if (this.gifs.lostHead.length === this.gifs.lostHead.index + 1) {
-          dieControl.next()
-        }
-      })
-      dieControl.add('lostHeadAttack', async () => {
-        if (this.target) {
-          let img = await this.gifs.lostHeadAttack.currentImg()
-          img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height)
-          if (this.gifs.lostHeadAttack.length === this.gifs.lostHeadAttack.index + 1) {
-            dieControl.next()
+      return {
+        die: new Control().batch((control) => {
+          const lostHead = async () => {
+            let lostHead = await this.gifs.lostHead.currentImg()
+            lostHead && this.scene.context.drawImage(lostHead, this.x, this.y, lostHead.width, lostHead.height)
+            let head = await this.gifs.head.currentImg()
+            head && this.scene.context.drawImage(head, this.x + head.width / 2, this.y, head.width, head.height)
+            if (this.gifs.lostHead.length === this.gifs.lostHead.index + 1) {
+              control.next()
+            }
           }
-        } else{
-          dieControl.next()
-        }
-      })
-      dieControl.add('die', async () => {
-        let img = await this.gifs.die.currentImg()
-        img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height)
-        if (this.gifs.die.length === this.gifs.die.index + 1) {
-          this.personal.img = img
-          this.fadeOut(void 0, img)
-          dieControl.next()
-        }
-      })
-      dieControl.add('hide', async () => {
-        await this.fadeOut(void 0, this.personal.img)
-        dieControl.next()
-      })
+          const lostHeadAttack = async () => {
+            if (this.target) {
+              let img = await this.gifs.lostHeadAttack.currentImg()
+              img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height)
+              if (this.gifs.lostHeadAttack.length === this.gifs.lostHeadAttack.index + 1) {
+                control.next()
+              }
+            } else{
+              control.next()
+            }
+          }
+          const die = async () => {
+            let img = await this.gifs.die.currentImg()
+            img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height)
+            if (this.gifs.die.length === this.gifs.die.index + 1) {
+              this.personal.img = img
+              this.fadeOut(void 0, img)
+              control.next()
+            }
+          }
+          const hide = async () => {
+            await this.fadeOut(void 0, this.personal.img)
+            control.next()
+          }
+          return [
+            [lostHead],
+            [lostHeadAttack],
+            [die],
+            [hide]
+          ]
+        })
+      }
     },
     async dieEffect() {
       this.controls.die?.exec()
@@ -96,7 +99,7 @@ const options: anyObject = mergeOptions(path, name, list, {
   },
   ConeheadZombie: {
     level: 1,
-    hp: 150,
+    hp: 95,
     dfe: 11,
     personal: {
       moveSpeedX: -7
@@ -141,9 +144,6 @@ const baseOption: anyObject = {
     if (!this.attackTime || now - this.attackSpeed > this.attackTime) {
       this.attackTime = now
       const sound = this.scene.toggleMusic('./sound/chomp.mp3', false)
-      // sound.onended = () => {
-      //   this.scene.toggleMusic('./sound/chompsoft.mp3', false)
-      // }
       this.setAttackResult(com)
     }
   }
