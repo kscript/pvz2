@@ -51,17 +51,10 @@ const options: anyObject = mergeOptions(path, name, list, {
     initControl() {
       return {
         die: new Control().batch((control) => {
-          const lostHead = async () => {
-            let lostHead = await this.gifs.lostHead.currentImg()
-            lostHead && this.scene.context.drawImage(lostHead, this.x, this.y, lostHead.width, lostHead.height)
-            let head = await this.gifs.head.currentImg()
-            head && this.scene.context.drawImage(head, this.x + head.width / 2, this.y, head.width, head.height)
-            if (this.gifs.lostHead.length === this.gifs.lostHead.index + 1) {
-              control.next()
-            }
-          }
           const lostHeadAttack = async () => {
             if (this.target) {
+              let head = await this.gifs.head.currentImg()
+              head && this.scene.context.drawImage(head, this.x + head.width / 2, this.y, head.width, head.height)
               let img = await this.gifs.lostHeadAttack.currentImg()
               img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height)
               if (this.gifs.lostHeadAttack.length === this.gifs.lostHeadAttack.index + 1) {
@@ -71,24 +64,26 @@ const options: anyObject = mergeOptions(path, name, list, {
               control.next()
             }
           }
+          const lostHead = async () => {
+            let lostHead = await this.gifs.lostHead.currentImg()
+            lostHead && this.scene.context.drawImage(lostHead, this.x, this.y, lostHead.width, lostHead.height)
+            if (this.gifs.lostHead.length === this.gifs.lostHead.index + 1) {
+              control.next()
+            }
+          }
           const die = async () => {
             let img = await this.gifs.die.currentImg()
             img && this.scene.context.drawImage(img, this.x, this.y, img.width, img.height)
-            if (this.gifs.die.length === this.gifs.die.index + 1) {
+            if (this.gifs.die.index === this.gifs.die.length - 1) {
               this.personal.img = img
               this.fadeOut(void 0, img)
               control.next()
             }
           }
-          const hide = async () => {
-            await this.fadeOut(void 0, this.personal.img)
-            control.next()
-          }
           return [
-            [lostHead],
             [lostHeadAttack],
-            [die],
-            [hide]
+            [lostHead],
+            [die]
           ]
         })
       }

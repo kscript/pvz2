@@ -71,6 +71,7 @@ const cradDrag = (com: Model, event: MouseEvent, oldEvent: MouseEvent) => {
 }
 const options: anyObject = mergeOptions(path, name, list, {
   SunFlower: {
+    sun: 50,
     sunSpeed: 2.5e4,
     medias: {
       head: '${name}/SunFlower1.gif'
@@ -155,8 +156,9 @@ const options: anyObject = mergeOptions(path, name, list, {
     }
   },
   Peashooter: {
+    sun: 100,
     attackSpeed: 3e3,
-    attackMoveX: 10,
+    attackMoveX: 12,
     attackAble: true,
     bulletName: 'PB01',
     // medias: {

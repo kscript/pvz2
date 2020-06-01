@@ -472,6 +472,7 @@ const options: anyObject = mergeOptions(path, name, list, {
     }
   },
   'Sun.gif': {
+    sun2: 25,
     personal: {
       end: null,
       easing: ''

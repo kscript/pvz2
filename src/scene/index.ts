@@ -17,6 +17,7 @@ const bullets: Model[] = []
 const zombies: Model[] = []
 const cards: Model[] = []
 const suns: Model[] = []
+const dyings: Model[] = []
 
 const coms: anyObject<Model[]> = {
   plants,
@@ -119,26 +120,26 @@ export default class Scene {
   getFlowStep() {
     return [
       [5 * 1e3, '开始'],
-      [20 * 1e3, 1, 3],
-      [35 * 1e3, 2, 3],
-      [50 * 1e3, 2, 4],
-      [60 * 1e3, 2, 5],
+      [20 * 1e3, 1, 2],
+      [35 * 1e3, 1, 2],
+      [50 * 1e3, 1, 3],
+      [60 * 1e3, 1, 3],
 
       [70 * 1e3, '一大波僵尸正在靠近'],
       
-      [85 * 1e3, 3, 5],
-      [100 * 1e3, 3, 5],
-      [115 * 1e3, 3, 5],
+      [85 * 1e3, 2, 3],
+      [100 * 1e3, 2, 3],
+      [115 * 1e3, 1, 4],
       
-      [125 * 1e3, 1, 3],
-      [135 * 1e3, 1, 3],
+      [125 * 1e3, 1, 4],
+      [135 * 1e3, 2, 4],
 
       [150* 1e3, '一大波僵尸正在靠近'],
       [155* 1e3, '最后一波'],
 
-      [165 * 1e3, 3, 6],
-      [175 * 1e3, 3, 6],
-      [190 * 1e3, 3, 6]
+      [165 * 1e3, 2, 4],
+      [175 * 1e3, 2, 5],
+      [190 * 1e3, 3, 5]
     ]
   }
   async play() {
@@ -233,7 +234,7 @@ export default class Scene {
     const com = this.getCom('Sun.gif')
     const comCopy = new Menu(com.name, Object.assign({}, com.options, {
       hitAble: true,
-      sun2: 50,
+      sun2: 25,
       personal: {
         coords: null,
         end: null,
@@ -552,12 +553,16 @@ export default class Scene {
             if (this.auxiliary['hitArae_' + com.type]) {
               com.drawHitArea(this.auxiliary['hitArae_' + com.type].hitArea)
             }
-            if (!com.dying) {
-              com.group.length ? await com.drawGroup() : await com.draw()
-            } else {
-              com.dyingEffect()
-            }
+            com.group.length ? await com.drawGroup() : await com.draw()
           })
+        })
+        dyings.forEach(com => {
+          if (com.dying) {
+            com.dyingEffect()
+          }
+          if (com.die) {
+            com.destroy()
+          }
         })
         await queue
         this.attackTest()
@@ -570,7 +575,6 @@ export default class Scene {
   }
   attackTest() {
     zombies.slice(0).forEach((com2, i2) => {
-      if (com2.dying)return
       if (com2.x <= this.config.width) {
         // 移动 攻击/被攻击 边界, 只改变x
         com2.attackArea[0] = com2.x
@@ -582,7 +586,6 @@ export default class Scene {
           com2.drawHitArea(this.auxiliary.attackArea2_com2, this.context, com2.attackArea2)
         }
         plants.concat(bullets).slice(0).forEach((com1, i1) => {
-          if (com1.dying)return
           if (com1.type === 'bullet') {
             com1.attackArea[0] = com1.x - com1.width * 2
             com1.attackArea2[0] = com1.x
@@ -597,12 +600,12 @@ export default class Scene {
           }
           if (com1.pos[1] === com2.pos[1]) {
             if (com1.id !== com2.id && com2.type === 'zombie') {
-              if(!com1.pending && com1.attackAble && !com2.dying) {
+              if(!com1.pending && com1.attackAble) {
                 if (hitTest2(com1.attackArea, com2.attackArea2)) {
                   com1.attack(com2)
                 }
               }
-              if(com1.type !== 'bullet' && !com2.pending && com2.attackAble && !com1.dying) {
+              if(com1.type !== 'bullet' && !com2.pending && com2.attackAble) {
                 if (hitTest2(com2.attackArea, com1.attackArea2)) {
                   com2.attack(com1)
                 }
@@ -626,12 +629,17 @@ export default class Scene {
     bullets.splice(0)
     cards.splice(0)
     suns.splice(0)
+    dyings.splice(0)
     this.comsMounted.forEach(com => {
       if (!com.die) {
-        if (com.name === "Sun.gif") {
-          suns.push(com)
+        if (com.dying) {
+          dyings.push(com)
         } else {
-          (coms[com.type + 's'] || others).push(com)
+          if (com.name === "Sun.gif") {
+            suns.push(com)
+          } else {
+            (coms[com.type + 's'] || others).push(com)
+          }
         }
       } else {
         this.dumpCom(com, false)
