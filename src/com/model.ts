@@ -170,49 +170,66 @@ export default class Model {
     }
     return true
   }
+  public extendGif(gif: GifCanvas) {
+    let { url, options, imgElems, imageUrls, imageDatas, width, height, length } = gif
+    let newGif = new GifCanvas(url, this, options)
+    newGif.extend({ imgElems, imageUrls, imageDatas, width, height, length })
+    return newGif
+  }
   public async init(stateChange?: (type: string, url: string, index: number, gif: GifCanvas, total?: number) => void) {
     if (this.state > 0) { return }
     this.state = 1
     this.initProp()
     if (this.initBefore()) {
       // gif和img属性可以缓存到options里, 如果要复制组件, 可以直接复用或手动重置
+      // 缓存的gif会使动作完全一致
       if (!this.gif) {
         this.gif = await this.initGif()
         await this.gif.toBlobUrl()
+      } else {
+        this.gif = this.extendGif(this.gif)
       }
       this.gif.start = () => {
         this.gifStart()
       }
       const gifs: GifCanvas[] = []
-      if (!isEmpty(this.medias) && isEmpty(this.gifs)) {
-        await Promise.all(Object.keys(this.medias).map(async (key: string) => {
-          let name = this.medias[key]
-          let imgPath = this.image.path
-          let options = {}
-          if (this.medias[key] instanceof Object) {
-            name =  this.medias[key].name
-            imgPath = this.medias[key].path || imgPath
-            options = this.medias[key].options instanceof Object ? this.medias[key].options : {}
-          }
-          if (name && typeof name === 'string') {
-            gifs.push(this.gifs[key] = await new GifCanvas(path.join(imgPath, name), this, Object.assign({ key }, options)))
-            await this.gifs[key].toBlobUrl()
-          }
-          return this.gifs[key]
-        }))
-        let len = 0
-        await Promise.all(gifs.map(gif => {
-          gif.loadImage((type, url, index, gif) => {
-            if (index === gif.imageUrls.length - 1) {
-              sendMessage(info[this.type] + this.id + '资源' + gif.options.key +'加载完成!', {
-                type: 'Model::init',
-                source: this
-              })
-              typeof stateChange === 'function' && stateChange(type, url, len++, gif, gifs.length + gif.imageUrls.length - 1)
+      if (!isEmpty(this.medias)) {
+        if (isEmpty(this.gifs)) {
+          await Promise.all(Object.keys(this.medias).map(async (key: string) => {
+            let name = this.medias[key]
+            let imgPath = this.image.path
+            let options = {}
+            if (this.medias[key] instanceof Object) {
+              name =  this.medias[key].name
+              imgPath = this.medias[key].path || imgPath
+              options = this.medias[key].options instanceof Object ? this.medias[key].options : {}
             }
-          })
-        }))
-        this.gifs['default'] = this.gif
+            if (name && typeof name === 'string') {
+              gifs.push(this.gifs[key] = await new GifCanvas(path.join(imgPath, name), this, Object.assign({ key }, options)))
+              await this.gifs[key].toBlobUrl()
+            }
+            return this.gifs[key]
+          }))
+          let len = 0
+          await Promise.all(gifs.map(gif => {
+            gif.loadImage((type, url, index, gif) => {
+              if (index === gif.imageUrls.length - 1) {
+                sendMessage(info[this.type] + this.id + '资源' + gif.options.key +'加载完成!', {
+                  type: 'Model::init',
+                  source: this
+                })
+                typeof stateChange === 'function' && stateChange(type, url, len++, gif, gifs.length + gif.imageUrls.length - 1)
+              }
+            })
+          }))
+          this.gifs['default'] = this.gif
+        } else {
+          for(let key in this.gifs) {
+            if (key !== 'default') {
+              this.gifs[key] = this.extendGif(this.gifs[key])
+            }
+          }
+        }
       }
       if (!this.img) {
         let total = gifs.length + this.gif.imageUrls.length - 1
@@ -374,12 +391,11 @@ export default class Model {
   }
   public setAttackArea() {
     let { akX, akY, pos } = this
-    let  { colScale, rowScale } = this.scene
     let [l, t, w, h, width, height] = this.scene.validArea
     // -2是为了不出现正好两边相交的情况
     if (this.type === 'plant') {
-      this.attackArea = [l + (pos[0] * colScale - .75) * width, t  + pos[1] * rowScale * height, akX * width, akY * height - 2]
-      this.attackArea2 = [l + (pos[0] * colScale - .75) * width, t  + pos[1] * rowScale * height, width, height - 2]
+      this.attackArea = [l + (pos[0] - .75) * width, t  + pos[1] * height, akX * width, akY * height - 2]
+      this.attackArea2 = [l + (pos[0] - .75) * width, t  + pos[1] * height, width, height - 2]
     } else if (this.type === 'bullet') {
       this.attackArea = [0, t  + pos[1] * height, this.width, this.height]
       this.attackArea2 = [0, t  + pos[1] * height, this.width, this.height]

@@ -50,8 +50,6 @@ export default class Scene {
   // 行高和列宽
   public rowH: number = 0
   public colW: number = 0
-  public rowScale: number = .935
-  public colScale: number = .925
   public stop: boolean = false
   public user: anyObject = {}
   public sounds: anyObject = {}
@@ -232,7 +230,7 @@ export default class Scene {
           const carCopy = new Menu(car.name, Object.assign({}, car.options, {
             pos: [0, start + index],
             x: l - width / 2 - 10, 
-            y: t + (start + index) * height * 1.02 + (height - car.height) / 2
+            y: t + (start + index + 1) * height - car.height
           }))
           await carCopy.init()
           return carCopy
@@ -354,13 +352,21 @@ export default class Scene {
     row = row < 0 || row > this.row ? 0 : row
     num = num < 0 || num > this.row ? 0 : num
     this.validArea = [
-      1.25  * width,
-      (row + .5) * height,
+      1.4  * width,
+      (row + .72) * height,
       9 * width,
       (this.row - num) * height,
       width,
       height
     ]
+  }
+  getValidCol(col: number) {
+    let [l, t, w, h, width, height] = this.validArea
+    return l + col * width
+  }
+  getValidRow(row: number) {
+    let [l, t, w, h, width, height] = this.validArea
+    return t + row * height
   }
   resetAttackArea() {
     this.comsMounted.forEach(com => {
@@ -398,8 +404,8 @@ export default class Scene {
       this.dumpCom(com)
     } else{
       this.setPos(pos, com.id)
-      com.x = l + width * this.colScale * pos[0] + width / 2
-      com.y = t + height * this.rowScale * pos[1] + height / 2
+      com.x = l + width * pos[0] + (width - com.width) / 2 + (width * .02 * 5 - pos[0])
+      com.y = t + height * pos[1] + (height - com.height) / 2
       com.hitAble = false
       com.static = false
       com.type = 'plant'
@@ -651,6 +657,8 @@ export default class Scene {
           if (com1.type === 'bullet') {
             com1.attackArea[0] = com1.x - com1.width * 2
             com1.attackArea2[0] = com1.x
+          } else if (com2.x < com1.x + com1.width / 2) {
+            return
           }
           if (i2 < 1) {
             if (this.auxiliary.attackArea_com1) {
@@ -911,6 +919,16 @@ export default class Scene {
   public drawHitArea(color: string, cxt: CanvasContextEx = this.selectContext(this), area: number[] = []) {
     // @ts-ignore
     drawHitArea(color, cxt, area)
+  }
+  public drawValidArea() {
+    let [l, t, w, h, width, height] = this.validArea
+    this.context.strokeStyle = 'red'
+    return Array(9 * this.row).fill('').map((item, index) => {
+      let x = index % 9
+      let y = ~~(index / 9)
+      this.context.strokeRect(l + x * width, t + y * height, width, height)
+      return [l + x * width, t + y * height, width, height]
+    })
   }
   public stopMuisc(src?: string) {
     try {

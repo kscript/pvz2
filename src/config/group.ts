@@ -16,7 +16,13 @@ const list: string[] = [
   'dialog_centerright.png',
   'dialog_bottomleft.png',
   'dialog_bottommiddle.png',
-  'dialog_bottomright.png'
+  'dialog_bottomright.png',
+  
+  'FlagMeterEmpty.png',
+  'FlagMeterFull.png',
+  'FlagMeterLevelProgress.png',
+  'FlagMeterParts1.png',
+  'FlagMeterParts2.png',
 ]
 const options: anyObject = mergeOptions(path, name, list, {
   'bgHeader.jpg': {

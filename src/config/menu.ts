@@ -54,7 +54,11 @@ const list: string[] = [
   
   'ZombieHand.png',
   'Tombstone_mounds.png',
-  'LawnCleaner.png'
+  'LawnCleaner.png',
+
+  'PrepareGrowPlants.png',
+  'FinalWave.gif',
+  'LargeWave.gif'
 ]
 
 const conf: anyObject = {

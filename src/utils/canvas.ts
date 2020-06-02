@@ -79,7 +79,6 @@ const errImg = document.createElement('img')
 export class GifCanvas {
     public url: string = ''
     public options: anyObject = {}
-    public imageDatas: Promise<ImageData[]>
     public imageUrls: string[] = []
     public imgElems: Promise<HTMLImageElement[]> = Promise.resolve([])
     public index: number = 0
@@ -89,6 +88,7 @@ export class GifCanvas {
     public width: number = 0
     public height: number = 0
     public parent: Model
+    public imageDatas: Promise<ImageData[]> | void = void 0
     constructor(url: string, parent: Model, options: anyObject = {}) {
         this.url = url
         const { x, y, fps } = parent
@@ -102,7 +102,6 @@ export class GifCanvas {
         this.height =  this.options.height || this.height
         this.type = type
         this.parent = parent
-        this.imageDatas = this.parseGif(url)
     }
     public async parseGif(url: string) {
         if (this.type !== 'gif') {
@@ -114,6 +113,7 @@ export class GifCanvas {
         if (this.type !== 'gif') {
             return this.imageUrls = [this.url]
         }
+        this.imageDatas = this.imageDatas || this.parseGif(this.url)
         let datas = await this.imageDatas as ImageData[]
         return this.imageUrls = datas.map(item => {
             let buffer = toPng(item)
@@ -146,6 +146,9 @@ export class GifCanvas {
                 })
             })
         })
+    }
+    public extend(options: anyObject = {}) {
+        return Object.assign(this, options)
     }
     public async currentImg(first: boolean = false, index?: number) {
         let elms = await this.imgElems

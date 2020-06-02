@@ -158,7 +158,7 @@ const options: anyObject = mergeOptions(path, name, list, {
   },
   Peashooter: {
     sun: 100,
-    attackSpeed: 3e3,
+    attackSpeed: 2e3,
     attackMoveX: 12,
     attackAble: true,
     bulletName: 'PB01',
