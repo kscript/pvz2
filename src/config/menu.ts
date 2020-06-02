@@ -520,7 +520,7 @@ const options: anyObject = mergeOptions(path, name, list, {
           return tween
         }
       }
-      const drawControl = new Control(() => {
+      const drawControl = new Control(this, () => {
         if (this.complete) {
           return false
         }
@@ -560,7 +560,7 @@ const options: anyObject = mergeOptions(path, name, list, {
         ]
       })
 
-      const triggerControl = new Control()
+      const triggerControl = new Control(this)
       .pause()
       .batch((control) => {
         const tween = async () => {

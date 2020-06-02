@@ -51,7 +51,7 @@ const options: anyObject = mergeOptions(path, name, list, {
     initControl() {
       const context = this.scene.selectContext(this)
       return {
-        die: new Control().batch((control) => {
+        die: new Control(this).batch((control) => {
           const lostHeadAttack = async () => {
             if (this.target) {
               let head = await this.gifs.head.currentImg()

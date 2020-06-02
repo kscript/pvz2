@@ -710,7 +710,11 @@ export default class Scene {
       }
     })
     orderList.sort((a, b) => {
-      return a.index - b.index
+      const r = a.index - b.index
+      // if (a.pos.length && b.pos.length) {
+      //   return a.pos[1] - b.pos[1] || r
+      // }
+      return r
     })
   }
   // 晃动镜头

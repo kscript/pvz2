@@ -3,7 +3,6 @@ import Model from '@/com/model'
 import Control  from '@/utils/control'
 import { Clock } from '@/utils/clock'
 import { rand } from '@/utils'
-
 const path = './images/Plants/'
 const name = '${name}/${name}.gif'
 const list: string[] = [
@@ -82,7 +81,7 @@ const options: anyObject = mergeOptions(path, name, list, {
           control.next()
         })
       }
-      const drawControl = new Control(() => {
+      const drawControl = new Control(this, () => {
         this.drawCard()
         if (this.type !== 'plant') {
           return false
@@ -90,7 +89,8 @@ const options: anyObject = mergeOptions(path, name, list, {
       }).batch(control => {
         let opacity = 0
         let sunEndClock: Clock | null
-        let sunClock = newClock(control, this.sunSpeed + rand(0, 5e3) - 2.5e3)
+        const start = this.sunSpeed + rand(0, 5e3) - 2.5e3
+        let sunClock = newClock(control, start)
         const plant = () => {
           sunClock.assess()
         }
@@ -109,7 +109,7 @@ const options: anyObject = mergeOptions(path, name, list, {
           context.globalAlpha = opacity
           context.drawImage(img, this.x, this.y, this.gifs.head.width, this.gifs.head.height)
           context.globalAlpha = 1
-          if (this.gifs.head.index === this.gifs.head.length - 1) {
+          if (this.gif.index === this.gif.length - 1) {
             control.next()
           }
         }
@@ -118,6 +118,7 @@ const options: anyObject = mergeOptions(path, name, list, {
         }
         const mountSun = async () => {
           if (!sunEndClock) {
+            sunEndClock = newClock(control, 5e3)
             const sun = this.scene.mountSun({
               x: this.x,
               y: this.y,
@@ -134,7 +135,6 @@ const options: anyObject = mergeOptions(path, name, list, {
               }
             })
             sun.source = this
-            sunEndClock = sunEndClock || newClock(control, 5e3)
           }
           sunEndClock.assess()
         }
