@@ -20,7 +20,7 @@ const list: string[] = [
 ]
 const options: anyObject = mergeOptions(path, name, list, {
   'bgHeader.jpg': {
-    layerIndex: 2,
+    index: 100,
     personal: {
     },
     draw() {

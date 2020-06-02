@@ -18,6 +18,7 @@ const zombies: Model[] = []
 const cards: Model[] = []
 const suns: Model[] = []
 const dyings: Model[] = []
+const orderList: Model[] = []
 
 const coms: anyObject<Model[]> = {
   plants,
@@ -25,7 +26,9 @@ const coms: anyObject<Model[]> = {
   bullets,
   cards,
   others,
-  suns
+  suns,
+  dyings,
+  orderList
 }
 export default class Scene {
   [prop: string]: any
@@ -73,6 +76,7 @@ export default class Scene {
   public refreshFps: number = 32
   public layers: anyObject[] = []
   public layerIndex = 0
+  public layerAble = false
   constructor(container: HTMLCanvasElement, config: anyObject = {}) {
     this.container = container
     config = this.config = Object.assign({}, defaultConfig, config)
@@ -103,6 +107,7 @@ export default class Scene {
     await this.task.init('init')
   }
   initLayer() {
+    if (!this.layerAble) return
     const el = this.container
     const parent = el.parentElement as HTMLElement
     parent.style.position = 'relative'
@@ -123,6 +128,7 @@ export default class Scene {
   selectContext(com: Model | {
     layerIndex: number
   }) {
+    if (!this.layerAble) return this.context
     const layer = this.layers[com.layerIndex]
     if (layer) {
       layer.selected = true
@@ -151,7 +157,6 @@ export default class Scene {
   getFlowStep() {
     return [
       [5 * 1e3, '开始'],
-      [20 * 1e3, 1, 2],
       [35 * 1e3, 1, 2],
       [50 * 1e3, 1, 3],
       [60 * 1e3, 1, 3],
@@ -210,10 +215,14 @@ export default class Scene {
 
   async beforeGame() {
     this.resetAttackArea()
+    await this.mountCar()
     await this.mountCardBar()
     await this.selectGameCard()
     await this.mountGameCard()
+  }
+  async mountCar() {
     const Menu = Com.Menu
+    const [l, t, w, h, width, height] = this.validArea
     const car = this.getCom('LawnCleaner.png')
     // scene应该要有一个开始row的属性, 后期加
     const start = 0
@@ -221,7 +230,9 @@ export default class Scene {
       await Promise.all(
         Array(this.row).fill('').map(async (item, index) => {
           const carCopy = new Menu(car.name, Object.assign({}, car.options, {
-            pos: [0, start + index]
+            pos: [0, start + index],
+            x: l - width / 2 - 10, 
+            y: t + (start + index) * height * 1.02 + (height - car.height) / 2
           }))
           await carCopy.init()
           return carCopy
@@ -605,21 +616,22 @@ export default class Scene {
             com.group.length ? await com.drawGroup() : await com.draw()
           })
         })
+        await queue
         dyings.forEach(com => {
-          if (com.dying) {
+          if (com.dying && !com.die) {
             com.dyingEffect()
           }
           if (com.die) {
             com.destroy()
           }
         })
-        await queue
         this.attackTest()
         this.refresh()
       }
     })
   }
   order() {
+    return coms.orderList
     return plants.concat(bullets, zombies, others, cards, suns)
   }
   attackTest() {
@@ -680,6 +692,7 @@ export default class Scene {
     cards.splice(0)
     suns.splice(0)
     dyings.splice(0)
+    orderList.splice(0)
     this.comsMounted.forEach(com => {
       if (!com.die) {
         if (com.dying) {
@@ -690,13 +703,14 @@ export default class Scene {
           } else {
             (coms[com.type + 's'] || others).push(com)
           }
+          orderList.push(com)
         }
       } else {
         this.dumpCom(com, false)
       }
     })
-    zombies.sort((a, b) => {
-      return a.pos[1] - b.pos[1]
+    orderList.sort((a, b) => {
+      return a.index - b.index
     })
   }
   // 晃动镜头
@@ -789,9 +803,13 @@ export default class Scene {
     if (context) {
       context.clearRect(0, 0, this.config.width, this.config.width)
     } else {
-      this.layers.forEach(({ context, selected }) => {
-        selected && context.clearRect(0, 0, this.config.width, this.config.width)
-      })
+      if (!this.layerAble) {
+        this.context.clearRect(0, 0, this.config.width, this.config.width)
+      } else {
+        this.layers.forEach(({ context, selected }) => {
+          selected && context.clearRect(0, 0, this.config.width, this.config.width)
+        })
+      }
     }
   }
   clearMounted() {

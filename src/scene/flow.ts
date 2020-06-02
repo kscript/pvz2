@@ -58,7 +58,7 @@ export class Flow {
                 }
                 this.index++
             }
-        } else if (this.index > 0 && this.scene.comGroup.zombies.length === 0) {
+        } else if (this.index > 0 && !this.scene.comGroup.zombies.length && !this.scene.comGroup.dyings.length) {
             this.complete = true
             this.scene.gameover(true)
         }

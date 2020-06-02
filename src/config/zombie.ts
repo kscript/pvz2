@@ -77,14 +77,16 @@ const options: anyObject = mergeOptions(path, name, list, {
             img && context.drawImage(img, this.x, this.y, img.width, img.height)
             if (this.gifs.die.index === this.gifs.die.length - 1) {
               this.personal.img = img
-              this.fadeOut(void 0, img)
+              await this.fadeOut(void 0, img)
               control.next()
             }
           }
           return [
             [lostHeadAttack],
             [lostHead],
-            [die]
+            [die, () => {
+              this.destroy()
+            }]
           ]
         })
       }

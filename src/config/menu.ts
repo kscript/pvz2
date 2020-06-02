@@ -628,13 +628,7 @@ const options: anyObject = mergeOptions(path, name, list, {
     }
   },
   'LawnCleaner.png': {
-    layerIndex: 1,
-    async draw() {
-      const [l, t, w, h, width, height] = this.scene.validArea
-      const [x, y] = this.pos
-      let img = await this.gif.currentImg()
-      img && this.scene.selectContext(this).drawImage(img, l - width / 2, t + y * height + (height - this.height) / 2, this.width, this.height)
-    }
+    layerIndex: 1
   }
 })
 const menu = {

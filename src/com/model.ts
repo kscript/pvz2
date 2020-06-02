@@ -72,7 +72,7 @@ export default class Model {
   public attackY: number = 0
 
   // 所处的层级
-  public index: number = 1
+  public index: number = 0
   
   // 帧频
   public fps: number = 6
@@ -245,6 +245,7 @@ export default class Model {
       this.time = +new Date
       this.id = [this.type, this.name, Math.floor(Math.random() * 1e8).toString(36)].join('/')
       this.moveSpeedX = (this.personal || this).moveSpeedX || 0
+      this.index = this.layerIndex * 1e4 + this.index
       sendMessage(info[this.type] + ':' + this.id + (this.scene.state === 'init' ? '准备加载' : messageText.initProp[this.type] || '创建成功!'), {
         type: 'Model::initProp',
         source: this
