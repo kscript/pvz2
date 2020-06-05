@@ -394,8 +394,8 @@ export default class Model {
     let [l, t, w, h, width, height] = this.scene.validArea
     // -2是为了不出现正好两边相交的情况
     if (this.type === 'plant') {
-      this.attackArea = [l + (pos[0] - .75) * width, t  + pos[1] * height, akX * width, akY * height - 2]
-      this.attackArea2 = [l + (pos[0] - .75) * width, t  + pos[1] * height, width, height - 2]
+      this.attackArea = [l + pos[0] * width, t  + pos[1] * height, akX * width, akY * height - 2]
+      this.attackArea2 = [l + pos[0] * width, t  + pos[1] * height, width, height - 2]
     } else if (this.type === 'bullet') {
       this.attackArea = [0, t  + pos[1] * height, this.width, this.height]
       this.attackArea2 = [0, t  + pos[1] * height, this.width, this.height]
@@ -404,10 +404,11 @@ export default class Model {
       this.attackArea2 = [0, t + pos[1] * height, width, height - 2]
     }
   }
+  public computeAttackArea(){}
   public drawHitArea(color = 'red', cxt = this.scene.selectContext(this), area = this.hitArea) {
     let len = area.length
     if (len === 4) {
-      drawHitArea(color, cxt, [this.x, this.y, area[2], area[3]])
+      drawHitArea(color, cxt, area)
     } else if (len && len > 4 && len % 2 === 0){
       drawHitArea(color, cxt, area)
     }

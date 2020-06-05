@@ -72,6 +72,7 @@ const options: anyObject = mergeOptions(path, name, list, {
   SunFlower: {
     sun: 50,
     sunSpeed: 2.5e4,
+    akX: 1,
     medias: {
       head: '${name}/SunFlower1.gif'
     },
@@ -158,6 +159,7 @@ const options: anyObject = mergeOptions(path, name, list, {
   },
   Peashooter: {
     sun: 100,
+    akx: 9,
     attackSpeed: 2e3,
     attackMoveX: 12,
     attackAble: true,

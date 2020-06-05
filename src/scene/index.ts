@@ -65,9 +65,15 @@ export default class Scene {
   public validArea: number[] = []
   public flow: Flow | null = null
   public auxiliary: anyObject = {
-    // hitArea: 'red',
-    // attackArea: 'blue',
-    // attackArea2: 'white'
+    hitArae_plant: 'red',
+    
+    attackArea_com1: 'blue',
+    attackArea2_com1: 'blue',
+
+    attackArea_com2: 'white',
+    attackArea2_com2: 'white',
+
+    validArea: 'block'
   }
   public pos: string[][] = []
   public refreshTime: number = 0
@@ -183,7 +189,9 @@ export default class Scene {
     this.setValidArea()
     const imageData = offlineCanvas.getImageData(com.img, com.width, this.config.height)
     this.selectContext(this).putImageData(imageData, 0, 0)
-    const useComs = (await this.mountGameZombies()).map(com => {
+    const useComs = (await this.mountGameZombies()).sort((a, b) => {
+      return a.pos[1] - b.pos[1]
+    }).map(com => {
       return {
         com,
         x: com.x
@@ -631,6 +639,9 @@ export default class Scene {
             com.destroy()
           }
         })
+        if (this.auxiliary.validArea) {
+          this.drawValidArea()
+        }
         this.attackTest()
         this.refresh()
       }
@@ -643,10 +654,9 @@ export default class Scene {
   attackTest() {
     const context = this.selectContext(this)
     zombies.slice(0).forEach((com2, i2) => {
-      if (com2.x <= this.config.width) {
+      if (com2.x <= this.config.width && com2.x >= this.validArea[0]) {
         // 移动 攻击/被攻击 边界, 只改变x
-        com2.attackArea[0] = com2.x
-        com2.attackArea2[0] = com2.x
+        com2.computeAttackArea()
         if (this.auxiliary.attackArea_com2) {
           com2.drawHitArea(this.auxiliary.attackArea_com2, context, com2.attackArea)
         }
@@ -654,12 +664,7 @@ export default class Scene {
           com2.drawHitArea(this.auxiliary.attackArea2_com2, context, com2.attackArea2)
         }
         plants.concat(bullets).slice(0).forEach((com1, i1) => {
-          if (com1.type === 'bullet') {
-            com1.attackArea[0] = com1.x - com1.width * 2
-            com1.attackArea2[0] = com1.x
-          } else if (com2.x < com1.x + com1.width / 2) {
-            return
-          }
+          com1.computeAttackArea()
           if (i2 < 1) {
             if (this.auxiliary.attackArea_com1) {
               com1.drawHitArea(this.auxiliary.attackArea_com1, context, com1.attackArea)
@@ -722,6 +727,11 @@ export default class Scene {
       // if (a.pos.length && b.pos.length) {
       //   return a.pos[1] - b.pos[1] || r
       // }
+      if (!r) {
+        if (a.type === 'zombie' && b.type === 'zombie') {
+          return a.pos[1] - b.pos[1]
+        }
+      }
       return r
     })
   }
@@ -920,9 +930,9 @@ export default class Scene {
     // @ts-ignore
     drawHitArea(color, cxt, area)
   }
-  public drawValidArea() {
+  public drawValidArea(color: string = 'block') {
     let [l, t, w, h, width, height] = this.validArea
-    this.context.strokeStyle = 'red'
+    this.context.strokeStyle = color
     return Array(9 * this.row).fill('').map((item, index) => {
       let x = index % 9
       let y = ~~(index / 9)

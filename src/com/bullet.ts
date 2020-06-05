@@ -15,4 +15,8 @@ export default class Bullet extends Model {
     }, options)
     this.source = this.options.source || null
   }
+  computeAttackArea() {
+    this.attackArea[0] = this.x
+    this.attackArea2[0] = this.x
+  }
 }
