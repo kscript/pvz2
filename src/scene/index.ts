@@ -16,6 +16,7 @@ const plants: Model[] = []
 const bullets: Model[] = []
 const zombies: Model[] = []
 const cards: Model[] = []
+const cars: Model[] = []
 const suns: Model[] = []
 const dyings: Model[] = []
 const orderList: Model[] = []
@@ -25,6 +26,7 @@ const coms: anyObject<Model[]> = {
   zombies,
   bullets,
   cards,
+  cars,
   others,
   suns,
   dyings,
@@ -161,8 +163,8 @@ export default class Scene {
   getFlowStep() {
     return [
       [5 * 1e3, '开始'],
-      [35 * 1e3, 1, 2],
-      [50 * 1e3, 1, 3],
+      [40 * 1e3, 1, 2],
+      [50 * 1e3, 1, 2],
       [60 * 1e3, 1, 3],
 
       [70 * 1e3, '一大波僵尸正在靠近'],
@@ -654,9 +656,22 @@ export default class Scene {
   attackTest() {
     const context = this.selectContext(this)
     zombies.slice(0).forEach((com2, i2) => {
-      if (com2.x <= this.config.width && com2.x >= this.validArea[0]) {
-        // 移动 攻击/被攻击 边界, 只改变x
+      if (com2.x <= this.config.width) {
         com2.computeAttackArea()
+        if (com2.attackArea[0] < this.validArea[0]) {
+          const car = (cars.filter(item => item.pos[1] === com2.pos[1]) || [])[0]
+          if (this.hasPos([9, com2.pos[1]])) {
+            if (car) {
+              car.attack()
+            } else {
+              // 僵尸进入了房间
+            }
+          } else {
+            car && this.setPos([9, com2.pos[1]], car.id)
+          }
+          return 
+        }
+        // 移动 攻击/被攻击 边界, 只改变x
         if (this.auxiliary.attackArea_com2) {
           com2.drawHitArea(this.auxiliary.attackArea_com2, context, com2.attackArea)
         }
@@ -665,6 +680,10 @@ export default class Scene {
         }
         plants.concat(bullets).slice(0).forEach((com1, i1) => {
           com1.computeAttackArea()
+          // 如果僵尸越过了植物的边缘, 则不进行碰撞检测
+          if (com2.attackArea[0] <= com1.attackArea2[0]) {
+            return
+          }
           if (i2 < 1) {
             if (this.auxiliary.attackArea_com1) {
               com1.drawHitArea(this.auxiliary.attackArea_com1, context, com1.attackArea)
@@ -705,6 +724,7 @@ export default class Scene {
     cards.splice(0)
     suns.splice(0)
     dyings.splice(0)
+    cars.splice(0)
     orderList.splice(0)
     this.comsMounted.forEach(com => {
       if (!com.die) {
@@ -713,6 +733,8 @@ export default class Scene {
         } else {
           if (com.name === "Sun.gif") {
             suns.push(com)
+          } else if (com.name === 'LawnCleaner.png'){
+            cars.push(com)
           } else {
             (coms[com.type + 's'] || others).push(com)
           }
